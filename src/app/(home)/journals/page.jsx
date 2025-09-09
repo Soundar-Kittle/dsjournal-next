@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import JournalCard from "@/components/Home/Journals/JournalCard";
 
@@ -17,7 +17,7 @@ export default function JournalsPage() {
   // ✅ prevent SSR/CSR mismatch by rendering only after mount
  const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  if (!mounted) return null; // or a tiny skeleton
+  // if (!mounted) return null; // or a tiny skeleton
 
   const [journals, setJournals] = useState([]);
   const [loading, setLoading] = useState(true);

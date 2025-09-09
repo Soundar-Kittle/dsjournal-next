@@ -5,8 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
-import { publicationFrequencies, languages, formatofpublication } from "@/@data/data";
+import moment from "moment";
+// import { format } from "date-fns";
+import {
+  publicationFrequencies,
+  languages,
+  formatofpublication,
+} from "@/@data/data";
 
 export default function Addform({ editData = null, onSuccess }) {
   const {
@@ -118,7 +123,7 @@ export default function Addform({ editData = null, onSuccess }) {
       </div>
       <div>
         <Label>Year Started</Label>
-        <Controller
+        {/* <Controller
           control={control}
           name="year_started"
           render={({ field }) => (
@@ -133,23 +138,51 @@ export default function Addform({ editData = null, onSuccess }) {
               placeholder="Pick a date"
             />
           )}
+        /> */}
+        <Controller
+          control={control}
+          name="year_started"
+          render={({ field }) => (
+            <Input
+              type="date"
+              onChange={(e) => {
+                const selected = moment(e.target.value, "YYYY-MM-DD").toDate();
+                field.onChange(selected);
+              }}
+              value={
+                field.value ? moment(field.value).format("YYYY-MM-DD") : ""
+              }
+              className="w-full"
+              placeholder="Pick a date"
+            />
+          )}
         />
       </div>
       <div>
         <Label>Publication Frequency</Label>
-        <select {...register("publication_frequency")} className="w-full border rounded px-2 py-1">
+        <select
+          {...register("publication_frequency")}
+          className="w-full border rounded px-2 py-1"
+        >
           <option value="">Select</option>
           {publicationFrequencies.map((freq) => (
-            <option key={freq} value={freq}>{freq}</option>
+            <option key={freq} value={freq}>
+              {freq}
+            </option>
           ))}
         </select>
       </div>
       <div>
         <Label>Language</Label>
-        <select {...register("language")} className="w-full border rounded px-2 py-1">
+        <select
+          {...register("language")}
+          className="w-full border rounded px-2 py-1"
+        >
           <option value="">Select</option>
           {languages.map((lang) => (
-            <option key={lang} value={lang}>{lang}</option>
+            <option key={lang} value={lang}>
+              {lang}
+            </option>
           ))}
         </select>
       </div>
@@ -159,13 +192,16 @@ export default function Addform({ editData = null, onSuccess }) {
       </div>
       <div>
         <Label>Format</Label>
-        <select {...register("format")} className="w-full border rounded px-2 py-1">
+        <select
+          {...register("format")}
+          className="w-full border rounded px-2 py-1"
+        >
           <option value="">Select</option>
-          {
-            formatofpublication.map((publishtype) => (
-              <option key={publishtype} value={publishtype}>{publishtype}</option>
-            ))
-          }
+          {formatofpublication.map((publishtype) => (
+            <option key={publishtype} value={publishtype}>
+              {publishtype}
+            </option>
+          ))}
         </select>
       </div>
       <div>

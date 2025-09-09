@@ -125,7 +125,7 @@ useEffect(() => {
         <CardTitle className="text-2xl font-semibold">Journal Settings</CardTitle>
         <CardDescription>Update your journal’s basic information.</CardDescription>
       </CardHeader>
-      <hr class="h-px bg-gray-200 border-0 dark:bg-gray-700"></hr>
+      <hr className="h-px bg-gray-200 border-0 dark:bg-gray-700"></hr>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col space-y-2">
           <Label htmlFor="journal_name">Journal Name</Label>
@@ -190,7 +190,7 @@ useEffect(() => {
       </CardHeader>
       <CardContent className="space-y-4">
         {fields.map((field, index) => (
-          <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
+          <div key={field.id} className="grid grid-cols-3 gap-2 items-center">
             <Input
               className="col-span-4"
               placeholder="Platform"

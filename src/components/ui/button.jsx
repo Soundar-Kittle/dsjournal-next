@@ -1,55 +1,377 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva } from "class-variance-authority";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  forwardRef,
+  useId,
+  Children,
+  isValidElement,
+  cloneElement,
+} from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "./variants";
 
-import { cn } from "@/lib/utils"
+// --- Main Button ---
+const Button = forwardRef(
+  (
+    {
+      className,
+      variant,
+      size,
+      rounded,
+      elevation,
+      animation,
+      iconPosition,
+      fullWidth,
+      asChild = false,
+      isLoading = false,
+      loadingText = "Loading...",
+      startIcon,
+      endIcon,
+      leadingIcon: LeadingIcon,
+      trailingIcon: TrailingIcon,
+      disabled = false,
+      disabledTooltip,
+      disabledReason,
+      ariaLabel,
+      ariaDescribedBy,
+      ariaLabelledBy,
+      ariaExpanded,
+      ariaControls,
+      ariaHaspopup,
+      ariaPressed,
+      ariaSelected,
+      children,
+      activeDescendant,
+      longPressTimeMs = 500,
+      onLongPress,
+      ...props
+    },
+    ref
+  ) => {
+    const Comp = asChild ? Slot : "button";
+    const isDisabled = disabled || isLoading;
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-  {
-    variants: {
-      variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-        outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
+    const [showTooltip, setShowTooltip] = useState(false);
+    const tooltipTimeoutRef = useRef(null);
+    const [pressTimer, setPressTimer] = useState(null);
+    const [isPressing, setIsPressing] = useState(false);
+
+    const startPressTimer = useCallback(() => {
+      if (onLongPress && !isDisabled) {
+        setIsPressing(true);
+        const timer = setTimeout(() => {
+          onLongPress();
+          setIsPressing(false);
+        }, longPressTimeMs);
+        setPressTimer(timer);
+      }
+    }, [onLongPress, longPressTimeMs, isDisabled]);
+
+    const clearPressTimer = useCallback(() => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        setPressTimer(null);
+        setIsPressing(false);
+      }
+    }, [pressTimer]);
+
+    useEffect(() => {
+      return () => {
+        clearPressTimer();
+        if (tooltipTimeoutRef.current) {
+          clearTimeout(tooltipTimeoutRef.current);
+        }
+      };
+    }, [clearPressTimer]);
+
+    const renderContent = () => {
+      if (isLoading) {
+        return (
+          <>
+            <Loader2 className="animate-spin" aria-hidden="true" />
+            {loadingText && <span>{loadingText}</span>}
+            <span className="sr-only">Loading</span>
+          </>
+        );
+      }
+      return (
+        <>
+          {startIcon || (LeadingIcon && <LeadingIcon aria-hidden="true" />)}
+          {children}
+          {endIcon || (TrailingIcon && <TrailingIcon aria-hidden="true" />)}
+        </>
+      );
+    };
+
+    return (
+      <div className="relative inline-block scale-105 active:scale-100">
+        <Comp
+          ref={ref}
+          data-slot="button"
+          data-loading={isLoading || undefined}
+          data-disabled={isDisabled || undefined}
+          data-variant={variant}
+          data-pressing={isPressing || undefined}
+          type={Comp === "button" ? props.type || "button" : undefined}
+          className={cn(
+            buttonVariants({
+              variant,
+              size,
+              rounded,
+              elevation,
+              animation,
+              iconPosition,
+              fullWidth,
+              disabled: isDisabled,
+              className,
+            })
+          )}
+          disabled={isDisabled}
+          aria-disabled={isDisabled}
+          aria-busy={isLoading}
+          aria-label={ariaLabel}
+          aria-describedby={ariaDescribedBy}
+          aria-labelledby={ariaLabelledBy}
+          aria-expanded={ariaExpanded}
+          aria-controls={ariaControls}
+          aria-haspopup={ariaHaspopup}
+          aria-pressed={ariaPressed}
+          aria-selected={ariaSelected}
+          aria-activedescendant={activeDescendant}
+          role={props.role || "button"}
+          tabIndex={isDisabled ? -1 : props.tabIndex || 0}
+          onMouseEnter={(e) => {
+            if (isDisabled && disabledTooltip) {
+              tooltipTimeoutRef.current = setTimeout(() => {
+                setShowTooltip(true);
+              }, 500);
+            }
+            props.onMouseEnter?.(e);
+          }}
+          onMouseLeave={(e) => {
+            if (tooltipTimeoutRef.current) {
+              clearTimeout(tooltipTimeoutRef.current);
+              tooltipTimeoutRef.current = null;
+            }
+            setShowTooltip(false);
+            props.onMouseLeave?.(e);
+          }}
+          onMouseDown={startPressTimer}
+          onMouseUp={clearPressTimer}
+          onTouchStart={startPressTimer}
+          onTouchEnd={clearPressTimer}
+          onKeyDown={(e) => {
+            if ((e.key === " " || e.key === "Enter") && !isDisabled) {
+              props.onClick?.(e);
+            }
+            if (e.key === " ") startPressTimer();
+            props.onKeyDown?.(e);
+          }}
+          onKeyUp={(e) => {
+            if (e.key === " " || e.key === "Enter") clearPressTimer();
+            props.onKeyUp?.(e);
+          }}
+          {...props}
+        >
+          {renderContent()}
+        </Comp>
+
+        {isDisabled && disabledTooltip && showTooltip && (
+          <div
+            role="tooltip"
+            className="absolute z-50 px-2 py-1 text-xs text-white bg-black rounded shadow-lg -top-8 whitespace-nowrap"
+          >
+            {disabledTooltip}
+          </div>
+        )}
+        {isDisabled && disabledReason && (
+          <span className="sr-only">{disabledReason}</span>
+        )}
+      </div>
+    );
   }
-)
+);
+Button.displayName = "Button";
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}) {
-  const Comp = asChild ? Slot : "button"
+// --- Button Group ---
+const ButtonGroup = forwardRef(
+  (
+    {
+      children,
+      variant = "default",
+      size = "default",
+      orientation = "horizontal",
+      attached = false,
+      label,
+      className,
+      ...props
+    },
+    ref
+  ) => {
+    const isVertical = orientation === "vertical";
+    const groupId = useId();
 
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props} />
-  );
-}
+    return (
+      <div
+        ref={ref}
+        role="group"
+        aria-label={label || "Button group"}
+        id={groupId}
+        className={cn(
+          "inline-flex",
+          isVertical ? "flex-col" : "flex-row",
+          attached &&
+            !isVertical &&
+            "[&>*:not(:first-child)]:rounded-l-none [&>*:not(:last-child)]:rounded-r-none [&>*:not(:first-child)]:-ml-px",
+          attached &&
+            isVertical &&
+            "[&>*:not(:first-child)]:rounded-t-none [&>*:not(:last-child)]:rounded-b-none [&>*:not(:first-child)]:-mt-px",
+          className
+        )}
+        {...props}
+      >
+        {Children.map(children, (child, index) => {
+          if (!isValidElement(child)) return child;
+          return cloneElement(child, {
+            variant: child.props.variant ?? variant,
+            size: child.props.size ?? size,
+            "data-group-id": groupId,
+            "data-group-item": true,
+            "data-group-index": index,
+            "data-group-position":
+              index === 0
+                ? "first"
+                : index === Children.count(children) - 1
+                ? "last"
+                : "middle",
+            className: cn(child.props.className),
+          });
+        })}
+      </div>
+    );
+  }
+);
+ButtonGroup.displayName = "ButtonGroup";
 
-export { Button, buttonVariants }
+// --- Icon Button ---
+const IconButton = forwardRef(
+  ({ icon: Icon, children, size = "icon", ariaLabel, ...props }, ref) => {
+    const accessibleLabel =
+      ariaLabel ||
+      (typeof children === "string"
+        ? children
+        : props["aria-label"] || "Button");
+
+    return (
+      <Button ref={ref} size={size} aria-label={accessibleLabel} {...props}>
+        {Icon && <Icon aria-hidden="true" />}
+        {children}
+      </Button>
+    );
+  }
+);
+IconButton.displayName = "IconButton";
+
+// --- Toggle Button ---
+const ToggleButton = forwardRef(
+  (
+    {
+      pressed,
+      defaultPressed = false,
+      onPressedChange,
+      pressedVariant = "default",
+      unpressedVariant = "outline",
+      ariaControls,
+      ariaLabel,
+      ...props
+    },
+    ref
+  ) => {
+    const [isPressedState, setIsPressedState] = useState(defaultPressed);
+    const isControlled = pressed !== undefined;
+    const isPressed = isControlled ? pressed : isPressedState;
+
+    const handleClick = (e) => {
+      if (!isControlled) setIsPressedState(!isPressedState);
+      onPressedChange?.(!isPressed);
+      props.onClick?.(e);
+    };
+
+    return (
+      <Button
+        ref={ref}
+        variant={isPressed ? pressedVariant : unpressedVariant}
+        aria-pressed={isPressed}
+        aria-controls={ariaControls}
+        aria-label={ariaLabel}
+        role="switch"
+        onClick={handleClick}
+        {...props}
+      />
+    );
+  }
+);
+ToggleButton.displayName = "ToggleButton";
+
+// --- Loading Button ---
+const LoadingButton = forwardRef(
+  (
+    {
+      onClick,
+      loadingText = "Loading...",
+      loadingDelay = 400,
+      onLoadingComplete,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const isMounted = useRef(true);
+
+    useEffect(() => {
+      return () => {
+        isMounted.current = false;
+      };
+    }, []);
+
+    const handleClick = async (e) => {
+      if (isLoading || !onClick) return;
+      try {
+        setIsLoading(true);
+        const [result] = await Promise.all([
+          onClick(e),
+          new Promise((resolve) => setTimeout(resolve, loadingDelay)),
+        ]);
+        if (isMounted.current) {
+          setIsLoading(false);
+          onLoadingComplete?.(result);
+        }
+      } catch (err) {
+        if (isMounted.current) {
+          setIsLoading(false);
+          console.error("Button action failed:", err);
+        }
+      }
+    };
+
+    return (
+      <Button
+        ref={ref}
+        isLoading={isLoading}
+        loadingText={loadingText}
+        onClick={handleClick}
+        {...props}
+      >
+        {children}
+      </Button>
+    );
+  }
+);
+LoadingButton.displayName = "LoadingButton";
+
+export { Button, ButtonGroup, IconButton, ToggleButton, LoadingButton };

@@ -23,7 +23,7 @@ export default function Page() {
       <section className="relative isolate">
         <div className="absolute inset-0 -z-10">
           <Image
-            src="/hero-circuit.jpg"
+            src="/uploads/banners/hero-bgimg.jpg"
             alt="Hero background"
             fill
             className="object-cover"
