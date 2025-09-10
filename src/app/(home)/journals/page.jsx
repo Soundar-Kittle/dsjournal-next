@@ -1,6 +1,5 @@
-"use client";
-import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { headers } from "next/headers";
 import JournalCard from "@/components/Home/Journals/JournalCard";
 
 // normalize cover paths like "uploads/..." → "/uploads/..."
@@ -13,57 +12,64 @@ function toCoverUrl(v) {
   return u;
 }
 
-export default function JournalsPage() {
-  // ✅ prevent SSR/CSR mismatch by rendering only after mount
- const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  // if (!mounted) return null; // or a tiny skeleton
+// make a safe slug from short_name (e.g., "DS-LLL" -> "lll")
+function slugFromShortName(s) {
+  if (!s) return null;
+  return s
+    .replace(/^DS-?/i, "")        // drop DS- prefix
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")  // non-alnum → hyphen
+    .replace(/^-+|-+$/g, "");     // trim hyphens
+}
 
-  const [journals, setJournals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+async function fetchJournals() {
+  try {
+    const hdrs = await headers();
+    const host = hdrs.get("host");
+    const proto = process.env.NODE_ENV === "development" ? "http" : "https";
+    const url = `${proto}://${host}/api/journals`;
 
-  const fetchJournals = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/journals", { cache: "no-store" });
-      const data = await res.json();
-      const list = Array.isArray(data?.records)
-        ? data.records
-        : Array.isArray(data?.journals)
-        ? data.journals
-        : [];
-      const norm = list.map((r) => ({
-        id: Number(r.id),
-        name: String(r.name ?? r.journal_name ?? r.title ?? ""),
-        slug: String(r.slug ?? r.alias ?? r.id),
-        cover_url: toCoverUrl(r.cover_url ?? r.cover ?? r.cover_image ?? null),
-        issn_print: r.issn_print && r.issn_print !== "null" ? r.issn_print : "",
-        issn_online: r.issn_online && r.issn_online !== "null" ? r.issn_online : "",
-      }));
-      setJournals(norm);
-    } catch (e) {
-      console.error("Failed to fetch journals", e);
-      setJournals([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const res = await fetch(url, { cache: "no-store", next: { revalidate: 0 } });
+    if (!res.ok) return [];
 
-  useEffect(() => {
-    fetchJournals();
-  }, []);
+    const data = await res.json();
+    const list = Array.isArray(data?.records)
+      ? data.records
+      : Array.isArray(data?.journals)
+      ? data.journals
+      : [];
 
-  const visible = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return journals;
-    return journals.filter(
-      (j) =>
-        (j.name || "").toLowerCase().includes(q) ||
-        (j.issn_online || "").toLowerCase().includes(q) ||
-        (j.issn_print || "").toLowerCase().includes(q)
-    );
-  }, [journals, search]);
+    return list.map((r) => ({
+      id: Number(r.id),
+      name: String(r.name ?? r.journal_name ?? r.title ?? ""),
+      // prefer an explicit slug if present; else derive from short_name; else fallback to id
+      slug: r.slug
+        ? String(r.slug).toLowerCase()
+        : slugFromShortName(r.short_name) ?? String(r.id),
+      cover_url: toCoverUrl(r.cover_url ?? r.cover ?? r.cover_image ?? null),
+      issn_print: r.issn_print && r.issn_print !== "null" ? r.issn_print : "",
+      issn_online: r.issn_online && r.issn_online !== "null" ? r.issn_online : "",
+    }));
+  } catch (e) {
+    console.error("journals page fetch failed", e);
+    return [];
+  }
+}
+
+export default async function JournalsPage({ searchParams }) {
+  const sp = await searchParams; // App Router requires awaiting searchParams here
+  const q = String(sp?.q ?? "").trim().toLowerCase();
+
+  const journals = await fetchJournals();
+
+  const visible = q
+    ? journals.filter(
+        (j) =>
+          (j.name || "").toLowerCase().includes(q) ||
+          (j.issn_online || "").toLowerCase().includes(q) ||
+          (j.issn_print || "").toLowerCase().includes(q)
+      )
+    : journals;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
@@ -78,26 +84,18 @@ export default function JournalsPage() {
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Journals</h1>
       </div>
 
-      <div className="mb-6">
+      {/* Query param search (?q=...) – hydration-safe */}
+      <form className="mb-6" action="/journals" method="get">
         <input
           type="text"
+          name="q"
           placeholder="Search by journal name or ISSN…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          defaultValue={q}
           className="w-full md:w-1/2 rounded border border-slate-300 px-3 py-2"
         />
-      </div>
+      </form>
 
-      {loading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="aspect-[3/4] w-full rounded-t-2xl bg-slate-100" />
-              <div className="p-4"><div className="h-4 w-3/4 rounded bg-slate-100" /></div>
-            </div>
-          ))}
-        </div>
-      ) : visible.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="text-slate-600">No journals found.</p>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
