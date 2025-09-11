@@ -5,21 +5,15 @@ import { parseForm } from "@/lib/parseForm";
 import { createDbConnection } from "@/lib/db";
 import { NextResponse } from "next/server";
 
-
-export const config = { api: { bodyParser: false } }
+export const config = { api: { bodyParser: false } };
 
 export async function POST(req) {
   try {
-    const { fields, files } = await parseForm(req)
-    const {
-      journal_name,
-      alias_name,
-      icon,
-      social_links
-    } = fields
+    const { fields, files } = await parseForm(req);
+    const { journal_name, alias_name, icon, social_links } = fields;
 
-    const logo = files?.logo?.newFilename || null
-    const conn = await createDbConnection()
+    const logo = files?.logo?.newFilename || null;
+    const conn = await createDbConnection();
     await conn.query(
       `INSERT INTO settings (journal_name, alias_name, icon, logo, social_links)
        VALUES (?, ?, ?, ?, ?)`,
@@ -28,56 +22,67 @@ export async function POST(req) {
         alias_name,
         icon,
         logo,
-        social_links // should be stringified JSON
+        social_links, // should be stringified JSON
       ]
-    )
-    await conn.end()
+    );
+    await conn.end();
 
-    return NextResponse.json({ success: true, message: "Settings saved!" })
+    return NextResponse.json({ success: true, message: "Settings saved!" });
   } catch (err) {
-    console.error("Insert failed:", err)
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
+    console.error("Insert failed:", err);
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 500 }
+    );
   }
 }
-
 
 export async function GET() {
   try {
     const connection = await createDbConnection();
-    const [rows] = await connection.query("SELECT * FROM settings WHERE id = 1 LIMIT 1");
+    const [rows] = await connection.query(
+      "SELECT * FROM settings WHERE id = 1 LIMIT 1"
+    );
     await connection.end();
 
     if (!rows.length) {
-      return Response.json({ success: false, message: "No settings found" }, { status: 404 });
+      return Response.json(
+        { success: false, message: "No settings found" },
+        { status: 404 }
+      );
     }
 
-   const settings = rows[0];
- // ✅ Fix: parse social_links from string to array
+    const settings = rows[0];
+    // ✅ Fix: parse social_links from string to array
     try {
       settings.social_links = JSON.parse(settings.social_links || "[]");
     } catch {
       settings.social_links = [];
     }
-return Response.json({ success: true, settings });
+    return Response.json({ success: true, settings });
   } catch (error) {
     console.error("GET /api/settings error:", error);
-    return Response.json({ success: false, error: "Internal server error" }, { status: 500 });
+    return Response.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
 export async function PATCH(req) {
   try {
     const { fields, files } = await parseForm(req);
-    const {
-      journal_name = "",
-      alias_name = "",
-      social_links = "[]"
-    } = fields;
+    const { journal_name = "", alias_name = "", social_links = "[]" } = fields;
 
-    const parsedLinks = typeof social_links === "string" ? social_links : JSON.stringify(social_links);
+    const parsedLinks =
+      typeof social_links === "string"
+        ? social_links
+        : JSON.stringify(social_links);
 
     const logo = files?.logo?.[0];
     const icon = files?.icon?.[0];
+
+    console.log(fields);
 
     let logoPath = null;
     let iconPath = null;
@@ -86,6 +91,7 @@ export async function PATCH(req) {
       const ext = path.extname(logo.originalFilename);
       const fileName = `logo_${Date.now()}${ext}`;
       const uploadDir = path.join(process.cwd(), "public/uploads/logos");
+      console.log("uploadDir:", uploadDir);
       fs.mkdirSync(uploadDir, { recursive: true });
       const savePath = path.join(uploadDir, fileName);
       fs.renameSync(logo.filepath, savePath);
@@ -119,9 +125,14 @@ export async function PATCH(req) {
     await conn.query(sql, params);
     await conn.end();
 
+    console.log("Settings updated");
+
     return NextResponse.json({ success: true, message: "Settings updated" });
   } catch (err) {
     console.error("PATCH error:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 500 }
+    );
   }
 }

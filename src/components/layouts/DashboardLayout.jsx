@@ -1,33 +1,29 @@
-// src/components/layouts/DashboardLayout.jsx
-// import Sidebar from "./Sidebar"
-// import { Avatar, AvatarImage } from "@/components/ui/avatar"
-// import { Separator } from "@/components/ui/separator"
-
-// export default function DashboardLayout({ children }) {
-//   return (
-//     <div className="flex h-screen">
-//       <Sidebar />
-
-//       <main className="flex-1 p-6 overflow-y-auto">
-//         <div className="flex justify-between items-center mb-4">
-//           <h1 className="text-2xl font-semibold">Dashboard</h1>
-//           <Avatar>
-//             <AvatarImage src="https://i.pravatar.cc/300" alt="User" />
-//           </Avatar>
-//         </div>
-
-//         <Separator className="mb-6" />
-//         {children}
-//       </main>
-//     </div>
-//   )
-// }
 import { Sidebar } from "@/components/sidebar/Sidebar.jsx";
-import { MenuItems } from "./menuItems";
+import { getMenuItems } from "./menuItems";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 
-const DashboardLayout = ({ children }) => {
+const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
+
+async function getUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth_token")?.value;
+  if (!token) return null;
+
+  try {
+    const { payload } = await jwtVerify(token, secretKey);
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+const DashboardLayout = async ({ children }) => {
+  const user = await getUser();
+  const role = user?.role || "user";
+  const menuItems = getMenuItems(role);
   return (
-    <Sidebar menuItems={MenuItems()} drawerBreakpoint="md">
+    <Sidebar menuItems={menuItems} user={user} drawerBreakpoint="md">
       {children}
     </Sidebar>
   );

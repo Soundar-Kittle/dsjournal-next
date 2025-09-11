@@ -11,6 +11,7 @@ import { useGlobalHotkeys, normaliseHotkey, kbdGlyph } from "./hotkeys";
 
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "../ui/button";
+import { toast } from "sonner";
 
 const HIDE_BUTTON = {
   sm: "sm:hidden",
@@ -66,6 +67,7 @@ export const Sidebar = ({
   showHotkeys = true,
   showSearch = true,
   density = "base",
+  user = null,
 }) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -208,6 +210,32 @@ export const Sidebar = ({
       router.push(path);
     }
   };
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const role = user?.role;
+
+      localStorage.removeItem("user");
+      queryClient.removeQueries();
+
+      // Toast
+      toast.success("You have been logged out");
+
+      // Redirect to correct login page
+      if (role === "admin") {
+        router.replace("/admin/login");
+      } else if (role === "author") {
+        router.replace("/author/login");
+      } else {
+        router.replace("/"); // fallback
+      }
+    } catch (err) {
+      toast.error("Logout failed");
+      console.error("❌ Logout error:", err);
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -349,16 +377,10 @@ export const Sidebar = ({
           <h1 className="text-lg font-bold text-gray-800"></h1>
 
           <div className="flex items-center gap-5">
-            <Link href="/dashboard/settings">
+            <Link href={user?.role ? `/${user?.role}/dashboard/settings` : "/dashboard/settings"}>
               <Settings className="w-5 h-5 text-primary hover:rotate-90 duration-500" />
             </Link>
-            <Button
-              onClick={() => {
-                localStorage.removeItem("token");
-                router.replace("/login");
-                queryClient.removeQueries();
-              }}
-            >
+            <Button onClick={handleLogout}>
               <LogOut size={14} />
               Logout
             </Button>

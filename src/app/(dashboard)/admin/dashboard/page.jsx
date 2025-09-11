@@ -5,12 +5,12 @@ export default function DashboardHome() {
   const items = [
     {
       title: "Volume & Issue",
-      href: "/dashboard/volume-issue",
+      href: "/admin/dashboard/volume-issue",
       description: "Manage volume and issue entries per journal.",
     },
     {
       title: "Month of Issue",
-      href: "/dashboard/month-issue",
+      href: "/admin/dashboard/month-issue",
       description: "Configure publishing frequency like Monthly, Quarterly, etc.",
     },
   ];

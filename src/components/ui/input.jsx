@@ -180,7 +180,7 @@ const Input = React.forwardRef(
                 type="button"
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 onClick={() => setShowPassword((p) => !p)}
-                className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground"
+                className="cursor-pointer absolute right-2.5 p-1 text-muted-foreground hover:text-foreground"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

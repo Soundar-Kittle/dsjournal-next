@@ -1,6 +1,6 @@
 "use client";
 import { createColumnHelper } from "@tanstack/react-table";
-import { DataTable } from "@/components/ui";
+import { Button, DataTable, Input } from "@/components/ui";
 
 import { AddBanner } from "./AddBanner";
 import { banners } from "@/services";
@@ -8,6 +8,7 @@ import { linkOptions } from "@/@data/data";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 
 const ManageBanner = () => {
   const columnHelper = createColumnHelper();
@@ -20,11 +21,12 @@ const ManageBanner = () => {
           cell: (info) => (
             <div className="h-12 w-12 rounded-md overflow-hidden relative">
               <Image
-                src={`${info.getValue()}`}
+                src={info.getValue()}
                 alt="banner"
                 fill
-                sizes="100%"
-                className="object-cover"
+                style={{ objectFit: "cover" }}
+                sizes="100px"
+                priority
               />
             </div>
           ),
@@ -32,6 +34,11 @@ const ManageBanner = () => {
         }),
         columnHelper.accessor("title", {
           header: "Title",
+          cell: (info) => (
+            <p className="line-clamp-3" title={info.getValue()}>
+              {info.getValue() || "N/A"}
+            </p>
+          ),
         }),
         columnHelper.accessor("button_link", {
           header: "Button Link",
@@ -63,7 +70,11 @@ const ManageBanner = () => {
         }),
         columnHelper.accessor("description", {
           header: "Description",
-          cell: (info) => info.getValue()?.slice(0, 50) || "N/A",
+          cell: (info) => (
+            <p className="line-clamp-3" title={info.getValue()}>
+              {info.getValue() || "N/A"}
+            </p>
+          ),
         }),
         columnHelper.accessor("alignment", {
           header: "Alignment",
@@ -85,11 +96,44 @@ const ManageBanner = () => {
     { value: "description", label: "Description", visible: true },
     { value: "alignment", label: "Alignment", visible: false },
     { value: "status", label: "Status", visible: true },
-
   ]);
+
+  const { control, watch, reset } = useForm();
+  const filterSearch = watch("search");
 
   return (
     <>
+      <div className="mb-3 rounded-lg shadow-md overflow-hidden p-4 pb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2  gap-4">
+          <Controller
+            control={control}
+            name="search"
+            render={({ field }) => (
+              <Input
+                {...field}
+                value={field.value ?? ""}
+                label="Search"
+                onValueChange={field.onChange}
+                placeholder="Search: title, description"
+              />
+            )}
+          />
+          <div className="flex justify-end">
+            <Button
+              type="reset"
+              className="mt-4"
+              onClick={() =>
+                reset({
+                  search: "",
+                })
+              }
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <DataTable
         fetchData={banners.getPaginated}
         columnsConfig={columnsConfig}
@@ -100,9 +144,9 @@ const ManageBanner = () => {
         AddComponent={AddBanner}
         addButtonText="Add Banner"
         EditComponent={AddBanner}
-        // filters={{
-        //   search: filterSearch ?? "",
-        // }}
+        filters={{
+          search: filterSearch ?? "",
+        }}
       />
     </>
   );

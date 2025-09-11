@@ -92,7 +92,7 @@ const AddBanner = ({ type = "add", editData = {}, onClose }) => {
   const mutation = useApiMutation({
     endpoint: type === "add" ? banners.add.url : banners.update.url,
     method: type === "add" ? banners.add.method : banners.update.method,
-    headers: { "Content-Type": "multipart/form-data" },
+    // headers: { "Content-Type": "multipart/form-data" },
     onSuccess: (res) => {
       queryClient.invalidateQueries(banners.getPaginated.key);
       setImageFile({ image: [] });

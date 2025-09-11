@@ -339,11 +339,12 @@ const DataTable = ({
   return (
     <>
       <div className="bg-white rounded-lg shadow-md border border-primary/10 overflow-hidden">
-        <div className="px-6 py-4 bg-primary/5 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div className="px-6 py-4 bg-primary/10 flex flex-col md:flex-row md:justify-between md:items-center 
+        gap-4 border border-primary/25 rounded-t-lg">
           <h2 className="text-xl font-semibold text-primary">
             Manage {title}
             {data && data.rowCount > 0 && (
-              <Badge className="ml-3 bg-primary/20 text-primary font-normal">
+              <Badge className="ml-3 bg-primary/20 text-primary font-semibold">
                 {data.rowCount} items
               </Badge>
             )}

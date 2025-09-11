@@ -21,14 +21,22 @@ export const SidebarHeader = ({ collapsed }) => {
             </div>
           )}
           {!collapsed && (
-            <div className="text-lg font-bold ml-3 w-55 h-8">
-              {/* src={`/uploads/settings/${settings?.logo}`} */}
+            // <div className="text-lg font-bold ml-3 w-55 h-8">
+            //   <Image
+            //     src="/logo.png"
+            //     alt="Logo"
+            //     fill
+            //     objectFit="contain"
+            //   />
+            // </div>
+            <div className="text-lg font-bold ml-3 w-55 h-16 relative">
               <Image
                 src="/logo.png"
                 alt="Logo"
                 fill
-                objectFit="contain"
-                // fallbackSrc={"/logo/logo.png"}
+                style={{ objectFit: "contain" }}
+                sizes="220px"
+                priority
               />
             </div>
           )}

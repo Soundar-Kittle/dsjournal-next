@@ -1,3 +1,4 @@
+import { Toaster } from "sonner";
 import "./auth.css";
 
 export const metadata = {
@@ -6,5 +7,10 @@ export const metadata = {
 };
 
 export default function AdminLayout({ children }) {
-  return <div>{children}</div>;
+  return (
+    <div>
+      {children}
+      <Toaster position="top-right" richColors closeButton />
+    </div>
+  );
 }
