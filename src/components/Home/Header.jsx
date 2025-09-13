@@ -9,7 +9,7 @@ import { Menu, X, Search as SearchIcon } from "lucide-react";
 const NAV = [
   { label: "Home", href: "/" },
   { label: "Journals", href: "/journals" },
-  { label: "Authors", href: "/authors" },
+  { label: "Authors", href: "/for-authors" },
   { label: "Reviewers", href: "/reviewers" },
   { label: "Editors", href: "/editors" }, // <- no hash
 ];

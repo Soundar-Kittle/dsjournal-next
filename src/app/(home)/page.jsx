@@ -12,6 +12,7 @@ import {
   LockOpen,
   ShieldCheck,
 } from "lucide-react";
+import HeroBanner from "@/components/Hero/HeroBanner";
 
 export default function Page() {
   return (
