@@ -1,28 +1,84 @@
 import { NextResponse } from "next/server";
 import { createDbConnection } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
+const intOrNull = (x) => {
+  const n = Number(x);
+  return Number.isFinite(n) ? n : null;
+};
 
 // GET /api/volume?journal_id=123
 // GET /api/volume?journal_id=2&year=2025
-export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const journal_id = parseInt(searchParams.get("journal_id"));
-  const year = parseInt(searchParams.get("year"));
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const journal_id = parseInt(searchParams.get("journal_id"));
+//   const year = parseInt(searchParams.get("year"));
 
-  if (!journal_id) {
-    return NextResponse.json({ success: false, message: "Missing journal_id" }, { status: 400 });
-  }
+//   if (!journal_id) {
+//     return NextResponse.json({ success: false, message: "Missing journal_id" }, { status: 400 });
+//   }
+
+//   const connection = await createDbConnection();
+
+//   try {
+//     const [volumes] = await connection.query(
+//       `SELECT id, volume_number, volume_label, alias_name
+//        FROM volumes
+//        WHERE journal_id = ?
+//        ${year ? "AND year = ?" : ""}`,
+//       year ? [journal_id, year] : [journal_id]
+//     );
+
+//     return NextResponse.json({ success: true, volumes });
+//   } catch (error) {
+//     console.error("Volume fetch error:", error);
+//     return NextResponse.json(
+//       { success: false, message: "Failed to fetch volumes" },
+//       { status: 500 }
+//     );
+//   } finally {
+//     await connection.end();
+//   }
+// }
+export async function GET(req) {
+  const url = new URL(req.url);
+  // accept journal id in multiple ways
+  let journal_id =
+    intOrNull(url.searchParams.get("journal_id")) ??
+    intOrNull(url.searchParams.get("jid"));
+
+  const journal_short = (url.searchParams.get("journal_short") || "").trim();
+  const year = intOrNull(url.searchParams.get("year"));
 
   const connection = await createDbConnection();
 
   try {
-    const [volumes] = await connection.query(
-      `SELECT id, volume_number, volume_label, alias_name
+    // resolve journal_short -> id if needed
+    if (journal_id === null && journal_short) {
+      const [[jr]] = await connection.query(
+        "SELECT id FROM journals WHERE journal_short = ? LIMIT 1",
+        [journal_short]
+      );
+      if (jr) journal_id = jr.id;
+    }
+
+    if (journal_id === null) {
+      return NextResponse.json(
+        { success: false, message: "Missing journal_id (use journal_id, jid, or journal_short)" },
+        { status: 400 }
+      );
+    }
+
+    const sql =
+      `SELECT id, volume_number, volume_label, alias_name, year
        FROM volumes
        WHERE journal_id = ?
-       ${year ? "AND year = ?" : ""}`,
-      year ? [journal_id, year] : [journal_id]
-    );
+       ${year !== null ? "AND year = ?" : ""}
+       ORDER BY year DESC, volume_number DESC`;
+
+    const params = year !== null ? [journal_id, year] : [journal_id];
+    const [volumes] = await connection.query(sql, params);
 
     return NextResponse.json({ success: true, volumes });
   } catch (error) {
@@ -35,6 +91,7 @@ export async function GET(req) {
     await connection.end();
   }
 }
+
 
 // POST /api/volume
 export async function POST(req) {

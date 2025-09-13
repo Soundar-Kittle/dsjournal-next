@@ -33,6 +33,8 @@ export default async function JournalPage({ params }) {
     { slug: "archives", label: "Archives", emoji: "🗃️" },
     { slug: "article", label: "Add +", emoji: "👉" },
     { slug: "citation", label: "Citation", emoji: "🤖" },
+    { slug: "stage", label: "Stage", emoji: "🏋️" },
+
   ];
 
   const hrefFor = (slug) =>

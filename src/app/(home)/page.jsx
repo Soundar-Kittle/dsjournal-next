@@ -1,4 +1,17 @@
-import HeroBanner from "@/components/Hero/HeroBanner";
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Menu,
+  X,
+  Search as SearchIcon,
+  BookOpen,
+  LockOpen,
+  ShieldCheck,
+} from "lucide-react";
 
 export default function Page() {
   return (

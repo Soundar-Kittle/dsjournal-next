@@ -1,29 +1,86 @@
 import { NextResponse } from "next/server";
 import { createDbConnection } from "@/lib/db";
 
+
+export const dynamic = "force-dynamic";
+
+const intOrNull = (x) => {
+  const n = Number(x);
+  return Number.isFinite(n) ? n : null;
+};
+
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const journal_id = parseInt(searchParams.get("journal_id"));
+//   const month_id = parseInt(searchParams.get("month_id")); // optional
+
+//   const connection = await createDbConnection();
+
+//   try {
+//     let query = `SELECT id, issue_number, issue_label, alias_name, journal_id
+//                  FROM issues
+//                  WHERE journal_id = ?`;
+//     let params = [journal_id];
+
+//     if (!isNaN(month_id)) {
+//       query += " AND month_id = ?";
+//       params.push(month_id);
+//     }
+
+//     const [issues] = await connection.query(query, params);
+
+//     return NextResponse.json({ success: true, issues });
+//   } catch (error) {
+//     console.error("Issue fetch error:", error);
+//     return NextResponse.json(
+//       { success: false, message: "Failed to fetch issues" },
+//       { status: 500 }
+//     );
+//   } finally {
+//     await connection.end();
+//   }
+// }
+
 export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const journal_id = parseInt(searchParams.get("journal_id"));
-  const month_id = parseInt(searchParams.get("month_id")); // optional
+  const url = new URL(req.url);
+  let journal_id =
+    intOrNull(url.searchParams.get("journal_id")) ??
+    intOrNull(url.searchParams.get("jid"));
+  const journal_short = (url.searchParams.get("journal_short") || "").trim();
+
+  const volume_id = intOrNull(url.searchParams.get("volume_id")); // optional
 
   const connection = await createDbConnection();
 
   try {
-    let query = `SELECT id, issue_number, issue_label, alias_name, journal_id
-                 FROM issues
-                 WHERE journal_id = ?`;
-    let params = [journal_id];
-
-    if (!isNaN(month_id)) {
-      query += " AND month_id = ?";
-      params.push(month_id);
+    if (journal_id === null && journal_short) {
+      const [[jr]] = await connection.query(
+        "SELECT id FROM journals WHERE journal_short = ? LIMIT 1",
+        [journal_short]
+      );
+      if (jr) journal_id = jr.id;
     }
 
-    const [issues] = await connection.query(query, params);
+    if (journal_id === null) {
+      return NextResponse.json(
+        { success: false, message: "Missing journal_id (use journal_id, jid, or journal_short)" },
+        { status: 400 }
+      );
+    }
+
+    const sql =
+      `SELECT id, issue_number, alias_name
+         FROM issues
+        WHERE journal_id = ?
+          ${volume_id !== null ? "AND volume_id = ?" : ""}
+        ORDER BY issue_number DESC`;
+
+    const params = volume_id !== null ? [journal_id, volume_id] : [journal_id];
+    const [issues] = await connection.query(sql, params);
 
     return NextResponse.json({ success: true, issues });
   } catch (error) {
-    console.error("Issue fetch error:", error);
+    console.error("Issues fetch error:", error);
     return NextResponse.json(
       { success: false, message: "Failed to fetch issues" },
       { status: 500 }
