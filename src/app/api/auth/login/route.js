@@ -3,7 +3,9 @@ import { createDbConnection } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
+// const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
+
+const secretKey = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret");
 
 export async function POST(req) {
   try {
@@ -51,7 +53,7 @@ export async function POST(req) {
     // ✅ Generate JWT
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
+      secretKey,
       { expiresIn: "8h" }
     );
 

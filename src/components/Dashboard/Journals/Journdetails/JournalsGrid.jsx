@@ -121,7 +121,7 @@ export default function JournalsGrid({
                   </div>
                 </div>
                 <div className="mt-3 text-center">
-                  <Link href={`/dashboard/journals/${journal.short_name || journal.id}`}>
+                  <Link href={`/admin/dashboard/journals/${journal.short_name || journal.id}`}>
                     <p className="text-sm font-semibold hover:underline">
                       {journal.journal_name}
                     </p>

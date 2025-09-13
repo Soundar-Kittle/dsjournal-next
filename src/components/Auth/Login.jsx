@@ -9,6 +9,8 @@ import { Mail, Lock, LogIn, Loader2, Home } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { roleThemes } from "@/@data/data";
+// import { SignJWT } from "jose";
+
 
 const schema = yup.object({
   email: yup.string().required("Email is required").email("Invalid email"),
