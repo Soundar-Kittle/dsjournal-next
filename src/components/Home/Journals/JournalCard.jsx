@@ -17,7 +17,7 @@ export default function JournalCard({ j }) {
       <div className="relative aspect-[3/4] w-full bg-white">
         {!failed && cover ? (
           <Image
-            src={cover}
+            src={j.cover_url}
             alt={j.name}
             fill
             sizes="(max-width:768px) 50vw, (max-width:1200px) 25vw, 20vw"
