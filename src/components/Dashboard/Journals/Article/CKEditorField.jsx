@@ -102,165 +102,500 @@
 // }
 
 // components/CKEditorField.jsx
-import React, { useEffect, useState } from "react";
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+// import React, { useEffect, useState } from "react";
+// import { CKEditor } from "@ckeditor/ckeditor5-react";
+// import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
-const LICENSE_KEY = "GPL";
+// const LICENSE_KEY = "GPL";
+
+// export default function CKEditorField({ value, onChange, placeholder = "Type here..." }) {
+//   const [ready, setReady] = useState(false);
+//   useEffect(() => { setReady(true); return () => setReady(false); }, []);
+
+//   const getProcessor = (editor) =>
+//     (editor?.data && (editor.data.htmlProcessor || editor.data.processor)) || null;
+
+//   const escapeHtml = (s) =>
+//     String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+//   // Parse html/plain → <ol>…</ol> (or null to skip)
+//   const toOrderedListHTML = (htmlOrText) => {
+//     if (!htmlOrText) return null;
+
+//     // Normalize to plain lines
+//     let text = htmlOrText
+//       .replace(/<!--[\s\S]*?-->/g, "")
+//       .replace(/<\/(p|div)>/gi, "\n")
+//       .replace(/<br\s*\/?>/gi, "\n")
+//       .replace(/<[^>]+>/g, "")
+//       .replace(/\u00A0|&nbsp;/g, " ")
+//       .replace(/[ \t]+/g, " ")
+//       .trim();
+
+//     const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+//     if (lines.length < 2) return null;
+
+//     // Numbered & bullets
+//     const numRe    = /^\s*(?:\[(\d+)\]|(\d+)[\.\)]\s+)(.*)$/;     // [1]  / 1.  / 1)
+//     const bulletRe = /^\s*(?:[•\u2022\u00B7·\-\.])\s+(.*)$/;      // • · - .
+
+//     const items = [];
+//     let current = null;
+//     let hasNumericLabels = false;
+
+//     for (const line of lines) {
+//       const mn = line.match(numRe);
+//       if (mn) {
+//         hasNumericLabels = true;
+//         items.push({ n: Number(mn[1] || mn[2] || 0), text: (mn[3] || "").trim() });
+//         current = items[items.length - 1];
+//         continue;
+//       }
+//       const mb = line.match(bulletRe);
+//       if (mb) {
+//         items.push({ n: 0, text: (mb[1] || "").trim() });
+//         current = items[items.length - 1];
+//         continue;
+//       }
+//       // continuation of previous ref (wrapped line)
+//       if (current) {
+//         current.text += (current.text ? " " : "") + line;
+//       } else {
+//         // treat as a new item; we might auto-number later
+//         items.push({ n: 0, text: line });
+//         current = items[items.length - 1];
+//       }
+//     }
+//     if (items.length < 2) return null;
+
+//     if (hasNumericLabels) {
+//       const start = items.find((it) => it.n > 0)?.n || 1;
+//       const lis = items.map((it) => `<li>${escapeHtml(it.text)}</li>`).join("");
+//       return `<ol${start !== 1 ? ` start="${start}"` : ""}>${lis}</ol>`;
+//     }
+
+//     // No labels → auto-number if it "looks like references"
+//     const yearRe = /\b(19|20)\d{2}\b/;
+//     const hintRe = /(doi|crossref|google scholar|publisher|vol\.|no\.|pp\.|https?:\/\/)/i;
+//     const longCount = items.filter((it) => it.text.length >= 40).length;
+//     const refyCount = items.filter((it) => yearRe.test(it.text) || hintRe.test(it.text)).length;
+//     const looksLikeRefs =
+//       items.length >= 3 && (longCount / items.length >= 0.6 || refyCount / items.length >= 0.4);
+//     if (!looksLikeRefs) return null;
+
+//     const lis = items.map((it) => `<li>${escapeHtml(it.text)}</li>`).join("");
+//     return `<ol>${lis}</ol>`;
+//   };
+
+//   const editorConfig = {
+//     licenseKey: LICENSE_KEY,
+//     toolbar: {
+//       items: [
+//         "undo","redo","|","heading","|",
+//         "fontSize","fontFamily","fontColor","fontBackgroundColor","|",
+//         "bold","italic","underline","subscript","superscript","code","removeFormat","|",
+//         "numberedList","bulletedList","blockQuote","link","specialCharacters","mediaEmbed","|",
+//         "outdent","indent",
+//       ],
+//       shouldNotGroupWhenFull: false,
+//     },
+//     list: { properties: { styles: true, startIndex: true, reversed: false } },
+//     fontSize: { options: [10,12,14,"default",16,18,20,22,24,28,32], supportAllValues: true },
+//     fontFamily: { supportAllValues: true },
+//     heading: {
+//       options: [
+//         { model: "paragraph", title: "Paragraph", class: "ck-heading_paragraph" },
+//         { model: "heading1", view: "h1", title: "Heading 1", class: "ck-heading_heading1" },
+//         { model: "heading2", view: "h2", title: "Heading 2", class: "ck-heading_heading2" },
+//         { model: "heading3", view: "h3", title: "Heading 3", class: "ck-heading_heading3" },
+//         { model: "heading4", view: "h4", title: "Heading 4", class: "ck-heading_heading4" },
+//         { model: "heading5", view: "h5", title: "Heading 5", class: "ck-heading_heading5" },
+//         { model: "heading6", view: "h6", title: "Heading 6", class: "ck-heading_heading6" },
+//       ],
+//     },
+//     placeholder,
+//   };
+
+//   return (
+//     <div className="space-y-2">
+//       <label className="font-medium text-sm">References</label>
+
+//       <div className="border rounded-md p-2">
+//         {ready && (
+//           <CKEditor
+//             editor={ClassicEditor}
+//             data={value || ""}
+//             config={editorConfig}
+//             onReady={(editor) => {
+//               const processor = getProcessor(editor);
+//               const toView = (html) => processor?.toView(html);
+
+//               // EARLY hook – catches plain text before CKEditor splits paragraphs
+//               editor.editing.view.document.on("clipboardInput", (evt, data) => {
+//                 const html = data.dataTransfer.getData("text/html");
+//                 const plain = !html && data.dataTransfer.getData("text/plain");
+//                 const candidate = html || plain;
+//                 const ol = toOrderedListHTML(candidate);
+//                 if (!ol) return;
+//                 // Replace content to be inserted
+//                 data.content = toView(ol);
+//               });
+
+//               // LATE hook – safety net if above didn’t catch
+//               const pipeline = editor.plugins.get("ClipboardPipeline");
+//               pipeline.on("inputTransformation", (evt, data) => {
+//                 // Only act if content is not already a list
+//                 const currentHtml = (data.content && processor?.toData(data.content)) || "";
+//                 if (/<ol|<ul/i.test(currentHtml)) return;
+
+//                 const html = data.dataTransfer.getData("text/html");
+//                 const plain = !html && data.dataTransfer.getData("text/plain");
+//                 const candidate = html || plain;
+//                 const ol = toOrderedListHTML(candidate);
+//                 if (!ol) return;
+//                 data.content = toView(ol);
+//               });
+//             }}
+//             onChange={(_, editor) => onChange(editor.getData())}
+//           />
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import {
+	ClassicEditor,
+	Alignment,
+	Autoformat,
+	AutoLink,
+	Autosave,
+	BlockQuote,
+	Bold,
+	Code,
+	Essentials,
+	FindAndReplace,
+	FontBackgroundColor,
+	FontColor,
+	FontFamily,
+	FontSize,
+	Fullscreen,
+	GeneralHtmlSupport,
+	Heading,
+	Highlight,
+	HorizontalLine,
+	ImageEditing,
+	ImageUtils,
+	Indent,
+	IndentBlock,
+	Italic,
+	Link,
+	List,
+	ListProperties,
+	Paragraph,
+	PasteFromOffice,
+	RemoveFormat,
+	SourceEditing,
+	SpecialCharacters,
+	SpecialCharactersArrows,
+	SpecialCharactersCurrency,
+	SpecialCharactersEssentials,
+	SpecialCharactersLatin,
+	SpecialCharactersMathematical,
+	SpecialCharactersText,
+	Strikethrough,
+	Style,
+	Subscript,
+	Superscript,
+	Table,
+	TableCaption,
+	TableCellProperties,
+	TableColumnResize,
+	TableProperties,
+	TableToolbar,
+	TextTransformation,
+	TodoList,
+	Underline
+} from 'ckeditor5';
+
+import 'ckeditor5/ckeditor5.css';
+
+
+/**
+ * Create a free account with a trial: https://portal.ckeditor.com/checkout?plan=free
+ */
+
+const LICENSE_KEY = 'GPL'; // or <YOUR_LICENSE_KEY>.
 
 export default function CKEditorField({ value, onChange, placeholder = "Type here..." }) {
-  const [ready, setReady] = useState(false);
-  useEffect(() => { setReady(true); return () => setReady(false); }, []);
+	const editorContainerRef = useRef(null);
+	const editorRef = useRef(null);
+	const [isLayoutReady, setIsLayoutReady] = useState(false);
 
-  const getProcessor = (editor) =>
-    (editor?.data && (editor.data.htmlProcessor || editor.data.processor)) || null;
+useEffect(() => {
+    setIsLayoutReady(true);
+    return () => setIsLayoutReady(false);
+  }, []);
 
-  const escapeHtml = (s) =>
-    String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const { editorConfig } = useMemo(() => {
+    if (!isLayoutReady) return {};
 
-  // Parse html/plain → <ol>…</ol> (or null to skip)
-  const toOrderedListHTML = (htmlOrText) => {
-    if (!htmlOrText) return null;
+		return {
+			editorConfig: {
+				toolbar: {
+					items: [
+						'undo',
+						'redo',
+						'|',
+						'sourceEditing',
+						'findAndReplace',
+						'fullscreen',
+						'|',
+						'heading',
+						'style',
+						'|',
+						'fontSize',
+						'fontFamily',
+						'fontColor',
+						'fontBackgroundColor',
+						'|',
+						'bold',
+						'italic',
+						'underline',
+						'strikethrough',
+						'subscript',
+						'superscript',
+						'code',
+						'removeFormat',
+						'|',
+						'specialCharacters',
+						'horizontalLine',
+						'link',
+						'insertTable',
+						'highlight',
+						'blockQuote',
+						'|',
+						'alignment',
+						'|',
+						'bulletedList',
+						'numberedList',
+						'todoList',
+						'outdent',
+						'indent'
+					],
+					shouldNotGroupWhenFull: false
+				},
+				plugins: [
+					Alignment,
+					Autoformat,
+					AutoLink,
+					Autosave,
+					BlockQuote,
+					Bold,
+					Code,
+					Essentials,
+					FindAndReplace,
+					FontBackgroundColor,
+					FontColor,
+					FontFamily,
+					FontSize,
+					Fullscreen,
+					GeneralHtmlSupport,
+					Heading,
+					Highlight,
+					HorizontalLine,
+					ImageEditing,
+					ImageUtils,
+					Indent,
+					IndentBlock,
+					Italic,
+					Link,
+					List,
+					ListProperties,
+					Paragraph,
+					PasteFromOffice,
+					RemoveFormat,
+					SourceEditing,
+					SpecialCharacters,
+					SpecialCharactersArrows,
+					SpecialCharactersCurrency,
+					SpecialCharactersEssentials,
+					SpecialCharactersLatin,
+					SpecialCharactersMathematical,
+					SpecialCharactersText,
+					Strikethrough,
+					Style,
+					Subscript,
+					Superscript,
+					Table,
+					TableCaption,
+					TableCellProperties,
+					TableColumnResize,
+					TableProperties,
+					TableToolbar,
+					TextTransformation,
+					TodoList,
+					Underline
+				],
+				fontFamily: {
+					supportAllValues: true
+				},
+				fontSize: {
+					options: [10, 12, 14, 'default', 18, 20, 22],
+					supportAllValues: true
+				},
+				fullscreen: {
+					onEnterCallback: container =>
+						container.classList.add(
+							'editor-container',
+							'editor-container_classic-editor',
+							'editor-container_include-style',
+							'editor-container_include-fullscreen',
+							'main-container'
+						)
+				},
+				heading: {
+					options: [
+						{
+							model: 'paragraph',
+							title: 'Paragraph',
+							class: 'ck-heading_paragraph'
+						},
+						{
+							model: 'heading1',
+							view: 'h1',
+							title: 'Heading 1',
+							class: 'ck-heading_heading1'
+						},
+						{
+							model: 'heading2',
+							view: 'h2',
+							title: 'Heading 2',
+							class: 'ck-heading_heading2'
+						},
+						{
+							model: 'heading3',
+							view: 'h3',
+							title: 'Heading 3',
+							class: 'ck-heading_heading3'
+						},
+						{
+							model: 'heading4',
+							view: 'h4',
+							title: 'Heading 4',
+							class: 'ck-heading_heading4'
+						},
+						{
+							model: 'heading5',
+							view: 'h5',
+							title: 'Heading 5',
+							class: 'ck-heading_heading5'
+						},
+						{
+							model: 'heading6',
+							view: 'h6',
+							title: 'Heading 6',
+							class: 'ck-heading_heading6'
+						}
+					]
+				},
+				htmlSupport: {
+					allow: [
+						{
+							name: /^.*$/,
+							styles: true,
+							attributes: true,
+							classes: true
+						}
+					]
+				},
+        placeholder,
+				initialData:value || "",
+				licenseKey: LICENSE_KEY,
+				link: {
+					addTargetToExternalLinks: true,
+					defaultProtocol: 'https://',
+					decorators: {
+						toggleDownloadable: {
+							mode: 'manual',
+							label: 'Downloadable',
+							attributes: {
+								download: 'file'
+							}
+						}
+					}
+				},
+				list: {
+					properties: {
+						styles: true,
+						startIndex: true,
+						reversed: true
+					}
+				},
+				placeholder: 'Type or paste your content here!',
+				style: {
+					definitions: [
+						{
+							name: 'Article category',
+							element: 'h3',
+							classes: ['category']
+						},
+						{
+							name: 'Title',
+							element: 'h2',
+							classes: ['document-title']
+						},
+						{
+							name: 'Subtitle',
+							element: 'h3',
+							classes: ['document-subtitle']
+						},
+						{
+							name: 'Info box',
+							element: 'p',
+							classes: ['info-box']
+						},
+						{
+							name: 'CTA Link Primary',
+							element: 'a',
+							classes: ['button', 'button--green']
+						},
+						{
+							name: 'CTA Link Secondary',
+							element: 'a',
+							classes: ['button', 'button--black']
+						},
+						{
+							name: 'Marker',
+							element: 'span',
+							classes: ['marker']
+						},
+						{
+							name: 'Spoiler',
+							element: 'span',
+							classes: ['spoiler']
+						}
+					]
+				},
+				table: {
+					contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties']
+				}
+			}
+		};
+	}, [isLayoutReady, value, placeholder]);
 
-    // Normalize to plain lines
-    let text = htmlOrText
-      .replace(/<!--[\s\S]*?-->/g, "")
-      .replace(/<\/(p|div)>/gi, "\n")
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .replace(/\u00A0|&nbsp;/g, " ")
-      .replace(/[ \t]+/g, " ")
-      .trim();
-
-    const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
-    if (lines.length < 2) return null;
-
-    // Numbered & bullets
-    const numRe    = /^\s*(?:\[(\d+)\]|(\d+)[\.\)]\s+)(.*)$/;     // [1]  / 1.  / 1)
-    const bulletRe = /^\s*(?:[•\u2022\u00B7·\-\.])\s+(.*)$/;      // • · - .
-
-    const items = [];
-    let current = null;
-    let hasNumericLabels = false;
-
-    for (const line of lines) {
-      const mn = line.match(numRe);
-      if (mn) {
-        hasNumericLabels = true;
-        items.push({ n: Number(mn[1] || mn[2] || 0), text: (mn[3] || "").trim() });
-        current = items[items.length - 1];
-        continue;
-      }
-      const mb = line.match(bulletRe);
-      if (mb) {
-        items.push({ n: 0, text: (mb[1] || "").trim() });
-        current = items[items.length - 1];
-        continue;
-      }
-      // continuation of previous ref (wrapped line)
-      if (current) {
-        current.text += (current.text ? " " : "") + line;
-      } else {
-        // treat as a new item; we might auto-number later
-        items.push({ n: 0, text: line });
-        current = items[items.length - 1];
-      }
-    }
-    if (items.length < 2) return null;
-
-    if (hasNumericLabels) {
-      const start = items.find((it) => it.n > 0)?.n || 1;
-      const lis = items.map((it) => `<li>${escapeHtml(it.text)}</li>`).join("");
-      return `<ol${start !== 1 ? ` start="${start}"` : ""}>${lis}</ol>`;
-    }
-
-    // No labels → auto-number if it "looks like references"
-    const yearRe = /\b(19|20)\d{2}\b/;
-    const hintRe = /(doi|crossref|google scholar|publisher|vol\.|no\.|pp\.|https?:\/\/)/i;
-    const longCount = items.filter((it) => it.text.length >= 40).length;
-    const refyCount = items.filter((it) => yearRe.test(it.text) || hintRe.test(it.text)).length;
-    const looksLikeRefs =
-      items.length >= 3 && (longCount / items.length >= 0.6 || refyCount / items.length >= 0.4);
-    if (!looksLikeRefs) return null;
-
-    const lis = items.map((it) => `<li>${escapeHtml(it.text)}</li>`).join("");
-    return `<ol>${lis}</ol>`;
-  };
-
-  const editorConfig = {
-    licenseKey: LICENSE_KEY,
-    toolbar: {
-      items: [
-        "undo","redo","|","heading","|",
-        "fontSize","fontFamily","fontColor","fontBackgroundColor","|",
-        "bold","italic","underline","subscript","superscript","code","removeFormat","|",
-        "numberedList","bulletedList","blockQuote","link","specialCharacters","mediaEmbed","|",
-        "outdent","indent",
-      ],
-      shouldNotGroupWhenFull: false,
-    },
-    list: { properties: { styles: true, startIndex: true, reversed: false } },
-    fontSize: { options: [10,12,14,"default",16,18,20,22,24,28,32], supportAllValues: true },
-    fontFamily: { supportAllValues: true },
-    heading: {
-      options: [
-        { model: "paragraph", title: "Paragraph", class: "ck-heading_paragraph" },
-        { model: "heading1", view: "h1", title: "Heading 1", class: "ck-heading_heading1" },
-        { model: "heading2", view: "h2", title: "Heading 2", class: "ck-heading_heading2" },
-        { model: "heading3", view: "h3", title: "Heading 3", class: "ck-heading_heading3" },
-        { model: "heading4", view: "h4", title: "Heading 4", class: "ck-heading_heading4" },
-        { model: "heading5", view: "h5", title: "Heading 5", class: "ck-heading_heading5" },
-        { model: "heading6", view: "h6", title: "Heading 6", class: "ck-heading_heading6" },
-      ],
-    },
-    placeholder,
-  };
-
-  return (
-    <div className="space-y-2">
-      <label className="font-medium text-sm">References</label>
-
-      <div className="border rounded-md p-2">
-        {ready && (
-          <CKEditor
-            editor={ClassicEditor}
-            data={value || ""}
-            config={editorConfig}
-            onReady={(editor) => {
-              const processor = getProcessor(editor);
-              const toView = (html) => processor?.toView(html);
-
-              // EARLY hook – catches plain text before CKEditor splits paragraphs
-              editor.editing.view.document.on("clipboardInput", (evt, data) => {
-                const html = data.dataTransfer.getData("text/html");
-                const plain = !html && data.dataTransfer.getData("text/plain");
-                const candidate = html || plain;
-                const ol = toOrderedListHTML(candidate);
-                if (!ol) return;
-                // Replace content to be inserted
-                data.content = toView(ol);
-              });
-
-              // LATE hook – safety net if above didn’t catch
-              const pipeline = editor.plugins.get("ClipboardPipeline");
-              pipeline.on("inputTransformation", (evt, data) => {
-                // Only act if content is not already a list
-                const currentHtml = (data.content && processor?.toData(data.content)) || "";
-                if (/<ol|<ul/i.test(currentHtml)) return;
-
-                const html = data.dataTransfer.getData("text/html");
-                const plain = !html && data.dataTransfer.getData("text/plain");
-                const candidate = html || plain;
-                const ol = toOrderedListHTML(candidate);
-                if (!ol) return;
-                data.content = toView(ol);
-              });
-            }}
-            onChange={(_, editor) => onChange(editor.getData())}
-          />
-        )}
-      </div>
-    </div>
-  );
+	return (
+		<div className="main-container">
+			<div
+				className="editor-container editor-container_classic-editor editor-container_include-style editor-container_include-fullscreen"
+				ref={editorContainerRef}
+			>
+				<div className="editor-container__editor">
+					<div ref={editorRef}>{editorConfig && <CKEditor editor={ClassicEditor} config={editorConfig} />}</div>
+				</div>
+			</div>
+		</div>
+	);
 }
-

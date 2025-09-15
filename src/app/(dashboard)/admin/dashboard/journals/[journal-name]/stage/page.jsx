@@ -209,24 +209,34 @@ function ReviewModal({ open, onClose, stagedId, onApproved }) {
   const [authors, setAuthors] = useState([]);
   const [refs, setRefs] = useState([]);
 
-  useEffect(() => {
-    if (!open || !stagedId) return;
-    (async () => {
-      setLoading(true);
-      try {
-        const r = await fetch(`/api/articles/stage/${stagedId}`);
-        const j = await r.json();
-        if (!j.success) throw new Error(j.message || "Failed to load");
-        setRow(j.staged);
-        setAuthors((j.authors || []).map((a) => a.full_name || a));
-        setRefs((j.references || []).map((r) => r.raw_citation || r));
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [open, stagedId]);
+useEffect(() => {
+  if (!open || !stagedId) return;
+  (async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/articles/stage/${stagedId}`);
+      const j = await r.json();
+      if (!j.success) throw new Error(j.message || "Failed to load");
+
+     setRow(j.staged);
+
+      setAuthors((j.authors || []).map((a) => a.full_name || a));
+
+      // 🔍 Debug refs
+      console.log("🔎 API references raw:", j.references);
+
+    setRefs(typeof j.references === "string" ? j.references : "");
+      // 🔍 Debug after join
+      console.log("🔎 refs (joined HTML):", j.references?.map((r) => r.raw_citation).join("") || "");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [open, stagedId]);
+
+
 
   const updateStaged = async () => {
     if (!row) return;
@@ -246,7 +256,7 @@ function ReviewModal({ open, onClose, stagedId, onApproved }) {
           published_date: row.published_date,
           article_id: row.article_id,
           authors,
-          references: refs,
+          references: refs    // raw HTML string straight from CKEditor
         }),
       });
       const j = await r.json();
@@ -307,58 +317,75 @@ function ReviewModal({ open, onClose, stagedId, onApproved }) {
       onClick={onClose}
     >
       <div
-        className="absolute inset-y-0 right-0 w-full max-w-3xl bg-white p-5 shadow-xl"
+        className="absolute inset-y-0 right-0 w-full sm:w-[600px] md:w-[720px] lg:w-[800px] max-w-[100vw] bg-white p-5 shadow-xl overflow-y-auto overflow-x-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Review & Approve</h2>
-          <button onClick={onClose} className="text-2xl leading-none">×</button>
+          <button onClick={onClose} className="text-2xl leading-none">
+            ×
+          </button>
         </div>
 
         {loading ? (
           <div className="p-8 text-sm text-gray-600">Loading…</div>
         ) : row ? (
-          <div className="mt-4 grid gap-4">
-            <TextInput label="Article ID" value={row.article_id || ""} onChange={(v) => setRow({ ...row, article_id: v })} />
-            <TextInput label="Title" value={row.title || ""} onChange={(v) => setRow({ ...row, title: v })} />
-            <TextArea label="Abstract" value={row.abstract || ""} onChange={(v) => setRow({ ...row, abstract: v })} rows={6} />
-            <TextInput label="Keywords" value={row.keywords || ""} onChange={(v) => setRow({ ...row, keywords: v })} />
-            <AuthorsEditor value={authors} onChange={setAuthors} />
-            {/* <ReferencesEditor value={refs} onChange={setRefs} /> */}
-                <CKEditorField
-  value={
-    refs && refs.length > 0
-      ? `<ol>${refs.map((r) => `<li>${r}</li>`).join("")}</ol>`
-      : ""
-  }
-  onChange={(html) => {
-    // Extract <li> items → plain refs array
-    const matches = Array.from(html.matchAll(/<li[^>]*>(.*?)<\/li>/gi));
-    if (matches.length > 0) {
-      setRefs(matches.map((m) => m[1].trim()));
-      return;
-    }
+          <div className="mt-4 grid gap-6">
+            {/* === Article Details Section === */}
+         <section className="w-full max-w-[720px]">
+              <h3 className="text-base font-semibold text-gray-700 mb-2">
+                Article Details
+              </h3>
+              <TextInput
+                label="Article ID"
+                value={row.article_id || ""}
+                onChange={(v) => setRow({ ...row, article_id: v })}
+              />
+              <TextInput
+                label="Title"
+                value={row.title || ""}
+                onChange={(v) => setRow({ ...row, title: v })}
+              />
+              <TextArea
+                label="Abstract"
+                value={row.abstract || ""}
+                onChange={(v) => setRow({ ...row, abstract: v })}
+                rows={6}
+              />
+              <TextInput
+                label="Keywords"
+                value={row.keywords || ""}
+                onChange={(v) => setRow({ ...row, keywords: v })}
+              />
+            </section>
 
-    // Fallback: plain text lines
-    const text = html
-      .replace(/<\/p>\s*<p>/gi, "\n")
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/?[^>]+(>|$)/g, "")
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
+            {/* === Authors Section === */}
+             <section className="w-full max-w-[720px]">
+              <h3 className="text-base font-semibold text-gray-700 mb-2">
+                Authors
+              </h3>
+              <AuthorsEditor value={authors} onChange={setAuthors} />
+            </section>
 
-    setRefs(text);
-  }}
+            {/* === References Section === */}
+              <section className="w-full max-w-[720px] ml-auto pr-2">
+            <CKEditorField
+  value={refs || ""}
+  onChange={(html) => setRefs(html)}   // keep full HTML (includes <br>)
   placeholder="Enter references here…"
 />
+              </section>
 
-            <div className="flex gap-2">
+            {/* === Actions Section === */}
+            <div className="flex gap-2 pt-4">
               <button
                 type="button"
                 onClick={updateStaged}
                 disabled={saving}
-                className={cls("rounded-md border px-4 py-2 text-sm", saving && "opacity-60")}
+                className={cls(
+                  "rounded-md border px-4 py-2 text-sm",
+                  saving && "opacity-60"
+                )}
               >
                 {saving ? "Saving…" : "Save Changes"}
               </button>
@@ -366,7 +393,10 @@ function ReviewModal({ open, onClose, stagedId, onApproved }) {
                 type="button"
                 onClick={accept}
                 disabled={promoting}
-                className={cls("rounded-md bg-green-600 px-4 py-2 text-sm text-white", promoting && "opacity-60")}
+                className={cls(
+                  "rounded-md bg-green-600 px-4 py-2 text-sm text-white",
+                  promoting && "opacity-60"
+                )}
               >
                 {promoting ? "Accepting…" : "Accept"}
               </button>
@@ -374,7 +404,10 @@ function ReviewModal({ open, onClose, stagedId, onApproved }) {
                 type="button"
                 onClick={reject}
                 disabled={promoting}
-                className={cls("rounded-md bg-red-600 px-4 py-2 text-sm text-white", promoting && "opacity-60")}
+                className={cls(
+                  "rounded-md bg-red-600 px-4 py-2 text-sm text-white",
+                  promoting && "opacity-60"
+                )}
               >
                 {promoting ? "Rejecting…" : "Reject"}
               </button>
