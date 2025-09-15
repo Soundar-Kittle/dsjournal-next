@@ -263,3 +263,4 @@ export default function CKEditorField({ value, onChange, placeholder = "Type her
     </div>
   );
 }
+

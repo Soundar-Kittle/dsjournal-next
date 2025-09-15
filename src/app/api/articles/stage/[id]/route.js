@@ -7,17 +7,6 @@ import { getAllowedKeys } from "@/lib/refLinks-allowed.js";
 
 export const dynamic = "force-dynamic";
 
-// put near your other utils in each route file
-const refsArrayToHtml = (arr = []) => {
-  const items = (arr || [])
-    .map((s) => String(s || "").trim())
-    .filter(Boolean)
-    .map((s) => s.replace(/^\[\d+\]\s*/, "")) // strip leading [1], [2], ...
-    .map((s) => `<li>${s}</li>`)
-    .join("");
-  return items ? `<ol class="references">${items}</ol>` : null;
-};
-
 export async function POST(req, { params }) {
   const id = Number(params.id);
   if (!Number.isFinite(id)) {
