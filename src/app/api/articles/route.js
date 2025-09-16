@@ -52,7 +52,7 @@ export async function POST(req) {
     } = fields;
 
    // Normalize the title like the DB side will compare it
-const titleNorm = String(article_title).trim().toLowerCase().replace(/\s+/g, " ");
+   const titleNorm = String(article_title).trim().toLowerCase().replace(/\s+/g, " ");
 
     // ─────────────────────────────────────────────────────────────
     // 1) VALIDATION: Journal prefix + volume/issue pattern & match

@@ -4,13 +4,13 @@ import Link from "next/link";
 export default function DashboardHome() {
   const items = [
     {
-      title: "Volume & Issue",
-      href: "/admin/dashboard/volume-issue",
+      title: "Sample",
+      href: "Sample",
       description: "Manage volume and issue entries per journal.",
     },
     {
-      title: "Month of Issue",
-      href: "/admin/dashboard/month-issue",
+      title: "Sample",
+      href: "Sample",
       description: "Configure publishing frequency like Monthly, Quarterly, etc.",
     },
   ];
