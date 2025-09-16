@@ -75,13 +75,12 @@
 //   ],
 // };
 
-
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET is not set");
-console.log("JWT_SECRET",JWT_SECRET);
+console.log("JWT_SECRET", JWT_SECRET);
 
 const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
 
@@ -126,7 +125,6 @@ export async function middleware(req) {
       }
       try {
         const { payload } = await jwtVerify(token, secretKey);
-        console.log("Payload",payload);
         if (payload.role !== role) {
           return NextResponse.redirect(
             new URL(`${roleRoutes[payload.role]}/dashboard`, req.url)

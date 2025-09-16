@@ -1,18 +1,5 @@
-"use client";
-
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Menu,
-  X,
-  Search as SearchIcon,
-  BookOpen,
-  LockOpen,
-  ShieldCheck,
-} from "lucide-react";
 import HeroBanner from "@/components/Hero/HeroBanner";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 
 export default function Page() {
   return (
@@ -34,3 +21,6 @@ export default function Page() {
     </div>
   );
 }
+export const generateMetadata = async () => {
+  return await generateDynamicMeta("/");
+};

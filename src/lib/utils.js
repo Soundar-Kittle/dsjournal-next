@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge"
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -18,8 +18,17 @@ export const cleanData = (data) => {
       cleanedData[key] = null;
     } else if (typeof value === "string") {
       const trimmedValue = value.trim();
-      cleanedData[key] = trimmedValue.length > 0 ? trimmedValue : null;
+
+      if (trimmedValue === "true") {
+        cleanedData[key] = true;
+      } else if (trimmedValue === "false") {
+        cleanedData[key] = false;
+      } else {
+        cleanedData[key] = trimmedValue.length > 0 ? trimmedValue : null;
+      }
     } else if (typeof value === "number" || typeof value === "boolean") {
+      cleanedData[key] = value;
+    } else {
       cleanedData[key] = value;
     }
   }
