@@ -62,7 +62,7 @@ export async function POST(req) {
       const [attrRes] = await connection.query(
         `INSERT INTO meta_attributes (attribute_scope, attribute_type, attribute_key, content)
          VALUES (?, ?, ?, ?)`,
-        [attribute_scope, attribute_type, attribute_key, content]
+        [attribute_scope, attribute_type, attribute_key?.trim(), content?.trim()]
       );
       attributeIds.push(attrRes.insertId);
     }
@@ -344,7 +344,7 @@ export async function PATCH(req) {
       const [attrRes] = await connection.query(
         `INSERT INTO meta_attributes (attribute_scope, attribute_type, attribute_key, content)
          VALUES (?, ?, ?, ?)`,
-        [attribute_scope, attribute_type, attribute_key, content]
+        [attribute_scope, attribute_type, attribute_key?.trim(), content?.trim()]
       );
       newIds.push(attrRes.insertId);
     }

@@ -312,7 +312,6 @@ export async function DELETE(req) {
     const existingImage = rows?.[0]?.image;
 
     await connection.query(`DELETE FROM banners WHERE id = ?`, [id]);
-    console.log(existingImage);
     if (existingImage) removeFile(existingImage);
 
     await connection.commit();
