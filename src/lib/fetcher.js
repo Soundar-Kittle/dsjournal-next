@@ -24,7 +24,7 @@ export async function api(
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || `Request failed: ${res.status}`);
+    throw new Error(errorData.message || errorData.error || `Request failed: ${res.status}`);
   }
 
   return res.json();

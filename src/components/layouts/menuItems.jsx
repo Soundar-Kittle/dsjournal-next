@@ -3,6 +3,7 @@ import {
   BookImage,
   Stethoscope,
   GalleryHorizontal,
+  ChevronsLeftRight,
 } from "lucide-react";
 
 export const getMenuItems = (role) => {
@@ -51,6 +52,11 @@ export const getMenuItems = (role) => {
             path: `${adminPath}/editorial-board/assign-roles`,
           },
         ],
+      },
+      {
+        title: "Meta",
+        path: `${adminPath}/meta`,
+        icon: <ChevronsLeftRight size={18} />,
       },
     ],
     author: [
