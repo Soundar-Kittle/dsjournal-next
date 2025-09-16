@@ -4,15 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import ArticleForm from "@/components/Dashboard/Journals/Article/ArticleForm";
 
-function parseArrayField(val) {
-  try {
-    const parsed = typeof val === "string" ? JSON.parse(val) : val;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
 export default function Page() {
   const searchParams = useSearchParams();
   const jid = searchParams.get("jid");

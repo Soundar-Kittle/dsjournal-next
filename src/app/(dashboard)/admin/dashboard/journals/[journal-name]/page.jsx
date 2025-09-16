@@ -38,7 +38,7 @@ export default async function JournalPage({ params }) {
   ];
 
   const hrefFor = (slug) =>
-    `/dashboard/journals/${encodeURIComponent(shortName)}/${slug}?jid=${encodeURIComponent(
+    `/admin/dashboard/journals/${encodeURIComponent(shortName)}/${slug}?jid=${encodeURIComponent(
       journal.id
     )}`;
 

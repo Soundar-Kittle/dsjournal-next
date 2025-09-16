@@ -544,6 +544,304 @@ async function resolveVolumeIssueIds(conn, journal_id, { url, form }, parsed) {
 }
 
 /* ───────── route ───────── */
+// export async function POST(req) {
+//   try {
+//     const form = await req.formData();
+//     const file = form.get("file");
+//     if (!file || typeof file === "string") {
+//       return NextResponse.json({ success: false, message: "file is required" }, { status: 400 });
+//     }
+
+//     const conn = await createDbConnection();
+//     try {
+//       const journal_id = await resolveJournalId(conn, { url: req.url, form });
+//       if (journal_id === null) {
+//         return NextResponse.json(
+//           {
+//             success: false,
+//             message:
+//               "A valid journal identifier is required. Send one of: form 'journal_id' or 'jid', query '?jid=', 'short_name', 'journal_name', or 'issn'.",
+//           },
+//           { status: 400 }
+//         );
+//       }
+
+//       // save file
+//       const originalName = file.name || "upload.docx";
+//       const base = slugifyBaseName(originalName.replace(/\.[^.]+$/, "")) || "doc";
+//       const ext = path.extname(originalName) || ".docx";
+//       const unique = crypto.randomBytes(6).toString("hex");
+//       const safeName = `${base}-${unique}${ext}`;
+//       const uploadDir = path.join(process.cwd(), "public", "uploads", "staged");
+//       await fs.mkdir(uploadDir, { recursive: true });
+
+//       const arrayBuffer = await file.arrayBuffer();
+//       const buf = Buffer.from(arrayBuffer);
+//       await fs.writeFile(path.join(uploadDir, safeName), buf);
+//       const storage_path = `/uploads/staged/${safeName}`;
+//       const mime_type = file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+//       const size_bytes = buf.byteLength;
+
+//       // extract text
+//       const { value } = await mammoth.extractRawText({ buffer: buf });
+//       const normalized = normalizeUnicode(value || "");
+//       const lines = splitLines(normalized);
+//       const fullText = lines.join("\n");
+//       const headerFooter = await readHeaderFooterTextFromDocx(buf);
+
+//      // Extract anchors from DOCX HTML for references
+// let anchorsPerItem = null;
+// try {
+//   anchorsPerItem = await extractRefAnchorsPerItem(buf);
+// } catch (e) {
+//   console.warn("Anchor extraction failed:", e);
+//   anchorsPerItem = null;
+// }
+
+//       // title
+//       const idxOrig = lines.findIndex((l) => /^Original Article$/i.test(l));
+//       let title = "";
+//       if (idxOrig >= 0) {
+//         for (let i = idxOrig + 1; i < Math.min(idxOrig + 6, lines.length); i++) {
+//           const cand = lines[i];
+//           if (!cand || /^Original Article$/i.test(cand) || /^ISSN\b/i.test(cand)) continue;
+//           if (cand.length >= 8) { title = cand; break; }
+//         }
+//       }
+//       if (!title) {
+//         title = lines.find((l) => l && !/^Original Article$/i.test(l) && !/^ISSN\b/i.test(l) && l.length > 12 && /^[A-Z]/.test(l)) || "";
+//       }
+
+//       // authors
+//       let authorsLine = "";
+//       for (let k = idxOrig >= 0 ? idxOrig + 1 : 0; k < Math.min(lines.length, idxOrig >= 0 ? idxOrig + 6 : 6); k++) {
+//         if (/,/.test(lines[k]) && !/Received:/.test(lines[k])) { authorsLine = lines[k]; break; }
+//       }
+//       const authors = authorsLine ? authorsLine.split(/,| and /i).map(cleanAuthor).filter(Boolean) : [];
+
+//       // dates / abstract / keywords
+//       const datesLine = lines.find((l) => /Received:\s*\d{1,2}\s+\w+\s+\d{4}/i.test(l)) || "";
+//       const { received_date, revised_date, accepted_date, published_date } = parseDates(datesLine);
+//       const iAbs = lines.findIndex((l) => /^Abstract\b/i.test(l));
+//       const iKeys = lines.findIndex((l) => /^Keywords\b/i.test(l));
+//       const abstract = iAbs >= 0 && iKeys > iAbs ? lines.slice(iAbs, iKeys).join(" ").replace(/^Abstract\s*[-:]\s*/i, "") : "";
+//       const keywords = iKeys >= 0 ? lines[iKeys].replace(/^Keywords\s*[-:]\s*/i, "") : "";
+
+//       // header text
+//       const headerTop = getHeaderText(lines);
+//       const headerAll = headerFooter ? `${headerFooter}\n${headerTop}` : headerTop;
+
+//       // vol/issue numbers (parsed)
+//       let vnum = null, inum = null;
+//       const viIdx = findFirstVolIssueIndex(lines, VOL_ISSUE_SCAN_LIMIT);
+//       if (viIdx >= 0) {
+//         const around = lines.slice(Math.max(0, viIdx - 1), Math.min(lines.length, viIdx + 2)).join(" ");
+//         const vi = parseVolIssueAnywhere(around);
+//         vnum = vi.volume_number ?? null;
+//         inum = vi.issue_number ?? null;
+//       }
+//       if (vnum == null || inum == null) {
+//         const viHead = parseVolIssueAnywhere(headerAll);
+//         vnum = vnum ?? viHead.volume_number ?? null;
+//         inum = inum ?? viHead.issue_number ?? null;
+//       }
+//       if (vnum == null || inum == null) {
+//         const viBody = parseVolIssueAnywhere(fullText);
+//         vnum = vnum ?? viBody.volume_number ?? null;
+//         inum = inum ?? viBody.issue_number ?? null;
+//       }
+
+//       // pages
+//       let pageHits = findPageRangesAround(lines, viIdx, 2, 6);
+//       let pages_from = pageHits.length ? pageHits.sort((a, b) => a.line - b.line || a.index - b.index)[0].from : null;
+//       let pages_to = pageHits.length ? pageHits.sort((a, b) => a.line - b.line || a.index - b.index)[0].to : null;
+//       if (pages_from == null || pages_to == null) {
+//         const pHead = chooseHeaderPages(headerAll);
+//         if (pHead.pages_from != null) { pages_from = pHead.pages_from; pages_to = pHead.pages_to; }
+//       }
+//       if (pages_from == null || pages_to == null) {
+//         const pBody = parsePagesBeforeReferences(lines);
+//         if (pBody.pages_from != null) { pages_from = pBody.pages_from; pages_to = pBody.pages_to; }
+//       }
+
+//       // months/year
+//       let month_from = null, month_to = null, year = null;
+//       {
+//         const m = /([A-Za-z]{3,9})\s*-\s*([A-Za-z]{3,9})\s+((?:19|20)\d{2})/i.exec(headerAll);
+//         if (m) {
+//           const M = (s) => MONTHS[s.toLowerCase()];
+//           const m1 = M(m[1]), m2 = M(m[2]);
+//           if (m1 && m2) { month_from = m1; month_to = m2; }
+//           year = num(m[3]);
+//         }
+//         if (year == null)
+//           year = parseInt((/(?:19|20)\d{2}/.exec(headerAll)?.[0] || ""), 10) || (published_date ? new Date(published_date).getFullYear() : null);
+//       }
+
+//       // filename hints
+//       const fromName = parseArticleIdFromFilename(originalName);
+//       const suggested_article_id = fromName?.article_id || null;
+//       if (vnum == null) vnum = fromName?.volume_number ?? null;
+//       if (inum == null) inum = fromName?.issue_number ?? null;
+
+//       // ids
+//       const idsH = parseIssnAndDoiFromHeader(headerAll);
+//       const issn = idsH.issn || null;
+//       const doi_url = idsH.doi_url || parseDoiUrlAnywhere(headerAll) || parseDoiUrlAnywhere(fullText) || null;
+
+//       /* ── REFERENCES: extract → split → clean → build CK HTML (WITH NUMBERING & allow-list links) ── */
+//       const iRefs = lines.findIndex(l => /^(References?|Bibliography)\s*:?\s*$/i.test(l));
+//       let referencesHtml = null;
+
+//       if (iRefs >= 0) {
+//         const refsLines = lines.slice(iRefs + 1);
+//         const refsArrayRaw = splitReferencesSmart(refsLines);
+//         const refsArray = sanitizeRefs(refsArrayRaw);
+
+//         let allowedRows = [];
+//         try {
+//           const [rows] = await conn.query(
+//             "SELECT `key`,`label`,`match_pattern`,`priority` FROM `ref_links_allow` WHERE `enabled`=1 ORDER BY `priority` ASC"
+//           );
+//           // No search templates — we only render present links
+//           allowedRows = (rows || []).filter(r => !/\{q\}/i.test(r.match_pattern || ""));
+//         } catch (e) {
+//           if (e?.code !== "ER_NO_SUCH_TABLE") throw e;
+//         }
+
+//         // Minimal defaults if DB empty/missing
+//         const hasDoi = allowedRows.some(r =>
+//           /^(doi|crossref)$/i.test(r.key) || /doi\.org/i.test(r.match_pattern || "")
+//         );
+//         const hasUrl = allowedRows.some(r => /^url$/i.test(r.key));
+//         if (!hasDoi) allowedRows.push({ key: "crossref", label: "CrossRef", match_pattern: "doi.org", priority: 10 });
+//         if (!hasUrl) allowedRows.push({ key: "url", label: "Publisher Link", match_pattern: "url", priority: 20 });
+
+// if (refsArray.length) {
+//   referencesHtml = refsArrayToCkHtml(refsArray, null, anchorsPerItem);
+// }
+//       }
+
+//       // resolve volume_id / issue_id using inputs → numbers → parsed
+//       const { volume_id, issue_id, vnum: vnOut, inum: inOut, warnings: warn } = await resolveVolumeIssueIds(
+//         conn,
+//         journal_id,
+//         { url: req.url, form },
+//         { volume_number: vnum, issue_number: inum }
+//       );
+
+//       vnum = vnOut;
+//       inum = inOut;
+
+//       // dynamic insert
+//       const [colsRows] = await conn.query(
+//         `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+//          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'staged_articles'`
+//       );
+//       const existing = new Set(colsRows.map((r) => r.COLUMN_NAME));
+
+//       const payload = {
+//         journal_id,
+//         title: title || null,
+//         year: year ?? null,
+//         month_from: month_from ?? null,
+//         month_to: month_to ?? null,
+//         pages_from: pages_from ?? null,
+//         pages_to: pages_to ?? null,
+//         abstract: abstract || null,
+//         keywords: keywords || null,
+//         received_date: received_date || null,
+//         revised_date: revised_date || null,
+//         accepted_date: accepted_date || null,
+//         published_date: published_date || null,
+
+//         // file
+//         file_name: safeName,
+//         original_name: originalName,
+//         mime_type,
+//         size_bytes,
+//         storage_path,
+
+//         status: "extracted",
+//         article_id: suggested_article_id,
+
+//         // store numbers and resolved IDs
+//         volume_number: vnum ?? null,
+//         issue_number: inum ?? null,
+//         volume_id: volume_id ?? null,
+//         issue_id: issue_id ?? null,
+
+//         // identifiers
+//         doi_url: doi_url || null,
+//         issn: issn || null,
+
+//         // references HTML (complete block with heading + numbered list)
+//         references: referencesHtml, // <- render this at the very end of your article body
+//       };
+
+//       const cols = Object.keys(payload).filter((k) => existing.has(k));
+//       const vals = cols.map((k) => (payload[k] === undefined ? null : payload[k]));
+//       const q = (name) => `\`${String(name).replace(/`/g, "``")}\``;
+//       const colsEsc = cols.map(q).join(", ");
+//       const placeholders = cols.map(() => "?").join(", ");
+
+//       const sql = `INSERT INTO staged_articles (${colsEsc}) VALUES (${placeholders})`;
+//       const [ins] = await conn.query(sql, vals);
+
+//       const stagedId = ins.insertId;
+
+//       // authors
+//       try {
+//         if (authors.length) {
+//           await conn.query(
+//             "INSERT INTO staged_article_authors (staged_article_id, author_order, full_name) VALUES ?",
+//             [authors.map((a, i) => [stagedId, i + 1, a])]
+//           );
+//         }
+//       } catch (e) {
+//         if (e?.code !== "ER_NO_SUCH_TABLE") throw e;
+//       }
+
+//       return NextResponse.json({
+//         success: true,
+//         staged_article_id: stagedId,
+//         stored_path: storage_path,
+//         file_name: safeName,
+//         extracted_preview: {
+//           article_id: suggested_article_id,
+//           title,
+//           authors,
+//           year,
+//           month_from,
+//           month_to,
+//           pages_from,
+//           pages_to,
+//           received_date,
+//           revised_date,
+//           accepted_date,
+//           published_date,
+//           keywords,
+//           doi_url: doi_url || null,
+//           issn,
+//           volume_number: vnum ?? null,
+//           issue_number: inum ?? null,
+//           volume_id: volume_id ?? null,
+//           issue_id: issue_id ?? null,
+//           warnings: warn,
+//         },
+//       });
+//     } finally {
+//       await conn.end();
+//     }
+//   } catch (e) {
+//     console.error("Stage error:", e);
+//     return NextResponse.json(
+//       { success: false, message: "Staging failed", error: String(e?.message || e) },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function POST(req) {
   try {
     const form = await req.formData();
@@ -579,7 +877,9 @@ export async function POST(req) {
       const buf = Buffer.from(arrayBuffer);
       await fs.writeFile(path.join(uploadDir, safeName), buf);
       const storage_path = `/uploads/staged/${safeName}`;
-      const mime_type = file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const mime_type =
+        file.type ||
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
       const size_bytes = buf.byteLength;
 
       // extract text
@@ -589,14 +889,14 @@ export async function POST(req) {
       const fullText = lines.join("\n");
       const headerFooter = await readHeaderFooterTextFromDocx(buf);
 
-     // Extract anchors from DOCX HTML for references
-let anchorsPerItem = null;
-try {
-  anchorsPerItem = await extractRefAnchorsPerItem(buf);
-} catch (e) {
-  console.warn("Anchor extraction failed:", e);
-  anchorsPerItem = null;
-}
+      // Extract anchors from DOCX HTML for references
+      let anchorsPerItem = null;
+      try {
+        anchorsPerItem = await extractRefAnchorsPerItem(buf);
+      } catch (e) {
+        console.warn("Anchor extraction failed:", e);
+        anchorsPerItem = null;
+      }
 
       // title
       const idxOrig = lines.findIndex((l) => /^Original Article$/i.test(l));
@@ -605,37 +905,71 @@ try {
         for (let i = idxOrig + 1; i < Math.min(idxOrig + 6, lines.length); i++) {
           const cand = lines[i];
           if (!cand || /^Original Article$/i.test(cand) || /^ISSN\b/i.test(cand)) continue;
-          if (cand.length >= 8) { title = cand; break; }
+          if (cand.length >= 8) {
+            title = cand;
+            break;
+          }
         }
       }
       if (!title) {
-        title = lines.find((l) => l && !/^Original Article$/i.test(l) && !/^ISSN\b/i.test(l) && l.length > 12 && /^[A-Z]/.test(l)) || "";
+        title =
+          lines.find(
+            (l) =>
+              l &&
+              !/^Original Article$/i.test(l) &&
+              !/^ISSN\b/i.test(l) &&
+              l.length > 12 &&
+              /^[A-Z]/.test(l)
+          ) || "";
       }
 
       // authors
       let authorsLine = "";
-      for (let k = idxOrig >= 0 ? idxOrig + 1 : 0; k < Math.min(lines.length, idxOrig >= 0 ? idxOrig + 6 : 6); k++) {
-        if (/,/.test(lines[k]) && !/Received:/.test(lines[k])) { authorsLine = lines[k]; break; }
+      for (
+        let k = idxOrig >= 0 ? idxOrig + 1 : 0;
+        k < Math.min(lines.length, idxOrig >= 0 ? idxOrig + 6 : 6);
+        k++
+      ) {
+        if (/,/.test(lines[k]) && !/Received:/.test(lines[k])) {
+          authorsLine = lines[k];
+          break;
+        }
       }
-      const authors = authorsLine ? authorsLine.split(/,| and /i).map(cleanAuthor).filter(Boolean) : [];
+      const authors = authorsLine
+        ? authorsLine.split(/,| and /i).map(cleanAuthor).filter(Boolean)
+        : [];
 
       // dates / abstract / keywords
-      const datesLine = lines.find((l) => /Received:\s*\d{1,2}\s+\w+\s+\d{4}/i.test(l)) || "";
-      const { received_date, revised_date, accepted_date, published_date } = parseDates(datesLine);
+      const datesLine =
+        lines.find((l) => /Received:\s*\d{1,2}\s+\w+\s+\d{4}/i.test(l)) || "";
+      const { received_date, revised_date, accepted_date, published_date } =
+        parseDates(datesLine);
       const iAbs = lines.findIndex((l) => /^Abstract\b/i.test(l));
       const iKeys = lines.findIndex((l) => /^Keywords\b/i.test(l));
-      const abstract = iAbs >= 0 && iKeys > iAbs ? lines.slice(iAbs, iKeys).join(" ").replace(/^Abstract\s*[-:]\s*/i, "") : "";
-      const keywords = iKeys >= 0 ? lines[iKeys].replace(/^Keywords\s*[-:]\s*/i, "") : "";
+      const abstract =
+        iAbs >= 0 && iKeys > iAbs
+          ? lines
+              .slice(iAbs, iKeys)
+              .join(" ")
+              .replace(/^Abstract\s*[-:]\s*/i, "")
+          : "";
+      const keywords =
+        iKeys >= 0
+          ? lines[iKeys].replace(/^Keywords\s*[-:]\s*/i, "")
+          : "";
 
       // header text
       const headerTop = getHeaderText(lines);
       const headerAll = headerFooter ? `${headerFooter}\n${headerTop}` : headerTop;
 
-      // vol/issue numbers (parsed)
-      let vnum = null, inum = null;
-      const viIdx = findFirstVolIssueIndex(lines, VOL_ISSUE_SCAN_LIMIT);
+      // vol/issue numbers
+      let vnum = null,
+        inum = null;
+      const viIdx = findFirstVolIssueIndex(lines, 40);
       if (viIdx >= 0) {
-        const around = lines.slice(Math.max(0, viIdx - 1), Math.min(lines.length, viIdx + 2)).join(" ");
+        const around = lines
+          .slice(Math.max(0, viIdx - 1), Math.min(lines.length, viIdx + 2))
+          .join(" ");
         const vi = parseVolIssueAnywhere(around);
         vnum = vi.volume_number ?? null;
         inum = vi.issue_number ?? null;
@@ -653,29 +987,52 @@ try {
 
       // pages
       let pageHits = findPageRangesAround(lines, viIdx, 2, 6);
-      let pages_from = pageHits.length ? pageHits.sort((a, b) => a.line - b.line || a.index - b.index)[0].from : null;
-      let pages_to = pageHits.length ? pageHits.sort((a, b) => a.line - b.line || a.index - b.index)[0].to : null;
+      let pages_from = pageHits.length
+        ? pageHits.sort((a, b) => a.line - b.line || a.index - b.index)[0].from
+        : null;
+      let pages_to = pageHits.length
+        ? pageHits.sort((a, b) => a.line - b.line || a.index - b.index)[0].to
+        : null;
       if (pages_from == null || pages_to == null) {
         const pHead = chooseHeaderPages(headerAll);
-        if (pHead.pages_from != null) { pages_from = pHead.pages_from; pages_to = pHead.pages_to; }
+        if (pHead.pages_from != null) {
+          pages_from = pHead.pages_from;
+          pages_to = pHead.pages_to;
+        }
       }
       if (pages_from == null || pages_to == null) {
         const pBody = parsePagesBeforeReferences(lines);
-        if (pBody.pages_from != null) { pages_from = pBody.pages_from; pages_to = pBody.pages_to; }
+        if (pBody.pages_from != null) {
+          pages_from = pBody.pages_from;
+          pages_to = pBody.pages_to;
+        }
       }
 
       // months/year
-      let month_from = null, month_to = null, year = null;
+      let month_from = null,
+        month_to = null,
+        year = null;
       {
-        const m = /([A-Za-z]{3,9})\s*-\s*([A-Za-z]{3,9})\s+((?:19|20)\d{2})/i.exec(headerAll);
+        const m = /([A-Za-z]{3,9})\s*-\s*([A-Za-z]{3,9})\s+((?:19|20)\d{2})/i.exec(
+          headerAll
+        );
         if (m) {
           const M = (s) => MONTHS[s.toLowerCase()];
-          const m1 = M(m[1]), m2 = M(m[2]);
-          if (m1 && m2) { month_from = m1; month_to = m2; }
+          const m1 = M(m[1]),
+            m2 = M(m[2]);
+          if (m1 && m2) {
+            month_from = m1;
+            month_to = m2;
+          }
           year = num(m[3]);
         }
         if (year == null)
-          year = parseInt((/(?:19|20)\d{2}/.exec(headerAll)?.[0] || ""), 10) || (published_date ? new Date(published_date).getFullYear() : null);
+          year =
+            parseInt(
+              (/(?:19|20)\d{2}/.exec(headerAll)?.[0] || ""),
+              10
+            ) ||
+            (published_date ? new Date(published_date).getFullYear() : null);
       }
 
       // filename hints
@@ -687,10 +1044,16 @@ try {
       // ids
       const idsH = parseIssnAndDoiFromHeader(headerAll);
       const issn = idsH.issn || null;
-      const doi_url = idsH.doi_url || parseDoiUrlAnywhere(headerAll) || parseDoiUrlAnywhere(fullText) || null;
+      const doi_url =
+        idsH.doi_url ||
+        parseDoiUrlAnywhere(headerAll) ||
+        parseDoiUrlAnywhere(fullText) ||
+        null;
 
-      /* ── REFERENCES: extract → split → clean → build CK HTML (WITH NUMBERING & allow-list links) ── */
-      const iRefs = lines.findIndex(l => /^(References?|Bibliography)\s*:?\s*$/i.test(l));
+      // references
+      const iRefs = lines.findIndex((l) =>
+        /^(References?|Bibliography)\s*:?\s*$/i.test(l)
+      );
       let referencesHtml = null;
 
       if (iRefs >= 0) {
@@ -703,27 +1066,43 @@ try {
           const [rows] = await conn.query(
             "SELECT `key`,`label`,`match_pattern`,`priority` FROM `ref_links_allow` WHERE `enabled`=1 ORDER BY `priority` ASC"
           );
-          // No search templates — we only render present links
-          allowedRows = (rows || []).filter(r => !/\{q\}/i.test(r.match_pattern || ""));
+          allowedRows = (rows || []).filter(
+            (r) => !/\{q\}/i.test(r.match_pattern || "")
+          );
         } catch (e) {
           if (e?.code !== "ER_NO_SUCH_TABLE") throw e;
         }
 
-        // Minimal defaults if DB empty/missing
-        const hasDoi = allowedRows.some(r =>
-          /^(doi|crossref)$/i.test(r.key) || /doi\.org/i.test(r.match_pattern || "")
-        );
-        const hasUrl = allowedRows.some(r => /^url$/i.test(r.key));
-        if (!hasDoi) allowedRows.push({ key: "crossref", label: "CrossRef", match_pattern: "doi.org", priority: 10 });
-        if (!hasUrl) allowedRows.push({ key: "url", label: "Publisher Link", match_pattern: "url", priority: 20 });
+        if (!allowedRows.some((r) => /doi\.org/i.test(r.match_pattern || ""))) {
+          allowedRows.push({
+            key: "crossref",
+            label: "CrossRef",
+            match_pattern: "doi.org",
+            priority: 10,
+          });
+        }
+        if (!allowedRows.some((r) => /^url$/i.test(r.key))) {
+          allowedRows.push({
+            key: "url",
+            label: "Publisher Link",
+            match_pattern: "url",
+            priority: 20,
+          });
+        }
 
-if (refsArray.length) {
-  referencesHtml = refsArrayToCkHtml(refsArray, null, anchorsPerItem);
-}
+        if (refsArray.length) {
+          referencesHtml = refsArrayToCkHtml(refsArray, null, anchorsPerItem);
+        }
       }
 
-      // resolve volume_id / issue_id using inputs → numbers → parsed
-      const { volume_id, issue_id, vnum: vnOut, inum: inOut, warnings: warn } = await resolveVolumeIssueIds(
+      // resolve volume_id / issue_id
+      const {
+        volume_id,
+        issue_id,
+        vnum: vnOut,
+        inum: inOut,
+        warnings: warn,
+      } = await resolveVolumeIssueIds(
         conn,
         journal_id,
         { url: req.url, form },
@@ -733,7 +1112,74 @@ if (refsArray.length) {
       vnum = vnOut;
       inum = inOut;
 
-      // dynamic insert
+      /* ───────────────────────────────
+         CROSS-JOURNAL & DUPLICATE CHECKS
+      ─────────────────────────────── */
+// FromName is already declared earlier
+// Step 0: fetch journal info
+const [[journalRow]] = await conn.query(
+  "SELECT journal_name, short_name FROM journals WHERE id=?",
+  [journal_id]
+);
+
+if (!journalRow) {
+  return NextResponse.json(
+    { success: false, message: `Journal not found for ID=${journal_id}` },
+    { status: 400 }
+  );
+}
+
+// Step 1: Extract article prefix (before first hyphen, or full if no hyphen)
+let prefix = "";
+if (suggested_article_id && suggested_article_id.includes("-")) {
+  prefix = suggested_article_id.split("-")[0].toUpperCase();
+} else if (suggested_article_id) {
+  prefix = suggested_article_id.toUpperCase();
+}
+
+// Step 2: Normalize journal code
+let baseAllowed = (journalRow.short_name || journalRow.journal_name).toUpperCase();
+if (baseAllowed.startsWith("DS-")) {
+  baseAllowed = baseAllowed.replace(/^DS-/, ""); // strip DS-
+}
+
+// Step 3: Compare
+if (prefix && baseAllowed && prefix !== baseAllowed) {
+  return NextResponse.json(
+    {
+      success: false,
+      message: `Upload blocked: This article (${prefix}) belongs to another journal. Only ${journalRow.short_name} articles are allowed for Journal ID ${journal_id}.`
+    },
+    { status: 400 }
+  );
+}
+
+
+
+      // duplicate file check
+// ✅ Duplicate file check (only the tables you actually have)
+const [fileDup] = await conn.query(
+  `
+   SELECT id, journal_id, 'staged' as source 
+   FROM staged_articles 
+   WHERE file_name=?
+  `,
+  [originalName]
+);
+
+if (fileDup.length > 0) {
+  return NextResponse.json(
+    {
+      success: false,
+      message: `Upload blocked: File already exists in ${fileDup[0].source} (Journal ID ${fileDup[0].journal_id})`,
+    },
+    { status: 400 }
+  );
+}
+
+      /* ───────────────────────────────
+         INSERT INTO staged_articles
+      ─────────────────────────────── */
       const [colsRows] = await conn.query(
         `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'staged_articles'`
@@ -754,40 +1200,32 @@ if (refsArray.length) {
         revised_date: revised_date || null,
         accepted_date: accepted_date || null,
         published_date: published_date || null,
-
-        // file
         file_name: safeName,
         original_name: originalName,
         mime_type,
         size_bytes,
         storage_path,
-
         status: "extracted",
         article_id: suggested_article_id,
-
-        // store numbers and resolved IDs
         volume_number: vnum ?? null,
         issue_number: inum ?? null,
         volume_id: volume_id ?? null,
         issue_id: issue_id ?? null,
-
-        // identifiers
         doi_url: doi_url || null,
         issn: issn || null,
-
-        // references HTML (complete block with heading + numbered list)
-        references: referencesHtml, // <- render this at the very end of your article body
+        references: referencesHtml,
       };
 
       const cols = Object.keys(payload).filter((k) => existing.has(k));
-      const vals = cols.map((k) => (payload[k] === undefined ? null : payload[k]));
+      const vals = cols.map((k) =>
+        payload[k] === undefined ? null : payload[k]
+      );
       const q = (name) => `\`${String(name).replace(/`/g, "``")}\``;
       const colsEsc = cols.map(q).join(", ");
       const placeholders = cols.map(() => "?").join(", ");
 
       const sql = `INSERT INTO staged_articles (${colsEsc}) VALUES (${placeholders})`;
       const [ins] = await conn.query(sql, vals);
-
       const stagedId = ins.insertId;
 
       // authors
@@ -839,5 +1277,35 @@ if (refsArray.length) {
       { success: false, message: "Staging failed", error: String(e?.message || e) },
       { status: 500 }
     );
+  }
+}
+
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const status = searchParams.get("status");
+  const jid = searchParams.get("jid");
+
+  const conn = await createDbConnection();
+  try {
+    let sql = `SELECT * FROM staged_articles WHERE 1=1`;
+    const params = [];
+
+    if (status) {
+      sql += ` AND status = ?`;
+      params.push(status);
+    }
+    if (jid) {
+      sql += ` AND journal_id = ?`;
+      params.push(jid);
+    }
+
+    sql += ` ORDER BY updated_at DESC`;
+
+    const [rows] = await conn.query(sql, params);
+    return NextResponse.json({ success: true, records: rows });
+  } catch (e) {
+    return NextResponse.json({ success: false, message: String(e) }, { status: 500 });
+  } finally {
+    await conn.end();
   }
 }
