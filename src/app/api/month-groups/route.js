@@ -76,3 +76,19 @@ export async function POST(req) {
     await connection.end();
   }
 }
+
+
+export async function PUT(req) {
+  const body = await req.json();
+  const connection = await createDbConnection();
+
+  try {
+    await connection.query(
+      `UPDATE month_groups SET from_month=?, to_month=? WHERE id=?`,
+      [body.from_month, body.to_month, body.id]
+    );
+    return NextResponse.json({ success: true, message: "Month group updated" });
+  } finally {
+    await connection.end();
+  }
+}

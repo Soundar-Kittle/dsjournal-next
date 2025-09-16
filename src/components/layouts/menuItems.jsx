@@ -24,6 +24,10 @@ export const getMenuItems = (role) => {
         title: "Journals",
         icon: <BookImage size={18} />,
         subItems: [
+           {
+            title: "Volume & Issue",
+            path: `${adminPath}/journals/volume-issue`,
+          },
           {
             title: "List of Journals",
             path: `${adminPath}/journals`,
