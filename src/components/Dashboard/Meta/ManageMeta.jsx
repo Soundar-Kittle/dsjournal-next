@@ -46,7 +46,7 @@ const ManageMeta = () => {
                 value={field.value ?? ""}
                 label="Search"
                 onValueChange={field.onChange}
-                placeholder="Search: key, content"
+                placeholder="Search: Type, Page"
               />
             )}
           />

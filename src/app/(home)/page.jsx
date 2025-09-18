@@ -1,5 +1,4 @@
 import HeroBanner from "@/components/Hero/HeroBanner";
-import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 
 export default function Page() {
   return (
@@ -21,6 +20,4 @@ export default function Page() {
     </div>
   );
 }
-export const generateMetadata = async () => {
-  return await generateDynamicMeta("/");
-};
+ 
