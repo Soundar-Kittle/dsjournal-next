@@ -230,26 +230,30 @@ if (titleDupes.length) {
     // 4) Insert / Update
     // ─────────────────────────────────────────────────────────────
     if (isEdit) {
-      const sql = `
-        UPDATE articles SET
-          journal_id = ?, volume_id = ?, issue_id = ?,
-          month_from = ?, month_to = ?,
-          article_id = ?, doi = ?, article_title = ?,title_norm=?,
-          page_from = ?, page_to = ?, authors = ?, abstract = ?, keywords = ?, \`references\` = ?,
-          received = ?, revised = ?, accepted = ?, published = ?,
-          pdf_path = ?, article_status = ?, updated_at = NOW()
-        WHERE id = ?
-        LIMIT 1
-      `;
-      const params = [
-        payload.journal_id, payload.volume_id, payload.issue_id,
-        payload.month_from, payload.month_to,
-        payload.article_id, payload.doi, payload.article_title,
-        payload.page_from, payload.page_to, payload.authors, payload.abstract, payload.keywords, payload.references,
-        payload.received, payload.revised, payload.accepted, payload.published,
-        payload.pdf_path, payload.article_status,
-        id,
-      ];
+const sql = `
+  UPDATE articles SET
+    journal_id = ?, volume_id = ?, issue_id = ?,
+    month_from = ?, month_to = ?,
+    article_id = ?, doi = ?, article_title = ?, title_norm = ?,
+    page_from = ?, page_to = ?, authors = ?, abstract = ?, keywords = ?, \`references\` = ?,
+    received = ?, revised = ?, accepted = ?, published = ?,
+    pdf_path = ?, article_status = ?, updated_at = NOW()
+  WHERE id = ?
+  LIMIT 1
+`;
+
+const params = [
+  payload.journal_id, payload.volume_id, payload.issue_id,
+  payload.month_from, payload.month_to,
+  payload.article_id, payload.doi, payload.article_title,
+  titleNorm, // 👈 normalized title
+  payload.page_from, payload.page_to, payload.authors, payload.abstract, payload.keywords, payload.references,
+  payload.received, payload.revised, payload.accepted, payload.published,
+  payload.pdf_path, payload.article_status,
+  id,
+];
+
+
       const [result] = await conn.query(sql, params);
       return NextResponse.json({
         success: true,
@@ -257,25 +261,29 @@ if (titleDupes.length) {
         affectedRows: result.affectedRows,
       });
     } else {
-      const sql = `
-        INSERT INTO articles (
-          journal_id, volume_id, issue_id,
-          month_from, month_to,
-          article_id, doi, article_title,title_norm,
-          page_from, page_to, authors, abstract, keywords, \`references\`,
-          received, revised, accepted, published,
-          pdf_path, article_status, created_at, updated_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-      `;
-      const params = [
-        payload.journal_id, payload.volume_id, payload.issue_id,
-        payload.month_from, payload.month_to,
-        payload.article_id, payload.doi, payload.article_title,
-        payload.page_from, payload.page_to, payload.authors, payload.abstract, payload.keywords, payload.references,
-        payload.received, payload.revised, payload.accepted, payload.published,
-        payload.pdf_path, payload.article_status,
-      ];
+const sql = `
+  INSERT INTO articles (
+    journal_id, volume_id, issue_id,
+    month_from, month_to,
+    article_id, doi, article_title, title_norm,
+    page_from, page_to, authors, abstract, keywords, \`references\`,
+    received, revised, accepted, published,
+    pdf_path, article_status, created_at, updated_at
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+`;
+
+const params = [
+  payload.journal_id, payload.volume_id, payload.issue_id,
+  payload.month_from, payload.month_to,
+  payload.article_id, payload.doi, payload.article_title,
+  titleNorm, // 👈 normalized title
+  payload.page_from, payload.page_to, payload.authors, payload.abstract, payload.keywords, payload.references,
+  payload.received, payload.revised, payload.accepted, payload.published,
+  payload.pdf_path, payload.article_status,
+];
+
+
       const [result] = await conn.query(sql, params);
       return NextResponse.json({
         success: true,
