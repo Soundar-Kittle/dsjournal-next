@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BsMenuDown, BsMenuUp } from "react-icons/bs";
 
 export default function SideMenu({
   title = "Menu",
-  items = [],               // [{ menu_label, menu_link }]
+  items = [], // [{ menu_label, menu_link }]
   initiallyOpen = true,
   className = "",
-  storageKey,               // optional: remember open/closed across pages
+  storageKey, // optional: remember open/closed across pages
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(initiallyOpen);
@@ -46,12 +47,13 @@ export default function SideMenu({
         className="w-full flex items-center justify-between bg-teal-900 text-white px-4 py-2 rounded-t-md"
       >
         <span className="font-medium">{title}</span>
-        <span className={`transition-transform ${open ? "rotate-0" : "-rotate-90"}`}>▾</span>
+        {/* <span className={`transition-transform ${open ? "rotate-0" : "-rotate-90"}`}>▾</span> */}
+        <span className="cursor-pointer">{open ? <BsMenuDown /> : <BsMenuUp />}</span>
       </button>
 
       {/* body with smooth collapse (grid-rows trick) */}
       <div
-        className={`border border-t-0 rounded-b-md p-2 grid transition-[grid-template-rows] duration-300 ease-in-out ${
+        className={`border border-t-0 rounded-b-md grid transition-[grid-template-rows] duration-300 ease-in-out ${
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >
@@ -67,7 +69,9 @@ export default function SideMenu({
                       : "text-slate-700"
                   }`}
                 >
-                  <span className="text-[11px] leading-none select-none">▸</span>
+                  <span className="text-[11px] leading-none select-none">
+                    ▸
+                  </span>
                   <span className="truncate">{it.menu_label}</span>
                 </Link>
               </li>
