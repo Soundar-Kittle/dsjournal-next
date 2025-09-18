@@ -19,3 +19,46 @@ export async function GET() {
     await conn.end();
   }
 }
+
+export async function PUT(req, { params }) {
+  const id = params.id;
+  const body = await req.json();
+
+  const {
+    title, keywords, pages_from, pages_to,
+    received_date, revised_date, accepted_date, published_date,
+    article_id, referencesHtml // ⭐ expect full HTML from frontend
+  } = body;
+
+  const conn = await createDbConnection();
+  try {
+await conn.query(
+  `UPDATE staged_articles
+   SET title=?,
+       keywords=?,
+       pages_from=?,
+       pages_to=?,
+       received_date=?,
+       revised_date=?,
+       accepted_date=?,
+       published_date=?,
+       article_id=?,
+       status='reviewing',
+       \`references\`=?,   -- ✅ escaped with backticks
+       updated_at=NOW()
+   WHERE id=?`,
+  [
+    title, keywords, pages_from, pages_to,
+    received_date, revised_date, accepted_date, published_date,
+    article_id, referencesHtml, id
+  ]
+);
+
+
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    return NextResponse.json({ success: false, message: e.message }, { status: 500 });
+  } finally {
+    await conn.end();
+  }
+}
