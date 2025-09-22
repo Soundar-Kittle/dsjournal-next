@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 
 const DEFAULT_COLUMNS = [
   {
@@ -39,10 +41,10 @@ const DEFAULT_COLUMNS = [
 ];
 
 const DEFAULT_SOCIAL = [
-  { name: "Twitter", href: "https://twitter.com/", Icon: Twitter },
-  { name: "Facebook", href: "https://facebook.com/", Icon: Facebook },
-  { name: "Instagram", href: "https://instagram.com/", Icon: Instagram },
-  { name: "LinkedIn", href: "https://linkedin.com/", Icon: Linkedin },
+  { name: "Twitter", href: "https://twitter.com/", Icon: FaXTwitter },
+  { name: "Facebook", href: "https://facebook.com/", Icon: FaFacebookF },
+  { name: "Instagram", href: "https://instagram.com/", Icon: FaInstagram },
+  { name: "LinkedIn", href: "https://linkedin.com/", Icon: FaLinkedinIn },
 ];
 
 export default function Footer({
@@ -53,9 +55,9 @@ export default function Footer({
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-teal-900 text-slate-100">
+    <footer className="bg-secondary text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 items-start">
           {/* 4 columns of links */}
           {columns.slice(0, 4).map((col, idx) => (
             <div key={idx} className="space-y-3">
@@ -70,8 +72,8 @@ export default function Footer({
                       prefetch={false}
                       className="group inline-flex items-center gap-2 text-slate-100/90 hover:text-white"
                     >
-                      <span className="text-lime-400 group-hover:translate-x-0.5 transition-transform">
-                        ›
+                      <span className="text-primary group-hover:translate-x-0.5 transition-transform">
+                        <ChevronRight size={16} />
                       </span>
                       <span>{item.label}</span>
                     </Link>
@@ -84,7 +86,7 @@ export default function Footer({
           {/* Social column */}
           <div className="space-y-4">
             <h4 className="font-semibold">Follow Us</h4>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               {social.map(({ name, href, Icon }) => (
                 <Link
                   key={name}
@@ -92,7 +94,7 @@ export default function Footer({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={name}
-                  className="grid h-9 w-9 place-items-center rounded-full bg-lime-500 text-teal-900 hover:brightness-110 transition"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-primary text-white hover:text-secondary transition"
                 >
                   <Icon className="h-4 w-4" />
                 </Link>
@@ -100,14 +102,10 @@ export default function Footer({
             </div>
           </div>
         </div>
-
-        {/* Divider */}
-        <div className="mt-8 border-t border-white/10" />
-
-        {/* Bottom bar */}
-        <div className="py-4 text-center text-sm">
-          © Copyright <span className="font-semibold">{brand}</span>. All Rights Reserved {year}
-        </div>
+      </div>
+      <div className="pb-16 pt-10 text-center text-sm border-t border-white">
+        © Copyright <span className="font-semibold">{brand}</span>. All Rights
+        Reserved {year}
       </div>
     </footer>
   );

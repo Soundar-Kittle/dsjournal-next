@@ -8,18 +8,11 @@ import {
 } from "@/components/ui/carousel";
 import { useBanners } from "@/services";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 const HeroBanner = () => {
   const { data: banner, isLoading: bannerLoading } = useBanners();
   const slides = banner?.rows || [];
-
-  if (bannerLoading) {
-    return (
-      <div className="flex justify-center items-center h-[90vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-      </div>
-    );
-  }
 
   const getJustify = (align) => {
     switch (+align) {
@@ -44,66 +37,86 @@ const HeroBanner = () => {
   };
 
   return (
-    <Carousel
-      opts={{
-        align: "start",
-        loop: true,
-      }}
-      className="relative"
-    >
-      <CarouselContent>
-        {slides
-          .filter((slide) => slide.status === 1)
-          .map((slide, i) => {
-            const justify = getJustify(slide.alignment);
-            const marginSide = getTextAlign(slide.alignment);
-            const visibility = slide.visibility || {};
+    <>
+      {bannerLoading ? (
+        <div className="w-full h-full relative">
+          <div className="relative h-80 w-full py-15">
+            <Image
+              src="/uploads/banners/hero-bgimg.jpg"
+              alt="Placeholder"
+              fill
+              className="object-cover"
+              priority={true}
+            />
+          </div>
+          <div className="absolute inset-0 bg-black/40"></div>
+        </div>
+      ) : (
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          className="relative"
+        >
+          <CarouselContent>
+            {slides
+              .filter((slide) => slide.status === 1)
+              .map((slide, i) => {
+                const justify = getJustify(slide.alignment);
+                const marginSide = getTextAlign(slide.alignment);
+                const visibility = slide.visibility || {};
 
-            return (
-              <CarouselItem key={i} className="w-full h-full">
-                <div className="relative h-full w-full py-15">
-                  <Image
-                    src={`${slide.image}`}
-                    alt={slide.title}
-                    fill
-                    className="object-cover"
-                    priority={i === 0}
-                  />
-                  <div className="absolute inset-0 bg-black/40"></div>
-                  <div
-                    className={`relative z-10 h-full flex items-center ${justify}`}
-                  >
-                    <div className="container mx-auto px-4">
-                      {+visibility.show_content === 1 && (
-                        <div
-                          className={`max-w-3xl text-white space-y-5 ${marginSide}`}
-                        >
-                          <h1 className="text-3xl md:text-5xl font-semibold leading-tight text-white">
-                            {slide.title}
-                          </h1>
-                          {+visibility.show_description === 1 && (
-                            <p className="text-base">{slide.description}</p>
+                return (
+                  <CarouselItem key={i} className="w-full h-full">
+                    <div className="relative h-full w-full py-15">
+                      <Image
+                        src={`${slide.image}`}
+                        alt={slide.title}
+                        fill
+                        className="object-cover"
+                        priority={i === 0}
+                      />
+                      <div className="absolute inset-0 bg-black/40"></div>
+                      <div
+                        className={`relative z-10 h-full flex items-center ${justify}`}
+                      >
+                        <div className="container mx-auto px-4">
+                          {+visibility.show_content === 1 && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 50 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
+                              className={`max-w-3xl text-white space-y-5 ${marginSide}`}
+                            >
+                              <h1 className="text-3xl md:text-5xl font-semibold leading-tight text-white">
+                                {slide.title}
+                              </h1>
+                              {+visibility.show_description === 1 && (
+                                <p className="text-base">{slide.description}</p>
+                              )}
+
+                              {+visibility.show_button === 1 &&
+                                slide.button_link && (
+                                  <Link
+                                    href={slide.button_link}
+                                    className="inline-block py-2 bg-primary text-white px-6 rounded-full hover:text-secondary font-semibold transition duration-300"
+                                  >
+                                    {slide.button_name}
+                                  </Link>
+                                )}
+                            </motion.div>
                           )}
-
-                          {+visibility.show_button === 1 &&
-                            slide.button_link && (
-                              <Link
-                                href={slide.button_link}
-                                className="inline-block py-2 bg-primary text-white px-6 rounded-full hover:text-secondary font-semibold transition duration-300"
-                              >
-                                {slide.button_name}
-                              </Link>
-                            )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </CarouselItem>
-            );
-          })}
-      </CarouselContent>
-    </Carousel>
+                  </CarouselItem>
+                );
+              })}
+          </CarouselContent>
+        </Carousel>
+      )}
+    </>
   );
 };
 

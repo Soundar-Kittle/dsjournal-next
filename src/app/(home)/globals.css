@@ -126,6 +126,8 @@
 
 body {
   font-family: var(--font-poppins), Helvetica, sans-serif;
+  background-color: #f4f8fa;
+  color: #444;
 }
 
 /* Global Scrollbar Styling */
