@@ -1039,31 +1039,232 @@
 //   );
 // }
 
+// "use client";
+
+// import { useCallback } from "react";
+// import { Input } from "@/components/ui/input";
+// import { Textarea } from "@/components/ui/textarea";
+// import { Button } from "@/components/ui/button";
+// import CKEditorField from "./CKEditorField";
+
+// export default function ArticleForm({
+//   form = {},
+//   setForm,
+//   onSubmit,                 // parent should submit with FormData (includes references)
+//   submitting = false,
+//   submitLabel = "Submit",
+//   journals = [],
+//   volumesMeta = [],
+//   issuesMeta = [],
+//   months = [],
+//   disabledJournal = false,
+//   onFileSelect,            // (file: File | null) => void
+//   selectedFile,            // File | null
+// }) {
+//   const handleChange = useCallback(
+//     (key) => (e) => {
+//       const value = e.target.value;
+//       setForm?.({ [key]: value });
+//     },
+//     [setForm]
+//   );
+
+//   const handleFileChange = (e) => {
+//     const file = e.target.files?.[0] || null;
+//     onFileSelect?.(file);
+//   };
+
+//   return (
+//     <div className="space-y-4">
+//       {/* ARTICLE STATUS */}
+//       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//         <div className="space-y-1">
+//           <label className="block text-sm font-medium">Article Status</label>
+//           <select
+//             value={String(form.article_status || "unpublished")}
+//             onChange={(e) => setForm?.({ article_status: e.target.value })}
+//             disabled={submitting}
+//             className="border rounded-md p-2 w-full focus:outline-none focus:ring"
+//           >
+//             <option value="unpublished">Unpublished</option>
+//             <option value="published">Published</option>
+//           </select>
+//         </div>
+//       </div>
+
+//       {/* JOURNAL / VOLUME / ISSUE / MONTHS */}
+//       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//         {/* JOURNAL */}
+//         <select
+//           value={String(form.journal_id || "")}
+//           onChange={handleChange("journal_id")}
+//           disabled={disabledJournal}
+//           className="border rounded-md p-2 w-full focus:outline-none focus:ring"
+//         >
+//           <option value="">Select Journal</option>
+//           {journals.map((j) => (
+//             <option key={j.id} value={String(j.id)}>
+//               {j.journal_name}
+//             </option>
+//           ))}
+//         </select>
+
+//         {/* VOLUME */}
+//         <select
+//           value={String(form.volume_id || "")}
+//           onChange={handleChange("volume_id")}
+//           className="border rounded-md p-2 w-full focus:outline-none focus:ring"
+//         >
+//           <option value="">Select Volume</option>
+//           {volumesMeta.map((v) => (
+//             <option key={v.id} value={String(v.id)}>
+//               {v.volume_number ?? v.volume_label ?? v.id}
+//             </option>
+//           ))}
+//         </select>
+
+//         {/* ISSUE */}
+//         <select
+//           value={String(form.issue_id || "")}
+//           onChange={handleChange("issue_id")}
+//           disabled={!form.volume_id}
+//           className="border rounded-md p-2 w-full"
+//         >
+//           <option value="">Select Issue</option>
+//           {issuesMeta.map((i) => (
+//             <option key={i.id} value={String(i.id)}>
+//               {i.issue_number ?? i.issue_label ?? i.id}
+//             </option>
+//           ))}
+//         </select>
+
+//         {/* MONTH FROM (display only) */}
+//         <select
+//           value={String(form.month_from || "")}
+//           disabled
+//           className="border rounded-md p-2 w-full bg-gray-100 cursor-not-allowed"
+//         >
+//           <option value={String(form.month_from || "")}>
+//             {form.month_from || "From Month"}
+//           </option>
+//         </select>
+
+//         {/* MONTH TO (display only) */}
+//         <select
+//           value={String(form.month_to || "")}
+//           disabled
+//           className="border rounded-md p-2 w-full bg-gray-100 cursor-not-allowed"
+//         >
+//           <option value={String(form.month_to || "")}>
+//             {form.month_to || "To Month"}
+//           </option>
+//         </select>
+//       </div>
+
+//       {/* PDF upload */}
+//       <div className="space-y-2">
+//         <label className="block text-sm font-medium">Article PDF</label>
+//         <input
+//           type="file"
+//           accept="application/pdf"
+//           onChange={handleFileChange}
+//           disabled={submitting}
+//           className="block w-full border rounded-md p-2"
+//         />
+
+//         {selectedFile ? (
+//           <div className="text-sm">
+//             Selected: <strong>{selectedFile.name}</strong>{" "}
+//             <button
+//               type="button"
+//               onClick={() => onFileSelect?.(null)}
+//               className="text-blue-600 underline ml-2"
+//               disabled={submitting}
+//             >
+//               remove
+//             </button>
+//           </div>
+//         ) : form.pdf_path ? (
+//           <div className="text-sm">
+//             Current file:{" "}
+//             <a href={form.pdf_path} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+//               open
+//             </a>
+//           </div>
+//         ) : (
+//           <div className="text-xs text-gray-500">
+//             No file selected. If you submit without a file, the server will generate a fallback URL.
+//           </div>
+//         )}
+//       </div>
+
+//       {/* BASICS */}
+//       <Input placeholder="Article ID" value={form.article_id || ""} onChange={handleChange("article_id")} />
+//       <Input placeholder="DOI" value={form.doi || ""} onChange={handleChange("doi")} />
+//       <Input placeholder="Title" value={form.article_title || ""} onChange={handleChange("article_title")} />
+//       <Input placeholder="Authors (comma separated)" value={form.authors || ""} onChange={handleChange("authors")} />
+//       <Textarea value={form.abstract || ""} onChange={handleChange("abstract")} placeholder="Abstract" />
+//       <Input placeholder="Keywords (comma separated)" value={form.keywords || ""} onChange={handleChange("keywords")} />
+
+//       <div className="grid grid-cols-2 gap-4">
+//         <Input type="number" placeholder="Page From" value={form.page_from || ""} onChange={handleChange("page_from")} />
+//         <Input type="number" placeholder="Page To" value={form.page_to || ""} onChange={handleChange("page_to")} />
+//       </div>
+
+//       {/* REFERENCES (CKEditor -> HTML string) */}
+//       <div className="space-y-1">
+//         <label className="block text-sm font-medium">References</label>
+//         <CKEditorField
+//           value={form.references || ""}
+//           onChange={(html) => setForm?.({ references: html })}
+//           placeholder="Enter references here…"
+//         />
+//       </div>
+
+//       {/* DATES */}
+//       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+//         <Input type="date" value={form.received || ""} onChange={handleChange("received")} />
+//         <Input type="date" value={form.revised || ""} onChange={handleChange("revised")} />
+//         <Input type="date" value={form.accepted || ""} onChange={handleChange("accepted")} />
+//         <Input type="date" value={form.published || ""} onChange={handleChange("published")} />
+//       </div>
+
+//       <div className="flex justify-end">
+//         <Button onClick={onSubmit} disabled={submitting}>
+//           {submitting ? "Saving..." : submitLabel}
+//         </Button>
+//       </div>
+//     </div>
+//   );
+// }
+
+
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+// NOTE: removed Textarea import because we use CKEditor for abstract now
 import { Button } from "@/components/ui/button";
 import CKEditorField from "./CKEditorField";
 
 export default function ArticleForm({
   form = {},
   setForm,
-  onSubmit,                 // parent should submit with FormData (includes references)
+  onSubmit,
   submitting = false,
   submitLabel = "Submit",
   journals = [],
   volumesMeta = [],
   issuesMeta = [],
-  months = [],
   disabledJournal = false,
-  onFileSelect,            // (file: File | null) => void
-  selectedFile,            // File | null
+  onFileSelect,
+  selectedFile,
 }) {
+  const [step, setStep] = useState(0);
+
   const handleChange = useCallback(
     (key) => (e) => {
-      const value = e.target.value;
+      const value = e?.target?.value ?? e; // supports both input events and direct values
       setForm?.({ [key]: value });
     },
     [setForm]
@@ -1074,167 +1275,421 @@ export default function ArticleForm({
     onFileSelect?.(file);
   };
 
-  return (
-    <div className="space-y-4">
-      {/* ARTICLE STATUS */}
+  // ---- helpers to judge "filled", incl. HTML fields from CKEditor
+  const stripHtml = (html) =>
+    (html || "")
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+
+  const isFilled = (val) => {
+    if (val === null || val === undefined) return false;
+    if (typeof val === "string") {
+      // treat CKEditor HTML as filled only if text content remains after stripping tags
+      return stripHtml(val).length > 0;
+    }
+    return String(val).trim() !== "";
+  };
+
+  // ---- REQUIRED FIELDS (per your spec)
+  // Step 1: article status, volume, issue, basic id + journal
+  // Step 2: abstract (editor), title, keyword, doi (file optional)
+  // Step 3: references
+  const requiredFields = {
+    0: ["article_status", "journal_id", "volume_id", "issue_id", "article_id"],
+    1: ["doi", "article_title", "authors", "abstract", "keywords"],
+    2: ["references"],
+  };
+
+  const fieldLabels = {
+    article_status: "Article Status",
+    journal_id: "Journal",
+    volume_id: "Volume",
+    issue_id: "Issue",
+    article_id: "Article ID",
+    doi: "DOI",
+    article_title: "Title",
+    authors: "Authors",
+    abstract: "Abstract",
+    keywords: "Keywords",
+    references: "References",
+  };
+
+  const isStepCompleted = (idx) => {
+    const fields = requiredFields[idx] || [];
+    return fields.every((f) => isFilled(form[f]));
+  };
+
+  const missingInStep = (idx) => {
+    const fields = requiredFields[idx] || [];
+    return fields.filter((f) => !isFilled(form[f]));
+  };
+
+  const stepLabels = ["Basic Info", "Abstract & Upload", "References"];
+
+  // compute invalid fields for current step (for red borders)
+  const invalidSet = useMemo(() => new Set(missingInStep(step)), [step, form]);
+
+  // ---- Steps
+  const steps = [
+{
+  title: "Basic Information",
+  content: (
+    <div className="space-y-6">
+      {/* Article Status + Journal + Volume + Issue + Article ID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <label className="block text-sm font-medium">Article Status</label>
+        {/* Article Status */}
+        <div>
+          <label className="block text-sm font-medium">
+            Article Status <span className="text-red-500">*</span>
+          </label>
           <select
-            value={String(form.article_status || "unpublished")}
+            value={String(form.article_status || "")}
             onChange={(e) => setForm?.({ article_status: e.target.value })}
             disabled={submitting}
-            className="border rounded-md p-2 w-full focus:outline-none focus:ring"
+            className={`border rounded-md p-2 w-full ${
+              invalidSet.has("article_status") ? "border-red-500" : ""
+            }`}
           >
+            <option value="">Select Status</option>
             <option value="unpublished">Unpublished</option>
             <option value="published">Published</option>
           </select>
         </div>
+
+        {/* Journal */}
+        <div>
+          <label className="block text-sm font-medium">
+            Journal <span className="text-red-500">*</span>
+          </label>
+<select
+  value={String(form.journal_id || "")}
+  onChange={handleChange("journal_id")}
+  disabled // ✅ always disabled
+  className="border rounded-md p-2 w-full bg-gray-100 cursor-not-allowed"
+>
+  <option value="">Select Journal</option>
+  {journals.map((j) => (
+    <option key={j.id} value={String(j.id)}>
+      {j.journal_name}
+    </option>
+  ))}
+</select>
+
+        </div>
+
+        {/* Volume */}
+        <div>
+          <label className="block text-sm font-medium">
+            Volume <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={String(form.volume_id || "")}
+            onChange={handleChange("volume_id")}
+            className={`border rounded-md p-2 w-full ${
+              invalidSet.has("volume_id") ? "border-red-500" : ""
+            }`}
+          >
+            <option value="">Select Volume</option>
+            {volumesMeta.map((v) => (
+              <option key={v.id} value={String(v.id)}>
+                {v.volume_number ?? v.volume_label ?? v.id}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Issue */}
+        <div>
+          <label className="block text-sm font-medium">
+            Issue <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={String(form.issue_id || "")}
+            onChange={handleChange("issue_id")}
+            disabled={!form.volume_id}
+            className={`border rounded-md p-2 w-full ${
+              invalidSet.has("issue_id") ? "border-red-500" : ""
+            }`}
+          >
+            <option value="">Select Issue</option>
+            {issuesMeta.map((i) => (
+              <option key={i.id} value={String(i.id)}>
+                {i.issue_number ?? i.issue_label ?? i.id}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Article ID */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium">
+            Article ID <span className="text-red-500">*</span>
+          </label>
+          <Input
+            placeholder="Article ID"
+            value={form.article_id || ""}
+            onChange={handleChange("article_id")}
+            className={invalidSet.has("article_id") ? "border-red-500" : ""}
+          />
+        </div>
       </div>
 
-      {/* JOURNAL / VOLUME / ISSUE / MONTHS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* JOURNAL */}
-        <select
-          value={String(form.journal_id || "")}
-          onChange={handleChange("journal_id")}
-          disabled={disabledJournal}
-          className="border rounded-md p-2 w-full focus:outline-none focus:ring"
-        >
-          <option value="">Select Journal</option>
-          {journals.map((j) => (
-            <option key={j.id} value={String(j.id)}>
-              {j.journal_name}
-            </option>
-          ))}
-        </select>
-
-        {/* VOLUME */}
-        <select
-          value={String(form.volume_id || "")}
-          onChange={handleChange("volume_id")}
-          className="border rounded-md p-2 w-full focus:outline-none focus:ring"
-        >
-          <option value="">Select Volume</option>
-          {volumesMeta.map((v) => (
-            <option key={v.id} value={String(v.id)}>
-              {v.volume_number ?? v.volume_label ?? v.id}
-            </option>
-          ))}
-        </select>
-
-        {/* ISSUE */}
-        <select
-          value={String(form.issue_id || "")}
-          onChange={handleChange("issue_id")}
-          disabled={!form.volume_id}
-          className="border rounded-md p-2 w-full"
-        >
-          <option value="">Select Issue</option>
-          {issuesMeta.map((i) => (
-            <option key={i.id} value={String(i.id)}>
-              {i.issue_number ?? i.issue_label ?? i.id}
-            </option>
-          ))}
-        </select>
-
-        {/* MONTH FROM (display only) */}
-        <select
-          value={String(form.month_from || "")}
-          disabled
-          className="border rounded-md p-2 w-full bg-gray-100 cursor-not-allowed"
-        >
-          <option value={String(form.month_from || "")}>
-            {form.month_from || "From Month"}
-          </option>
-        </select>
-
-        {/* MONTH TO (display only) */}
-        <select
-          value={String(form.month_to || "")}
-          disabled
-          className="border rounded-md p-2 w-full bg-gray-100 cursor-not-allowed"
-        >
-          <option value={String(form.month_to || "")}>
-            {form.month_to || "To Month"}
-          </option>
-        </select>
+      {/* Page From / Page To */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium">Page From</label>
+          <Input
+            type="number"
+            placeholder="Page From"
+            value={form.page_from || ""}
+            onChange={handleChange("page_from")}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Page To</label>
+          <Input
+            type="number"
+            placeholder="Page To"
+            value={form.page_to || ""}
+            onChange={handleChange("page_to")}
+          />
+        </div>
       </div>
 
-      {/* PDF upload */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Article PDF</label>
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={handleFileChange}
-          disabled={submitting}
-          className="block w-full border rounded-md p-2"
-        />
+      {/* Dates */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <label className="block text-sm font-medium">Received</label>
+          <Input
+            type="date"
+            value={form.received || ""}
+            onChange={handleChange("received")}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Revised</label>
+          <Input
+            type="date"
+            value={form.revised || ""}
+            onChange={handleChange("revised")}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Accepted</label>
+          <Input
+            type="date"
+            value={form.accepted || ""}
+            onChange={handleChange("accepted")}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Published</label>
+          <Input
+            type="date"
+            value={form.published || ""}
+            onChange={handleChange("published")}
+          />
+        </div>
+      </div>
+    </div>
+  ),
+},
+    {
+      title: "Abstract, Title, Keywords & Upload",
+      content: (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium">
+              DOI <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder="DOI"
+              value={form.doi || ""}
+              onChange={handleChange("doi")}
+              className={invalidSet.has("doi") ? "border-red-500" : ""}
+            />
+          </div>
 
-        {selectedFile ? (
-          <div className="text-sm">
-            Selected: <strong>{selectedFile.name}</strong>{" "}
-            <button
-              type="button"
-              onClick={() => onFileSelect?.(null)}
-              className="text-blue-600 underline ml-2"
+          <div>
+            <label className="block text-sm font-medium">
+              Title <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder="Title"
+              value={form.article_title || ""}
+              onChange={handleChange("article_title")}
+              className={invalidSet.has("article_title") ? "border-red-500" : ""}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">
+              Authors (comma separated) <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder="Authors"
+              value={form.authors || ""}
+              onChange={handleChange("authors")}
+              className={invalidSet.has("authors") ? "border-red-500" : ""}
+            />
+          </div>
+
+          {/* ✅ Abstract with CKEditor */}
+          <div>
+            <label className="block text-sm font-medium">
+              Abstract <span className="text-red-500">*</span>
+            </label>
+            <div className={invalidSet.has("abstract") ? "ring-1 ring-red-500 rounded" : ""}>
+              <CKEditorField
+                value={form.abstract || ""}
+                onChange={(html) => setForm?.({ abstract: html })}
+                placeholder="Enter abstract…"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">
+              Keywords (comma separated) <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder="Keywords"
+              value={form.keywords || ""}
+              onChange={handleChange("keywords")}
+              className={invalidSet.has("keywords") ? "border-red-500" : ""}
+            />
+          </div>
+
+          {/* PDF Upload (optional) */}
+          <div>
+            <label className="block text-sm font-medium">Article PDF (optional)</label>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={handleFileChange}
               disabled={submitting}
-            >
-              remove
-            </button>
+              className="block w-full border rounded-md p-2"
+            />
+            {selectedFile ? (
+              <div className="text-sm">
+                Selected: <strong>{selectedFile.name}</strong>{" "}
+                <button
+                  type="button"
+                  onClick={() => onFileSelect?.(null)}
+                  className="text-blue-600 underline ml-2"
+                  disabled={submitting}
+                >
+                  remove
+                </button>
+              </div>
+            ) : form.pdf_path ? (
+              <div className="text-sm">
+                Current file:{" "}
+                <a href={form.pdf_path} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                  open
+                </a>
+              </div>
+            ) : (
+              <div className="text-xs text-gray-500">No file selected yet.</div>
+            )}
           </div>
-        ) : form.pdf_path ? (
-          <div className="text-sm">
-            Current file:{" "}
-            <a href={form.pdf_path} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-              open
-            </a>
+        </div>
+      ),
+    },
+    {
+      title: "References",
+      content: (
+        <div>
+          <label className="block text-sm font-medium">
+            References <span className="text-red-500">*</span>
+          </label>
+          <div className={invalidSet.has("references") ? "ring-1 ring-red-500 rounded" : ""}>
+            <CKEditorField
+              value={form.references || ""}
+              onChange={(html) => setForm?.({ references: html })}
+              placeholder="Enter references here…"
+            />
           </div>
-        ) : (
-          <div className="text-xs text-gray-500">
-            No file selected. If you submit without a file, the server will generate a fallback URL.
-          </div>
+        </div>
+      ),
+    },
+  ];
+
+  const canGoNext = isStepCompleted(step);
+
+  const handleNext = () => {
+    if (!canGoNext) return;
+    setStep((s) => Math.min(s + 1, steps.length - 1));
+  };
+
+  const handlePrev = () => setStep((s) => Math.max(s - 1, 0));
+
+  return (
+    <div className="space-y-6">
+      {/* Stepper */}
+<div className="flex items-center justify-between mb-4">
+  {stepLabels.map((label, idx) => {
+    const isActive = idx === step;
+    const completed = isStepCompleted(idx);
+    const hasMissing = !completed; // mark incomplete with !
+
+    return (
+      <div key={idx} className="flex-1 flex items-center">
+        <div
+          className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+            isActive
+              ? "bg-blue-600 text-white border-blue-600"
+              : completed
+              ? "bg-green-500 text-white border-green-500"
+              : "border-red-400 text-red-500"
+          }`}
+          title={
+            completed
+              ? "Completed"
+              : isActive
+              ? "In progress"
+              : "Incomplete"
+          }
+        >
+          {completed ? "✓" : hasMissing ? "!" : idx + 1}
+        </div>
+        <div className="ml-2 text-sm font-medium">{label}</div>
+        {idx < stepLabels.length - 1 && (
+          <div className="flex-1 h-0.5 bg-gray-300 mx-2" />
         )}
       </div>
+    );
+  })}
+</div>
 
-      {/* BASICS */}
-      <Input placeholder="Article ID" value={form.article_id || ""} onChange={handleChange("article_id")} />
-      <Input placeholder="DOI" value={form.doi || ""} onChange={handleChange("doi")} />
-      <Input placeholder="Title" value={form.article_title || ""} onChange={handleChange("article_title")} />
-      <Input placeholder="Authors (comma separated)" value={form.authors || ""} onChange={handleChange("authors")} />
-      <Textarea value={form.abstract || ""} onChange={handleChange("abstract")} placeholder="Abstract" />
-      <Input placeholder="Keywords (comma separated)" value={form.keywords || ""} onChange={handleChange("keywords")} />
 
-      <div className="grid grid-cols-2 gap-4">
-        <Input type="number" placeholder="Page From" value={form.page_from || ""} onChange={handleChange("page_from")} />
-        <Input type="number" placeholder="Page To" value={form.page_to || ""} onChange={handleChange("page_to")} />
-      </div>
+      {/* If missing in current step, show a small helper */}
+      {!canGoNext && missingInStep(step).length > 0 && (
+        <div className="text-xs text-red-600">
+          Please complete: {missingInStep(step).map((f) => fieldLabels[f] || f).join(", ")}
+        </div>
+      )}
 
-      {/* REFERENCES (CKEditor -> HTML string) */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium">References</label>
-        <CKEditorField
-          value={form.references || ""}
-          onChange={(html) => setForm?.({ references: html })}
-          placeholder="Enter references here…"
-        />
-      </div>
+      {/* Current Step */}
+      <h2 className="text-lg font-semibold">{steps[step].title}</h2>
+      <div>{steps[step].content}</div>
 
-      {/* DATES */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Input type="date" value={form.received || ""} onChange={handleChange("received")} />
-        <Input type="date" value={form.revised || ""} onChange={handleChange("revised")} />
-        <Input type="date" value={form.accepted || ""} onChange={handleChange("accepted")} />
-        <Input type="date" value={form.published || ""} onChange={handleChange("published")} />
-      </div>
-
-      <div className="flex justify-end">
-        <Button onClick={onSubmit} disabled={submitting}>
-          {submitting ? "Saving..." : submitLabel}
+      {/* Navigation */}
+      <div className="flex justify-between pt-4">
+        <Button variant="outline" disabled={step === 0} onClick={handlePrev}>
+          Previous
         </Button>
+        {step < steps.length - 1 ? (
+          <Button onClick={handleNext} disabled={!canGoNext}>
+            Next
+          </Button>
+        ) : (
+          <Button onClick={onSubmit} disabled={submitting || !isStepCompleted(step)}>
+            {submitting ? "Saving..." : submitLabel}
+          </Button>
+        )}
       </div>
     </div>
   );
 }
-

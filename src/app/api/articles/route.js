@@ -425,30 +425,53 @@ export async function POST(req) {
 
     const titleNorm = normalizeTitle(article_title);
 
-    // ── Validation
+    // ── Required checks
     if (!journal_id || !volume_id || !issue_id || !article_id) {
       return NextResponse.json(
-        { success: false, message: "journal_id, volume_id, issue_id and article_id are required." },
+        {
+          success: false,
+          message:
+            "journal_id, volume_id, issue_id and article_id are required.",
+        },
         { status: 400 }
       );
     }
 
-    // journal prefix (e.g., DS-AIR -> AIR)
-    const [[jr]] = await conn.query("SELECT short_name FROM journals WHERE id = ? LIMIT 1", [journal_id]);
-    if (!jr) return NextResponse.json({ success: false, message: "Invalid journal_id." }, { status: 400 });
+    // ── Journal prefix check (e.g. DS-AIR -> AIR)
+    const [[jr]] = await conn.query(
+      "SELECT short_name FROM journals WHERE id = ? LIMIT 1",
+      [journal_id]
+    );
+    if (!jr)
+      return NextResponse.json(
+        { success: false, message: "Invalid journal_id." },
+        { status: 400 }
+      );
 
-    const expectedPrefix = (jr.short_name || "").replace(/^DS-/, "").trim().toUpperCase();
+    const expectedPrefix = (jr.short_name || "")
+      .replace(/^DS-/, "")
+      .trim()
+      .toUpperCase();
     const idPrefix = String(article_id).split("-")[0]?.toUpperCase();
     if (expectedPrefix !== idPrefix) {
       return NextResponse.json(
-        { success: false, message: `Article ID must start with "${expectedPrefix}-" (got "${idPrefix}-").` },
+        {
+          success: false,
+          message: `Article ID must start with "${expectedPrefix}-" (got "${idPrefix}-").`,
+        },
         { status: 400 }
       );
     }
 
-    // volume / issue numbers
-    const [[volRow]] = await conn.query("SELECT volume_number FROM volumes WHERE id = ? LIMIT 1", [volume_id]);
-    const [[issRow]] = await conn.query("SELECT issue_number FROM issues WHERE id = ? LIMIT 1", [issue_id]);
+    // ── Volume / Issue consistency check
+    const [[volRow]] = await conn.query(
+      "SELECT volume_number FROM volumes WHERE id = ? LIMIT 1",
+      [volume_id]
+    );
+    const [[issRow]] = await conn.query(
+      "SELECT issue_number FROM issues WHERE id = ? LIMIT 1",
+      [issue_id]
+    );
     if (!volRow || !issRow) {
       return NextResponse.json(
         { success: false, message: "Invalid volume_id or issue_id." },
@@ -458,23 +481,29 @@ export async function POST(req) {
     const volNum = String(volRow.volume_number);
     const issNum = String(issRow.issue_number);
 
-    // enforce -V<vol>I<issue> in article_id
     const m = String(article_id).match(/-V(\d+)I(\d+)/i);
     if (!m) {
       return NextResponse.json(
-        { success: false, message: 'Article ID must include "-V<vol>I<issue>" (e.g. AIR-V1I1P101).' },
+        {
+          success: false,
+          message:
+            'Article ID must include "-V<vol>I<issue>" (e.g. AIR-V1I1P101).',
+        },
         { status: 400 }
       );
     }
     const [, volInId, issInId] = m;
     if (String(volInId) !== volNum || String(issInId) !== issNum) {
       return NextResponse.json(
-        { success: false, message: `Article ID volume/issue must be V${volNum}I${issNum} (got V${volInId}I${issInId}).` },
+        {
+          success: false,
+          message: `Article ID volume/issue must be V${volNum}I${issNum} (got V${volInId}I${issInId}).`,
+        },
         { status: 400 }
       );
     }
 
-    // unique article_id (except self)
+    // ── Unique article_id
     const [dupes] = await conn.query(
       "SELECT id FROM articles WHERE article_id = ? AND id <> ? LIMIT 1",
       [article_id, isEdit ? id : 0]
@@ -486,9 +515,12 @@ export async function POST(req) {
       );
     }
 
-    // title required + unique (using generated column title_norm)
+    // ── Title required + unique
     if (!article_title || !String(article_title).trim()) {
-      return NextResponse.json({ success: false, message: "Title is required." }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Title is required." },
+        { status: 400 }
+      );
     }
     const [titleDupes] = await conn.query(
       `SELECT id FROM articles WHERE journal_id = ? AND title_norm = ? AND id <> ? LIMIT 1`,
@@ -496,23 +528,68 @@ export async function POST(req) {
     );
     if (titleDupes.length) {
       return NextResponse.json(
-        { success: false, message: "An article with the same title already exists in this journal." },
+        {
+          success: false,
+          message:
+            "An article with the same title already exists in this journal.",
+        },
         { status: 409 }
       );
     }
 
-    // ── PDF path
+    // ── DOI unique
+    if (doi && String(doi).trim()) {
+      const [doiDupes] = await conn.query(
+        `SELECT id FROM articles WHERE doi = ? AND id <> ? LIMIT 1`,
+        [doi, isEdit ? id : 0]
+      );
+      if (doiDupes.length) {
+        return NextResponse.json(
+          { success: false, message: "Another article already uses this DOI." },
+          { status: 409 }
+        );
+      }
+    }
+
+    // ── PDF path (build first)
     let pdfPath;
     const uploaded = files?.pdf?.[0];
-
     if (uploaded?.relativePath) {
-      pdfPath = uploaded.relativePath.startsWith("/") ? uploaded.relativePath : `/${uploaded.relativePath}`;
+      pdfPath = uploaded.relativePath.startsWith("/")
+        ? uploaded.relativePath
+        : `/${uploaded.relativePath}`;
     } else if (isEdit) {
-      const [[row]] = await conn.query(`SELECT pdf_path FROM articles WHERE id = ?`, [id]);
+      const [[row]] = await conn.query(
+        `SELECT pdf_path FROM articles WHERE id = ?`,
+        [id]
+      );
       pdfPath = row?.pdf_path || null;
     } else {
       const prefix = idPrefix;
-      pdfPath = `/${path.posix.join("upload", prefix, `volume-${volNum}`, `issue-${issNum}`, `${article_id}.pdf`)}`;
+      pdfPath = `/${path.posix.join(
+        "upload",
+        prefix,
+        `volume-${volNum}`,
+        `issue-${issNum}`,
+        `${article_id}.pdf`
+      )}`;
+    }
+
+    // ── PDF unique
+    if (pdfPath) {
+      const [pdfDupes] = await conn.query(
+        `SELECT id FROM articles WHERE pdf_path = ? AND id <> ? LIMIT 1`,
+        [pdfPath, isEdit ? id : 0]
+      );
+      if (pdfDupes.length) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Another article already uses the same PDF file.",
+          },
+          { status: 409 }
+        );
+      }
     }
 
     // ── Normalize arrays
@@ -542,9 +619,8 @@ export async function POST(req) {
       page_from: toNull(page_from),
       page_to: toNull(page_to),
       authors: JSON.stringify(authorArray),
-      abstract: toNull(abstract),
+      abstract: abstract === undefined ? null : String(abstract),
       keywords: JSON.stringify(keywordArray),
-      // ⬇️ Preserve CKEditor HTML (do NOT trim/sanitize here)
       references: references === undefined ? null : String(references),
       received: toNull(received),
       revised: toNull(revised),
@@ -568,16 +644,34 @@ export async function POST(req) {
         LIMIT 1
       `;
       const params = [
-        payload.journal_id, payload.volume_id, payload.issue_id,
-        payload.month_from, payload.month_to,
-        payload.article_id, payload.doi, payload.article_title,
-        payload.page_from, payload.page_to, payload.authors, payload.abstract, payload.keywords, payload.references,
-        payload.received, payload.revised, payload.accepted, payload.published,
-        payload.pdf_path, payload.article_status,
+        payload.journal_id,
+        payload.volume_id,
+        payload.issue_id,
+        payload.month_from,
+        payload.month_to,
+        payload.article_id,
+        payload.doi,
+        payload.article_title,
+        payload.page_from,
+        payload.page_to,
+        payload.authors,
+        payload.abstract,
+        payload.keywords,
+        payload.references,
+        payload.received,
+        payload.revised,
+        payload.accepted,
+        payload.published,
+        payload.pdf_path,
+        payload.article_status,
         id,
       ];
       const [result] = await conn.query(sql, params);
-      return NextResponse.json({ success: true, message: "Article updated successfully", affectedRows: result.affectedRows });
+      return NextResponse.json({
+        success: true,
+        message: "Article updated successfully",
+        affectedRows: result.affectedRows,
+      });
     } else {
       const sql = `
         INSERT INTO articles (
@@ -591,26 +685,49 @@ export async function POST(req) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `;
       const params = [
-        payload.journal_id, payload.volume_id, payload.issue_id,
-        payload.month_from, payload.month_to,
-        payload.article_id, payload.doi, payload.article_title,
-        payload.page_from, payload.page_to, payload.authors, payload.abstract, payload.keywords, payload.references,
-        payload.received, payload.revised, payload.accepted, payload.published,
-        payload.pdf_path, payload.article_status,
+        payload.journal_id,
+        payload.volume_id,
+        payload.issue_id,
+        payload.month_from,
+        payload.month_to,
+        payload.article_id,
+        payload.doi,
+        payload.article_title,
+        payload.page_from,
+        payload.page_to,
+        payload.authors,
+        payload.abstract,
+        payload.keywords,
+        payload.references,
+        payload.received,
+        payload.revised,
+        payload.accepted,
+        payload.published,
+        payload.pdf_path,
+        payload.article_status,
       ];
       const [result] = await conn.query(sql, params);
-      return NextResponse.json({ success: true, message: "Article submitted successfully", insertedId: result.insertId });
+      return NextResponse.json({
+        success: true,
+        message: "Article submitted successfully",
+        insertedId: result.insertId,
+      });
     }
   } catch (e) {
     console.error("POST /api/articles error:", e);
     return NextResponse.json(
-      { success: false, message: "Failed to save article", error: e.sqlMessage ?? e.message ?? "Unknown error" },
+      {
+        success: false,
+        message: "Failed to save article",
+        error: e.sqlMessage ?? e.message ?? "Unknown error",
+      },
       { status: 500 }
     );
   } finally {
     await conn.end();
   }
 }
+
 
 // export async function GET(req) {
 //   const { searchParams } = new URL(req.url);
@@ -746,11 +863,17 @@ export async function GET(req) {
 export async function DELETE(req) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
-  if (!id) return NextResponse.json({ success: false, error: "Article ID is required" }, { status: 400 });
+  if (!id)
+    return NextResponse.json({ success: false, error: "Article ID is required" }, { status: 400 });
 
   const conn = await createDbConnection();
   try {
     const [[article]] = await conn.query("SELECT pdf_path FROM articles WHERE id = ?", [id]);
+    if (!article) {
+      return NextResponse.json({ success: false, message: "Article not found" }, { status: 404 });
+    }
+
+    // delete PDF from disk if exists
     if (article?.pdf_path) {
       const localPath = path.join(process.cwd(), "public", article.pdf_path);
       try {
@@ -761,7 +884,7 @@ export async function DELETE(req) {
     }
 
     await conn.query("DELETE FROM articles WHERE id = ?", [id]);
-    return NextResponse.json({ success: true, message: "Article deleted" });
+    return NextResponse.json({ success: true, message: "Article deleted", deletedId: id });
   } catch (err) {
     console.error("DELETE /api/articles error:", err);
     return NextResponse.json(
@@ -772,3 +895,4 @@ export async function DELETE(req) {
     await conn.end();
   }
 }
+

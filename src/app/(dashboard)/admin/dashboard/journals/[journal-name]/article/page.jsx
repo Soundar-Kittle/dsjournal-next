@@ -91,22 +91,51 @@ const articleIdParam = searchParams.get("article_id");
   }, [jid]);
 
   /** Load issues when volume changes */
+  // useEffect(() => {
+  //   if (!form.volume_id) {
+  //     setIssuesMeta([]);
+  //     setMonths([]);
+  //     return;
+  //   }
+  //   (async () => {
+  //     try {
+  //       const res = await fetch(`/api/issues?journal_id=${jid}&volume_id=${form.volume_id}`);
+  //       const data = await res.json();
+  //       if (data?.success) setIssuesMeta(data.issues);
+  //     } catch (e) {
+  //       console.error("issue load error", e);
+  //     }
+  //   })();
+  // }, [form.volume_id, jid]);
+
   useEffect(() => {
-    if (!form.volume_id) {
-      setIssuesMeta([]);
-      setMonths([]);
-      return;
-    }
-    (async () => {
-      try {
-        const res = await fetch(`/api/issues?journal_id=${jid}&volume_id=${form.volume_id}`);
-        const data = await res.json();
-        if (data?.success) setIssuesMeta(data.issues);
-      } catch (e) {
-        console.error("issue load error", e);
+  if (!form.volume_id) {
+    setIssuesMeta([]);
+    setMonths([]);
+    setForm((prev) => ({ ...prev, issue_id: "", month_from: "", month_to: "" }));
+    return;
+  }
+  (async () => {
+    try {
+      const res = await fetch(`/api/issues?journal_id=${jid}&volume_id=${form.volume_id}`);
+      const data = await res.json();
+      if (data?.success) {
+        const issues = data.issues || [];
+        setIssuesMeta(issues);
+
+        if (issues.length > 0) {
+          // auto-pick first issue if none is selected already
+          setForm((prev) => ({
+            ...prev,
+            issue_id: prev.issue_id || String(issues[0].id),
+          }));
+        }
       }
-    })();
-  }, [form.volume_id, jid]);
+    } catch (e) {
+      console.error("issue load error", e);
+    }
+  })();
+}, [form.volume_id, jid]);
 
   /** Load months-group when issue changes. 
    *  If editing and months already present, DO NOT overwrite.
@@ -265,62 +294,95 @@ useEffect(() => {
   };
 
   /** Submit (create or update) */
-  const onSubmit = async () => {
-    try {
-      if (!form.journal_id || !form.volume_id || !form.issue_id) {
-        alert("Please select Journal, Volume and Issue.");
-        return;
-      }
-      if (!form.article_title) {
-        alert("Please enter the article title.");
-        return;
-      }
-
-      setSubmitting(true);
-
-      const fd = new FormData();
-      if (form.id) fd.append("id", String(form.id)); // <-- makes it an update
-
-      fd.append("journal_id", String(form.journal_id || ""));
-      fd.append("volume_id", String(form.volume_id || ""));
-      fd.append("issue_id", String(form.issue_id || ""));
-      fd.append("month_from", String(form.month_from || ""));
-      fd.append("month_to", String(form.month_to || ""));
-      fd.append("article_id", String(form.article_id || ""));
-      fd.append("doi", String(form.doi || ""));
-      fd.append("article_title", String(form.article_title || ""));
-      fd.append("authors", String(form.authors || "")); // comma-separated; server splits
-      fd.append("abstract", String(form.abstract || ""));
-      fd.append("keywords", String(form.keywords || "")); // comma-separated
-      fd.append("references", String(form.references || ""));
-      fd.append("received", String(form.received || ""));
-      fd.append("revised", String(form.revised || ""));
-      fd.append("accepted", String(form.accepted || ""));
-      fd.append("published", String(form.published || ""));
-      fd.append("page_from", String(form.page_from || ""));
-      fd.append("page_to", String(form.page_to || ""));
-      fd.append("article_status", String(form.article_status || "unpublished"));
-
-      if (pdfFile) fd.append("pdf", pdfFile);
-
-      const res = await fetch("/api/articles", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.error || data?.message || "Failed to save article");
-      }
-
-      alert(isEdit ? "Article updated." : "Article created.");
-      if (!isEdit) {
-        setPdfFile(null);
-        // optionally reset fields on create
-      }
-    } catch (err) {
-      console.error("Save article error:", err);
-      alert(err.message || "Something went wrong");
-    } finally {
-      setSubmitting(false);
+/** Submit (create or update) */
+const onSubmit = async () => {
+  try {
+    if (!form.journal_id || !form.volume_id || !form.issue_id) {
+      alert("Please select Journal, Volume and Issue.");
+      return;
     }
-  };
+    if (!form.article_title) {
+      alert("Please enter the article title.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    const fd = new FormData();
+    if (form.id) fd.append("id", String(form.id)); // <-- makes it an update
+
+    fd.append("journal_id", String(form.journal_id || ""));
+    fd.append("volume_id", String(form.volume_id || ""));
+    fd.append("issue_id", String(form.issue_id || ""));
+    fd.append("month_from", String(form.month_from || ""));
+    fd.append("month_to", String(form.month_to || ""));
+    fd.append("article_id", String(form.article_id || ""));
+    fd.append("doi", String(form.doi || ""));
+    fd.append("article_title", String(form.article_title || ""));
+    fd.append("authors", String(form.authors || "")); // comma-separated; server splits
+    fd.append("abstract", String(form.abstract || ""));
+    fd.append("keywords", String(form.keywords || "")); // comma-separated
+    fd.append("references", String(form.references || ""));
+    fd.append("received", String(form.received || ""));
+    fd.append("revised", String(form.revised || ""));
+    fd.append("accepted", String(form.accepted || ""));
+    fd.append("published", String(form.published || ""));
+    fd.append("page_from", String(form.page_from || ""));
+    fd.append("page_to", String(form.page_to || ""));
+    fd.append("article_status", String(form.article_status || "unpublished"));
+
+    if (pdfFile) fd.append("pdf", pdfFile);
+
+    const res = await fetch("/api/articles", { method: "POST", body: fd });
+
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error("Server returned invalid JSON.");
+    }
+
+    if (!res.ok || !data?.success) {
+      // ✅ Show backend validation messages
+      throw new Error(data?.message || data?.error || "Failed to save article");
+    }
+
+    alert(isEdit ? "Article updated successfully." : "Article created successfully.");
+
+if (!isEdit) {
+  setPdfFile(null);
+  setForm({
+    id: "",
+    article_status: "unpublished",
+    journal_id: jid || "",
+    volume_id: "",
+    issue_id: "",
+    month_from: "",
+    month_to: "",
+    article_id: "",
+    doi: "",
+    article_title: "",
+    authors: "",
+    abstract: "",
+    keywords: "",
+    page_from: "",
+    page_to: "",
+    references: "",
+    received: "",
+    revised: "",
+    accepted: "",
+    published: "",
+    pdf_path: "",
+  });
+}
+
+  } catch (err) {
+    console.error("Save article error:", err);
+    alert(err.message || "Something went wrong. Please try again.");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <div className="max-w-6xl mx-auto p-6">

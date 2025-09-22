@@ -370,33 +370,6 @@ export default function Page() {
   const [volumesMeta, setVolumesMeta] = useState([]);
   const [issuesMeta, setIssuesMeta] = useState([]);
 
-  // Articles
-  // const { data: articles = [] } = useQuery({
-  //   queryKey: ["articles", jid],
-  //   queryFn: async () => {
-  //     const res = await fetch(`/api/articles?journal_id=${jid}`);
-  //     const data = await res.json();
-  //     if (!data.success || !Array.isArray(data.articles)) return [];
-  //     return data.articles.map((a) => ({
-  //       ...a,
-  //       title: a.article_title || "",
-  //       authors: safeParseArray(a.authors),
-  //       key_words: safeParseArray(a.keywords),
-
-  //       // keep IDs for filtering; we'll render numbers via helpers
-  //       volume: String(a.volume_id ?? ""),
-  //       issue: String(a.issue_id ?? ""),
-
-  //       year: a.published ? new Date(a.published).getFullYear().toString() : "",
-  //       article_file_path: a.pdf_path || "",
-  //       received_date: a.received || "",
-  //       revised_date: a.revised || "",
-  //       accepted_date: a.accepted || "",
-  //       published_date: a.published || "",
-  //     }));
-  //   },
-  //   enabled: !!jid,
-  // });
 const { data: articles = [] } = useQuery({
   queryKey: ["articles", jid],
   queryFn: async () => {
@@ -505,31 +478,47 @@ const { data: articles = [] } = useQuery({
       },
       { header: "Year", accessorKey: "year" },
       { header: "DOI", accessorKey: "doi" },
-      {
-        header: "Actions",
-        cell: ({ row }) => (
-          <div className="space-x-2">
-            <button onClick={() => setViewArticle(row.original)} className="text-blue-600">
-              View
-            </button>
-            <button
-              onClick={() => {
-                const { id, article_id, journal_id } = row.original;
-                const journalCode = String(article_id || "").split("-")[0] || "journal";
-                const qs = id ? `id=${encodeURIComponent(id)}` : `article_id=${encodeURIComponent(article_id)}`;
-                router.push(
-                  `/dashboard/journals/${journalCode}/article?jid=${encodeURIComponent(journal_id)}&edit=1&${qs}`
-                );
-              }}
-            >
-              Edit
-            </button>
-            <button onClick={() => handleDelete(row.original.article_id)} className="text-red-600">
-              Delete
-            </button>
-          </div>
-        ),
-      },
+    {
+  header: "Actions",
+  cell: ({ row }) => (
+    <div className="space-x-2">
+      <button
+        onClick={() => setViewArticle(row.original)}
+        className="text-blue-600"
+      >
+        View
+      </button>
+
+      <button
+        onClick={() => {
+          const { id, article_id, journal_id } = row.original;
+          // 👇 compute here
+          const journalCode = String(article_id || "").split("-")[0] || "journal";
+          const qs = id
+            ? `id=${encodeURIComponent(id)}`
+            : `article_id=${encodeURIComponent(article_id)}`;
+
+          setViewArticle(null); // close modal
+          router.push(
+            `/admin/dashboard/journals/${journalCode}/article?jid=${encodeURIComponent(
+              journal_id
+            )}&edit=1&${qs}`
+          );
+        }}
+        className="text-green-600"
+      >
+        Edit
+      </button>
+
+      <button
+        onClick={() => handleDelete(row.original.article_id)}
+        className="text-red-600"
+      >
+        Delete
+      </button>
+    </div>
+  ),
+},
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -733,12 +722,13 @@ const { data: articles = [] } = useQuery({
                 })}
               </div>
 
-              <div className="mb-4">
-                <h4 className="font-semibold mb-1 text-gray-800">Abstract</h4>
-                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm sm:text-base">
-                  {viewArticle.abstract}
-                </p>
-              </div>
+        <div className="mb-4">
+  <h4 className="font-semibold mb-1 text-gray-800">Abstract</h4>
+  <div
+    className="text-gray-700 leading-relaxed text-sm sm:text-base prose max-w-none"
+    dangerouslySetInnerHTML={{ __html: viewArticle.abstract }}
+  />
+</div>
 
               <div className="mb-4">
                 <h4 className="font-semibold mb-1 text-gray-800">Keywords</h4>
