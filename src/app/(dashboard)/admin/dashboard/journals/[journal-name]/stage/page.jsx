@@ -238,35 +238,36 @@ useEffect(() => {
 
 
 
-  const updateStaged = async () => {
-    if (!row) return;
-    setSaving(true);
-    try {
-      const r = await fetch(`/api/articles/stage/${stagedId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: row.title,
-          keywords: row.keywords,
-          pages_from: row.pages_from,
-          pages_to: row.pages_to,
-          received_date: row.received_date,
-          revised_date: row.revised_date,
-          accepted_date: row.accepted_date,
-          published_date: row.published_date,
-          article_id: row.article_id,
-          authors,
-          references: refs    // raw HTML string straight from CKEditor
-        }),
-      });
-      const j = await r.json();
-      if (!j.success) throw new Error(j.message || "Save failed");
-    } catch (e) {
-      alert(e.message || String(e));
-    } finally {
-      setSaving(false);
-    }
-  };
+ const updateStaged = async () => {
+  if (!row) return;
+  setSaving(true);
+  try {
+    const r = await fetch(`/api/articles/stage/${stagedId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: row.title,
+        keywords: row.keywords,
+        pages_from: row.pages_from,
+        pages_to: row.pages_to,
+        received_date: row.received_date,
+        revised_date: row.revised_date,
+        accepted_date: row.accepted_date,
+        published_date: row.published_date,
+        article_id: row.article_id,
+        authors,
+        references: refs   // ✅ send CKEditor HTML from state
+      }),
+    });
+    const j = await r.json();
+    if (!j.success) throw new Error(j.message || "Save failed");
+  } catch (e) {
+    alert(e.message || String(e));
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   const accept = async () => {
     if (!stagedId) return;
@@ -369,9 +370,9 @@ useEffect(() => {
 
             {/* === References Section === */}
               <section className="w-full max-w-[720px] ml-auto pr-2">
-            <CKEditorField
+<CKEditorField
   value={refs || ""}
-  onChange={(html) => setRefs(html)}   // keep full HTML (includes <br>)
+  onChange={(html) => setRefs(html)}   // full HTML
   placeholder="Enter references here…"
 />
               </section>

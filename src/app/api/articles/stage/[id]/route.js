@@ -98,8 +98,8 @@ export async function GET(_req, context) {
 }
 
 export async function PUT(req, context) {
-  // 🔑 await params from context
-  const { id } = await context.params;
+  // 🔑 use params directly (no await)
+  const { id } = context.params;
 
   try {
     const body = await req.json();
@@ -113,21 +113,29 @@ export async function PUT(req, context) {
       accepted_date,
       published_date,
       article_id,
-      // This must be the CKEditor HTML string (innerHTML)
-      references
+      references // HTML string from CKEditor
     } = body;
 
     const conn = await createDbConnection();
     try {
       await conn.beginTransaction();
 
-      // 🔒 Use placeholders and backtick the reserved column name
       const sql = `
         UPDATE \`staged_articles\`
-        SET \`title\`=?, \`keywords\`=?, \`pages_from\`=?, \`pages_to\`=?,
-            \`received_date\`=?, \`revised_date\`=?, \`accepted_date\`=?, \`published_date\`=?,
-            \`article_id\`=?, \`references\`=?, \`status\`='reviewing', \`updated_at\`=CURRENT_TIMESTAMP
+        SET \`title\`=?,
+            \`keywords\`=?,
+            \`pages_from\`=?,
+            \`pages_to\`=?,
+            \`received_date\`=?,
+            \`revised_date\`=?,
+            \`accepted_date\`=?,
+            \`published_date\`=?,
+            \`article_id\`=?,
+            \`references\`=?,   -- ✅ backticks
+            \`status\`='reviewing',
+            \`updated_at\`=CURRENT_TIMESTAMP
         WHERE \`id\`=?`;
+
       const vals = [
         title ?? null,
         keywords ?? null,
@@ -138,12 +146,13 @@ export async function PUT(req, context) {
         accepted_date ?? null,
         published_date ?? null,
         article_id ?? null,
-        (typeof references === "string" ? references : "") ?? null, // save raw HTML
+        typeof references === "string" ? references : null,
         id
       ];
 
       await conn.query(sql, vals);
       await conn.commit();
+
       return NextResponse.json({ success: true });
     } catch (err) {
       await conn.rollback();
