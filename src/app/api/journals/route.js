@@ -488,52 +488,114 @@ export async function PATCH(req) {
 // }
 
 // ---------- READ ----------
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const id    = searchParams.get("jid") || searchParams.get("id");
+//   const short = searchParams.get("short");
+//   const slug  = searchParams.get("slug"); // cleaned slug like "lll"
+
+//   let conn;
+//   try {
+//     conn = await createDbConnection();
+//     let result;
+
+//     if (id) {
+//       [result] = await conn.query("SELECT * FROM journals WHERE id = ? LIMIT 1", [id]);
+//     } else if (short) {
+//       [result] = await conn.query(
+//         "SELECT * FROM journals WHERE LOWER(TRIM(short_name)) = LOWER(TRIM(?)) LIMIT 1",
+//         [short]
+//       );
+//     } else if (slug) {
+//       // match DS- prefix variants OR explicit slug/alias columns if you have them
+//       const [rows] = await conn.query(
+//         `SELECT * FROM journals
+//          WHERE
+//            REPLACE(LOWER(TRIM(short_name)), 'ds-', '') = LOWER(TRIM(?))
+//            OR REPLACE(LOWER(TRIM(short_name)), 'ds', '') = LOWER(TRIM(?))
+//            OR LOWER(TRIM(short_name)) = LOWER(TRIM(?))          -- allow exact short_name
+//            OR LOWER(TRIM(slug))       = LOWER(TRIM(?))          -- if you have a slug column
+//            OR LOWER(TRIM(alias))      = LOWER(TRIM(?))          -- if you have an alias column
+//          LIMIT 1`,
+//         [slug, slug, slug, slug, slug]
+//       );
+//       result = rows;
+//     } else {
+//       [result] = await conn.query(
+//         "SELECT * FROM journals ORDER BY sort_index ASC, id ASC"
+//       );
+//     }
+
+//     await conn.end();
+//     const rows = Array.isArray(result) ? result : result ? [result] : [];
+//     return NextResponse.json({ success: true, journals: rows });
+//   } catch (err) {
+//     if (conn) try { await conn.end(); } catch {}
+//     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+//   }
+// }
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const id    = searchParams.get("jid") || searchParams.get("id");
-  const short = searchParams.get("short");
-  const slug  = searchParams.get("slug"); // cleaned slug like "lll"
+  const id = searchParams.get("id");
+  const article_id = searchParams.get("article_id");
+  const journal_id = searchParams.get("journal_id");
+  const conn = await createDbConnection();
 
-  let conn;
   try {
-    conn = await createDbConnection();
-    let result;
+    if (id || article_id) {
+      const where = id ? "a.id = ?" : "a.article_id = ?";
+      const val = id ? Number(id) : article_id;
 
-    if (id) {
-      [result] = await conn.query("SELECT * FROM journals WHERE id = ? LIMIT 1", [id]);
-    } else if (short) {
-      [result] = await conn.query(
-        "SELECT * FROM journals WHERE LOWER(TRIM(short_name)) = LOWER(TRIM(?)) LIMIT 1",
-        [short]
-      );
-    } else if (slug) {
-      // match DS- prefix variants OR explicit slug/alias columns if you have them
       const [rows] = await conn.query(
-        `SELECT * FROM journals
-         WHERE
-           REPLACE(LOWER(TRIM(short_name)), 'ds-', '') = LOWER(TRIM(?))
-           OR REPLACE(LOWER(TRIM(short_name)), 'ds', '') = LOWER(TRIM(?))
-           OR LOWER(TRIM(short_name)) = LOWER(TRIM(?))          -- allow exact short_name
-           OR LOWER(TRIM(slug))       = LOWER(TRIM(?))          -- if you have a slug column
-           OR LOWER(TRIM(alias))      = LOWER(TRIM(?))          -- if you have an alias column
+        `SELECT
+           a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
+           a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
+           a.authors, a.abstract, a.keywords, a.\`references\`,
+           DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
+           DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
+           DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
+           DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
+           a.pdf_path, a.article_status, a.created_at, a.updated_at,
+           v.volume_number,
+           i.issue_number
+         FROM articles a
+         LEFT JOIN volumes v ON v.id = a.volume_id
+         LEFT JOIN issues  i ON i.id = a.issue_id
+         WHERE ${where}
          LIMIT 1`,
-        [slug, slug, slug, slug, slug]
+        [val]
       );
-      result = rows;
-    } else {
-      [result] = await conn.query(
-        "SELECT * FROM journals ORDER BY sort_index ASC, id ASC"
-      );
+      if (!rows.length) return NextResponse.json({ success: false, message: "Article not found" }, { status: 404 });
+      return NextResponse.json({ success: true, article: rows[0] });
     }
 
+    let sql = `
+      SELECT
+        a.*,
+        v.volume_number,
+        i.issue_number
+      FROM articles a
+      LEFT JOIN volumes v ON v.id = a.volume_id
+      LEFT JOIN issues  i ON i.id = a.issue_id
+    `;
+    const params = [];
+    if (journal_id) {
+      sql += ` WHERE a.journal_id = ?`;
+      params.push(journal_id);
+    }
+    const [rows] = await conn.query(sql, params);
+    return NextResponse.json({ success: true, articles: rows });
+  } catch (e) {
+    console.error("GET /api/articles error:", e);
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch articles", error: e.sqlMessage ?? e.message },
+      { status: 500 }
+    );
+  } finally {
     await conn.end();
-    const rows = Array.isArray(result) ? result : result ? [result] : [];
-    return NextResponse.json({ success: true, journals: rows });
-  } catch (err) {
-    if (conn) try { await conn.end(); } catch {}
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
 
 // ---------- DELETE ----------
 export async function DELETE(req) {

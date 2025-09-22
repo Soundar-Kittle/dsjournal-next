@@ -1041,31 +1041,35 @@
 
 "use client";
 
+import { useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import CKEditorField from "./CKEditorField";
 
 export default function ArticleForm({
-  form,
+  form = {},
   setForm,
-  onSubmit,
-  submitting = false,     // <— new
+  onSubmit,                 // parent should submit with FormData (includes references)
+  submitting = false,
   submitLabel = "Submit",
   journals = [],
   volumesMeta = [],
   issuesMeta = [],
   months = [],
   disabledJournal = false,
-   onFileSelect,         // ⬅️ NEW
-  selectedFile,         // ⬅️ NEW (File or null)
+  onFileSelect,            // (file: File | null) => void
+  selectedFile,            // File | null
 }) {
-const handleChange = (key) => (e) => {
-    const value = e.target.value;
-    setForm({ [key]: value });
-  };
+  const handleChange = useCallback(
+    (key) => (e) => {
+      const value = e.target.value;
+      setForm?.({ [key]: value });
+    },
+    [setForm]
+  );
 
-   const handleFileChange = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0] || null;
     onFileSelect?.(file);
   };
@@ -1073,24 +1077,26 @@ const handleChange = (key) => (e) => {
   return (
     <div className="space-y-4">
       {/* ARTICLE STATUS */}
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div className="space-y-1">
-    <label className="block text-sm font-medium">Article Status</label>
-    <select
-      value={String(form.article_status || "unpublished")}
-      onChange={(e) => setForm({ article_status: e.target.value })}
-      disabled={submitting}
-      className="border rounded-md p-2 w-full focus:outline-none focus:ring"
-    >
-      <option value="unpublished">Unpublished</option>
-      <option value="published">Published</option>
-    </select>
-  </div>
-</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium">Article Status</label>
+          <select
+            value={String(form.article_status || "unpublished")}
+            onChange={(e) => setForm?.({ article_status: e.target.value })}
+            disabled={submitting}
+            className="border rounded-md p-2 w-full focus:outline-none focus:ring"
+          >
+            <option value="unpublished">Unpublished</option>
+            <option value="published">Published</option>
+          </select>
+        </div>
+      </div>
+
+      {/* JOURNAL / VOLUME / ISSUE / MONTHS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* JOURNAL */}
         <select
-          value={String(form.journal_id)}
+          value={String(form.journal_id || "")}
           onChange={handleChange("journal_id")}
           disabled={disabledJournal}
           className="border rounded-md p-2 w-full focus:outline-none focus:ring"
@@ -1105,7 +1111,7 @@ const handleChange = (key) => (e) => {
 
         {/* VOLUME */}
         <select
-          value={String(form.volume_id)}
+          value={String(form.volume_id || "")}
           onChange={handleChange("volume_id")}
           className="border rounded-md p-2 w-full focus:outline-none focus:ring"
         >
@@ -1119,7 +1125,7 @@ const handleChange = (key) => (e) => {
 
         {/* ISSUE */}
         <select
-          value={String(form.issue_id)}
+          value={String(form.issue_id || "")}
           onChange={handleChange("issue_id")}
           disabled={!form.volume_id}
           className="border rounded-md p-2 w-full"
@@ -1132,8 +1138,7 @@ const handleChange = (key) => (e) => {
           ))}
         </select>
 
-        {/* MONTH */}
- {/* FROM MONTH (disabled display) */}
+        {/* MONTH FROM (display only) */}
         <select
           value={String(form.month_from || "")}
           disabled
@@ -1144,7 +1149,7 @@ const handleChange = (key) => (e) => {
           </option>
         </select>
 
-        {/* TO MONTH (disabled display) */}
+        {/* MONTH TO (display only) */}
         <select
           value={String(form.month_to || "")}
           disabled
@@ -1154,9 +1159,9 @@ const handleChange = (key) => (e) => {
             {form.month_to || "To Month"}
           </option>
         </select>
-        
       </div>
-       {/* PDF upload */}
+
+      {/* PDF upload */}
       <div className="space-y-2">
         <label className="block text-sm font-medium">Article PDF</label>
         <input
@@ -1167,7 +1172,6 @@ const handleChange = (key) => (e) => {
           className="block w-full border rounded-md p-2"
         />
 
-        {/* show selection or existing pdf */}
         {selectedFile ? (
           <div className="text-sm">
             Selected: <strong>{selectedFile.name}</strong>{" "}
@@ -1182,39 +1186,50 @@ const handleChange = (key) => (e) => {
           </div>
         ) : form.pdf_path ? (
           <div className="text-sm">
-            Current file: <a href={form.pdf_path} target="_blank" className="text-blue-600 underline">open</a>
+            Current file:{" "}
+            <a href={form.pdf_path} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+              open
+            </a>
           </div>
         ) : (
-          <div className="text-xs text-gray-500">No file selected. If you submit without a file, the server will generate a fallback URL.</div>
+          <div className="text-xs text-gray-500">
+            No file selected. If you submit without a file, the server will generate a fallback URL.
+          </div>
         )}
       </div>
 
-      <Input placeholder="Article ID" value={form.article_id} onChange={handleChange("article_id")} />
-      <Input placeholder="DOI" value={form.doi} onChange={handleChange("doi")} />
-      <Input placeholder="Title" value={form.article_title} onChange={handleChange("article_title")} />
-      <Input placeholder="Authors (comma separated)" value={form.authors} onChange={handleChange("authors")} />
-      <Textarea value={form.abstract} onChange={handleChange("abstract")} placeholder="Abstract" />
-      <Input placeholder="Keywords (comma separated)" value={form.keywords} onChange={handleChange("keywords")} />
+      {/* BASICS */}
+      <Input placeholder="Article ID" value={form.article_id || ""} onChange={handleChange("article_id")} />
+      <Input placeholder="DOI" value={form.doi || ""} onChange={handleChange("doi")} />
+      <Input placeholder="Title" value={form.article_title || ""} onChange={handleChange("article_title")} />
+      <Input placeholder="Authors (comma separated)" value={form.authors || ""} onChange={handleChange("authors")} />
+      <Textarea value={form.abstract || ""} onChange={handleChange("abstract")} placeholder="Abstract" />
+      <Input placeholder="Keywords (comma separated)" value={form.keywords || ""} onChange={handleChange("keywords")} />
 
       <div className="grid grid-cols-2 gap-4">
-        <Input type="number" placeholder="Page From" value={form.page_from} onChange={handleChange("page_from")} />
-        <Input type="number" placeholder="Page To" value={form.page_to} onChange={handleChange("page_to")} />
+        <Input type="number" placeholder="Page From" value={form.page_from || ""} onChange={handleChange("page_from")} />
+        <Input type="number" placeholder="Page To" value={form.page_to || ""} onChange={handleChange("page_to")} />
       </div>
 
-      <CKEditorField
-        value={form.references}
-        onChange={(data) => setForm({ references: data })}
-        placeholder="Enter references here…"
-      />
+      {/* REFERENCES (CKEditor -> HTML string) */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium">References</label>
+        <CKEditorField
+          value={form.references || ""}
+          onChange={(html) => setForm?.({ references: html })}
+          placeholder="Enter references here…"
+        />
+      </div>
 
+      {/* DATES */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Input type="date" value={form.received}  onChange={handleChange("received")} />
-        <Input type="date" value={form.revised}   onChange={handleChange("revised")} />
-        <Input type="date" value={form.accepted}  onChange={handleChange("accepted")} />
-        <Input type="date" value={form.published} onChange={handleChange("published")} />
+        <Input type="date" value={form.received || ""} onChange={handleChange("received")} />
+        <Input type="date" value={form.revised || ""} onChange={handleChange("revised")} />
+        <Input type="date" value={form.accepted || ""} onChange={handleChange("accepted")} />
+        <Input type="date" value={form.published || ""} onChange={handleChange("published")} />
       </div>
 
-   <div className="flex justify-end">
+      <div className="flex justify-end">
         <Button onClick={onSubmit} disabled={submitting}>
           {submitting ? "Saving..." : submitLabel}
         </Button>
@@ -1222,3 +1237,4 @@ const handleChange = (key) => (e) => {
     </div>
   );
 }
+
