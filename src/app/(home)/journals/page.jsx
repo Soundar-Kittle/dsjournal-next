@@ -1,13 +1,23 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import JournalCard from "@/components/Home/Journals/JournalCard";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export const generateMetadata = async () => {
+  return await generateDynamicMeta("journals");
+};
 
 // normalize cover paths like "uploads/..." → "/uploads/..."
 function toCoverUrl(v) {
   if (!v) return null;
   let u = String(v).trim();
   if (u === "null") return null;
-  if (!u.startsWith("http://") && !u.startsWith("https://") && !u.startsWith("/")) u = "/" + u;
+  if (
+    !u.startsWith("http://") &&
+    !u.startsWith("https://") &&
+    !u.startsWith("/")
+  )
+    u = "/" + u;
   if (u.startsWith("http://")) u = u.replace(/^http:\/\//, "https://");
   return u;
 }
@@ -16,10 +26,10 @@ function toCoverUrl(v) {
 function slugFromShortName(s) {
   if (!s) return null;
   return s
-    .replace(/^DS-?/i, "")        // drop DS- prefix
+    .replace(/^DS-?/i, "") // drop DS- prefix
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")  // non-alnum → hyphen
-    .replace(/^-+|-+$/g, "");     // trim hyphens
+    .replace(/[^a-z0-9]+/g, "-") // non-alnum → hyphen
+    .replace(/^-+|-+$/g, ""); // trim hyphens
 }
 
 async function fetchJournals() {
@@ -29,7 +39,10 @@ async function fetchJournals() {
     const proto = process.env.NODE_ENV === "development" ? "http" : "https";
     const url = `${proto}://${host}/api/journals`;
 
-    const res = await fetch(url, { cache: "no-store", next: { revalidate: 0 } });
+    const res = await fetch(url, {
+      cache: "no-store",
+      next: { revalidate: 0 },
+    });
     if (!res.ok) return [];
 
     const data = await res.json();
@@ -48,7 +61,8 @@ async function fetchJournals() {
         : slugFromShortName(r.short_name) ?? String(r.id),
       cover_url: toCoverUrl(r.cover_url ?? r.cover ?? r.cover_image ?? null),
       issn_print: r.issn_print && r.issn_print !== "null" ? r.issn_print : "",
-      issn_online: r.issn_online && r.issn_online !== "null" ? r.issn_online : "",
+      issn_online:
+        r.issn_online && r.issn_online !== "null" ? r.issn_online : "",
     }));
   } catch (e) {
     console.error("journals page fetch failed", e);
@@ -58,7 +72,9 @@ async function fetchJournals() {
 
 export default async function JournalsPage({ searchParams }) {
   const sp = await searchParams; // App Router requires awaiting searchParams here
-  const q = String(sp?.q ?? "").trim().toLowerCase();
+  const q = String(sp?.q ?? "")
+    .trim()
+    .toLowerCase();
 
   const journals = await fetchJournals();
 
@@ -76,12 +92,18 @@ export default async function JournalsPage({ searchParams }) {
       <div className="mb-6">
         <nav className="text-sm text-slate-500">
           <ol className="flex items-center gap-2">
-            <li><Link href="/" className="hover:text-slate-700">Home</Link></li>
+            <li>
+              <Link href="/" className="hover:text-slate-700">
+                Home
+              </Link>
+            </li>
             <li className="select-none">/</li>
             <li className="font-medium text-slate-700">Journals</li>
           </ol>
         </nav>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Journals</h1>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+          Journals
+        </h1>
       </div>
 
       {/* Query param search (?q=...) – hydration-safe */}

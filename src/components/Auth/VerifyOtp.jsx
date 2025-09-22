@@ -11,16 +11,23 @@ export default function VerifyOtp() {
   const [otp, setOtp] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(120);
+  const [email, setEmail] = useState(null);
   const timerRef = useRef(null);
 
-  const email = localStorage.getItem("resetEmail");
+  // Load email from localStorage only on client
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedEmail = localStorage.getItem("resetEmail");
+      if (!storedEmail) {
+        toast.error("Email missing. Restart password reset.");
+        router.replace("/forgot-password");
+      } else {
+        setEmail(storedEmail);
+      }
+    }
+  }, [router]);
 
-  if (!email) {
-    toast.error("Email missing. Restart password reset.");
-    router.replace("/forgot-password");
-    return null;
-  }
-
+  // Timer countdown
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
@@ -28,7 +35,9 @@ export default function VerifyOtp() {
     return () => clearInterval(timerRef.current);
   }, []);
 
-  const handleVerify = async () => {
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    if (!email) return;
     if (otp.length !== 6) return toast.error("Enter 6-digit OTP");
     setIsSubmitting(true);
     try {
@@ -53,7 +62,7 @@ export default function VerifyOtp() {
   };
 
   const handleResend = async () => {
-    if (secondsLeft !== 0) return;
+    if (!email || secondsLeft !== 0) return;
     try {
       const res = await fetch("/api/auth/resend-otp", {
         method: "POST",
@@ -72,9 +81,15 @@ export default function VerifyOtp() {
     }
   };
 
+  // Don’t render until email is loaded
+  if (!email) return null;
+
   return (
     <div className="relative w-full min-h-screen flex items-center justify-center px-4 py-8 bg-primary">
-      <form className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+      <form
+        onSubmit={handleVerify}
+        className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+      >
         <h2 className="text-2xl font-bold text-center mb-2">Verify OTP</h2>
         <p className="text-center text-sm text-gray-600 mb-6">
           Enter the 6-digit code we sent to <b>{email}</b>
@@ -93,7 +108,6 @@ export default function VerifyOtp() {
         <button
           type="submit"
           disabled={isSubmitting || otp.length !== 6}
-          onClick={handleVerify}
           className="cursor-pointer disabled:cursor-not-allowed w-full py-2 px-4 text-sm font-semibold rounded-md text-white bg-primary hover:bg-primary/90 transition inline-flex items-center justify-center gap-2"
         >
           {isSubmitting ? (

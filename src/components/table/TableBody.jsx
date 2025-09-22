@@ -9,10 +9,9 @@ const TableBody = ({ table }) => {
         <tr>
           <td
             colSpan={table.getAllLeafColumns().length}
-            className="py-16 text-center text-gray-500"
+            className="py-10 text-center text-gray-500"
           >
             <div className="flex flex-col items-center justify-center space-y-2">
-              <FileX className="w-12 h-12 text-gray-300" />
               <p className="text-lg font-medium">No Data Available</p>
               <p className="text-sm text-gray-400">
                 No records found to display

@@ -1,17 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Menu,
-  X,
-  Search as SearchIcon,
-  BookOpen,
-  LockOpen,
-  ShieldCheck,
-} from "lucide-react";
 import HeroBanner from "@/components/Hero/HeroBanner";
 
 export default function Page() {
@@ -34,3 +20,4 @@ export default function Page() {
     </div>
   );
 }
+ 
