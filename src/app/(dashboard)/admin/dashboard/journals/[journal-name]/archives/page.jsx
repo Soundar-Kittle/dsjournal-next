@@ -371,33 +371,58 @@ export default function Page() {
   const [issuesMeta, setIssuesMeta] = useState([]);
 
   // Articles
-  const { data: articles = [] } = useQuery({
-    queryKey: ["articles", jid],
-    queryFn: async () => {
-      const res = await fetch(`/api/articles?journal_id=${jid}`);
-      const data = await res.json();
-      if (!data.success || !Array.isArray(data.articles)) return [];
-      return data.articles.map((a) => ({
-        ...a,
-        title: a.article_title || "",
-        authors: safeParseArray(a.authors),
-        key_words: safeParseArray(a.keywords),
+  // const { data: articles = [] } = useQuery({
+  //   queryKey: ["articles", jid],
+  //   queryFn: async () => {
+  //     const res = await fetch(`/api/articles?journal_id=${jid}`);
+  //     const data = await res.json();
+  //     if (!data.success || !Array.isArray(data.articles)) return [];
+  //     return data.articles.map((a) => ({
+  //       ...a,
+  //       title: a.article_title || "",
+  //       authors: safeParseArray(a.authors),
+  //       key_words: safeParseArray(a.keywords),
 
-        // keep IDs for filtering; we'll render numbers via helpers
-        volume: String(a.volume_id ?? ""),
-        issue: String(a.issue_id ?? ""),
+  //       // keep IDs for filtering; we'll render numbers via helpers
+  //       volume: String(a.volume_id ?? ""),
+  //       issue: String(a.issue_id ?? ""),
 
-        year: a.published ? new Date(a.published).getFullYear().toString() : "",
-        article_file_path: a.pdf_path || "",
-        received_date: a.received || "",
-        revised_date: a.revised || "",
-        accepted_date: a.accepted || "",
-        published_date: a.published || "",
-      }));
-    },
-    enabled: !!jid,
-  });
+  //       year: a.published ? new Date(a.published).getFullYear().toString() : "",
+  //       article_file_path: a.pdf_path || "",
+  //       received_date: a.received || "",
+  //       revised_date: a.revised || "",
+  //       accepted_date: a.accepted || "",
+  //       published_date: a.published || "",
+  //     }));
+  //   },
+  //   enabled: !!jid,
+  // });
+const { data: articles = [] } = useQuery({
+  queryKey: ["articles", jid],
+  queryFn: async () => {
+    const res = await fetch(`/api/articles?journal_id=${jid}`);
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.articles)) return [];
+    return data.articles.map((a) => ({
+      ...a,
+      title: a.article_title || "",
+      authors: safeParseArray(a.authors),
+      key_words: safeParseArray(a.keywords),
 
+      // keep IDs for filtering; we'll render numbers via helpers
+ volume: a.volume_number ? String(a.volume_number) : String(a.volume_id ?? ""),
+ issue: a.issue_number ? String(a.issue_number) : String(a.issue_id ?? ""),
+     year: a.year ? String(a.year) : "",   // 👈 use DB year from volumes
+
+      article_file_path: a.pdf_path || "",
+      received_date: a.received || "",
+      revised_date: a.revised || "",
+      accepted_date: a.accepted || "",
+      published_date: a.published || "",
+    }));
+  },
+  enabled: !!jid,
+});
   const years = [...new Set(articles.map((a) => a.year).filter(Boolean))];
 
   // Volumes & Issues metadata

@@ -612,6 +612,56 @@ export async function POST(req) {
   }
 }
 
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const id = searchParams.get("id");
+//   const article_id = searchParams.get("article_id");
+//   const journal_id = searchParams.get("journal_id");
+//   const conn = await createDbConnection();
+
+//   try {
+//     if (id || article_id) {
+//       const where = id ? "id = ?" : "article_id = ?";
+//       const val = id ? Number(id) : article_id;
+
+//       const [rows] = await conn.query(
+//         `SELECT 
+//            id, journal_id, volume_id, issue_id, month_from, month_to,
+//            article_id, doi, article_title, page_from, page_to,
+//            authors, abstract, keywords, \`references\`,
+//            DATE_FORMAT(received,  '%Y-%m-%d') AS received,
+//            DATE_FORMAT(revised,   '%Y-%m-%d') AS revised,
+//            DATE_FORMAT(accepted,  '%Y-%m-%d') AS accepted,
+//            DATE_FORMAT(published, '%Y-%m-%d') AS published,
+//            pdf_path, article_status, created_at, updated_at
+//          FROM articles
+//          WHERE ${where}
+//          LIMIT 1`,
+//         [val]
+//       );
+//       if (!rows.length) return NextResponse.json({ success: false, message: "Article not found" }, { status: 404 });
+//       return NextResponse.json({ success: true, article: rows[0] });
+//     }
+
+//     let sql = `SELECT * FROM articles`;
+//     const params = [];
+//     if (journal_id) {
+//       sql += ` WHERE journal_id = ?`;
+//       params.push(journal_id);
+//     }
+//     const [rows] = await conn.query(sql, params);
+//     return NextResponse.json({ success: true, articles: rows });
+//   } catch (e) {
+//     console.error("GET /api/articles error:", e);
+//     return NextResponse.json(
+//       { success: false, message: "Failed to fetch articles", error: e.sqlMessage ?? e.message },
+//       { status: 500 }
+//     );
+//   } finally {
+//     await conn.end();
+//   }
+// }
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
@@ -620,47 +670,78 @@ export async function GET(req) {
   const conn = await createDbConnection();
 
   try {
+    // 👉 Single article fetch
     if (id || article_id) {
-      const where = id ? "id = ?" : "article_id = ?";
+      const where = id ? "a.id = ?" : "a.article_id = ?";
       const val = id ? Number(id) : article_id;
 
       const [rows] = await conn.query(
         `SELECT 
-           id, journal_id, volume_id, issue_id, month_from, month_to,
-           article_id, doi, article_title, page_from, page_to,
-           authors, abstract, keywords, \`references\`,
-           DATE_FORMAT(received,  '%Y-%m-%d') AS received,
-           DATE_FORMAT(revised,   '%Y-%m-%d') AS revised,
-           DATE_FORMAT(accepted,  '%Y-%m-%d') AS accepted,
-           DATE_FORMAT(published, '%Y-%m-%d') AS published,
-           pdf_path, article_status, created_at, updated_at
-         FROM articles
+           a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
+           a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
+           a.authors, a.abstract, a.keywords, a.\`references\`,
+           DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
+           DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
+           DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
+           DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
+           a.pdf_path, a.article_status, a.created_at, a.updated_at,
+           v.volume_number, v.volume_label, v.year   -- 👈 year from volumes
+         FROM articles a
+         LEFT JOIN volumes v ON a.volume_id = v.id
          WHERE ${where}
          LIMIT 1`,
         [val]
       );
-      if (!rows.length) return NextResponse.json({ success: false, message: "Article not found" }, { status: 404 });
+
+      if (!rows.length) {
+        return NextResponse.json(
+          { success: false, message: "Article not found" },
+          { status: 404 }
+        );
+      }
       return NextResponse.json({ success: true, article: rows[0] });
     }
 
-    let sql = `SELECT * FROM articles`;
+    // 👉 Multiple articles fetch
+    let sql = `
+      SELECT 
+        a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
+        a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
+        a.authors, a.abstract, a.keywords, a.\`references\`,
+        DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
+        DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
+        DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
+        DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
+        a.pdf_path, a.article_status, a.created_at, a.updated_at,
+        v.volume_number, v.volume_label, v.year   -- 👈 year from volumes
+      FROM articles a
+      LEFT JOIN volumes v ON a.volume_id = v.id
+    `;
+
     const params = [];
     if (journal_id) {
-      sql += ` WHERE journal_id = ?`;
+      sql += ` WHERE a.journal_id = ?`;
       params.push(journal_id);
     }
+
     const [rows] = await conn.query(sql, params);
     return NextResponse.json({ success: true, articles: rows });
   } catch (e) {
     console.error("GET /api/articles error:", e);
     return NextResponse.json(
-      { success: false, message: "Failed to fetch articles", error: e.sqlMessage ?? e.message },
+      {
+        success: false,
+        message: "Failed to fetch articles",
+        error: e.sqlMessage ?? e.message,
+      },
       { status: 500 }
     );
   } finally {
     await conn.end();
   }
 }
+
+
 
 export async function DELETE(req) {
   const { searchParams } = new URL(req.url);
