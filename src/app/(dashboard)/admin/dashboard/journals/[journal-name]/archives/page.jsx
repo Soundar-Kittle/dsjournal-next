@@ -378,6 +378,8 @@ const { data: articles = [] } = useQuery({
     if (!data.success || !Array.isArray(data.articles)) return [];
     return data.articles.map((a) => ({
       ...a,
+  id: a.id,                     // numeric primary key
+  article_id: a.article_id,     // string like DST-V1I1P1011
       title: a.article_title || "",
       authors: safeParseArray(a.authors),
       key_words: safeParseArray(a.keywords),
@@ -510,12 +512,13 @@ const { data: articles = [] } = useQuery({
         Edit
       </button>
 
-      <button
-        onClick={() => handleDelete(row.original.article_id)}
-        className="text-red-600"
-      >
-        Delete
-      </button>
+   <button
+  onClick={() => handleDelete(row.original.id)}   // ✅ numeric DB id
+  className="text-red-600"
+>
+  Delete
+</button>
+
     </div>
   ),
 },
@@ -531,12 +534,26 @@ const { data: articles = [] } = useQuery({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const handleDelete = (id) => {
-    const confirmed = window.confirm("Are you sure you want to delete this article?");
-    if (confirmed) {
-      table.options.data = table.options.data.filter((a) => a.article_id !== id);
-    }
-  };
+const handleDelete = async (id) => {
+  const confirmed = window.confirm("Are you sure you want to delete this article?");
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`/api/articles?id=${id}`, { method: "DELETE" });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete");
+
+    // ✅ remove by numeric id
+    table.options.data = table.options.data.filter((a) => a.id !== id);
+
+    alert("Article deleted successfully.");
+  } catch (err) {
+    console.error("Delete error:", err);
+    alert(err.message || "Something went wrong.");
+  }
+};
+
 
   return (
     <div className="p-6">
