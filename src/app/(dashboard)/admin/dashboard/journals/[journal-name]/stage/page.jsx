@@ -238,7 +238,7 @@ useEffect(() => {
 
 
 
- const updateStaged = async () => {
+const updateStaged = async () => {
   if (!row) return;
   setSaving(true);
   try {
@@ -247,6 +247,7 @@ useEffect(() => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: row.title,
+        abstract: row.abstract,
         keywords: row.keywords,
         pages_from: row.pages_from,
         pages_to: row.pages_to,
@@ -255,8 +256,12 @@ useEffect(() => {
         accepted_date: row.accepted_date,
         published_date: row.published_date,
         article_id: row.article_id,
-        authors,
-        references: refs   // ✅ send CKEditor HTML from state
+        authors,              // array from AuthorsEditor
+        doi: row.doi,
+        volume_number: row.volume_number,
+        issue_number: row.issue_number,
+        year: row.year,
+        references: refs,     // CKEditor HTML
       }),
     });
     const j = await r.json();
