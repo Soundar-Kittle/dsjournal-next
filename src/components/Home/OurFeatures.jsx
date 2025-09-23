@@ -2,6 +2,7 @@
 
 import { BsJournalMedical } from "react-icons/bs";
 import { BiSolidBookContent, BiSolidLockOpenAlt } from "react-icons/bi";
+import { motion } from "framer-motion";
 
 const features = [
   {
