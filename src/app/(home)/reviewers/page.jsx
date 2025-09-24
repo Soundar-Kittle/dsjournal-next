@@ -1,9 +1,11 @@
-import React from 'react'
+import PageHeader from "@/components/Home/PageHeader";
 
 const page = () => {
   return (
-    <div>page</div>
-  )
-}
+    <div>
+      <PageHeader title="Reviewers" />
+    </div>
+  );
+};
 
-export default page
+export default page;

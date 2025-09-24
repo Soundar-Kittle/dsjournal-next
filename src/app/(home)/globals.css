@@ -81,6 +81,7 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --font-poppins: var(--font-poppins);
+  --font-roboto: var(--font-roboto);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
@@ -129,6 +130,13 @@ body {
   font-family: var(--font-poppins), Helvetica, sans-serif;
   background-color: #f4f8fa;
   color: #444;
+}
+
+.font-roboto {
+  font-family: var(--font-roboto), Helvetica, sans-serif;
+}
+.font-poppins {
+  font-family: var(--font-poppins), Helvetica, sans-serif;
 }
 
 /* Global Scrollbar Styling */

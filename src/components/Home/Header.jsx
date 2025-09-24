@@ -164,7 +164,7 @@ export default function Header() {
       {mobileOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white absolute left-0 top-full w-full">
           <div className="max-w-7xl px-4 py-3">
-            <nav className="flex flex-col items-center w-full gap-2 text-sm">
+            <nav className="flex flex-col  w-full gap-2 text-sm">
               {NAV.map((item) => (
                 <Link
                   key={item.href}

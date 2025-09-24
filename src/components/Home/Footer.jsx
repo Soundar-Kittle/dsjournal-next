@@ -5,6 +5,17 @@ import { ChevronRight } from "lucide-react";
 import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 60 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
+
 const DEFAULT_COLUMNS = [
   {
     title: "",
@@ -56,7 +67,13 @@ export default function Footer({
 
   return (
     <footer className="bg-secondary text-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 items-start">
           {/* 4 columns of links */}
           {columns.slice(0, 4).map((col, idx) => (
@@ -102,7 +119,7 @@ export default function Footer({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
       <div className="pb-16 pt-10 text-center text-sm border-t border-white">
         © Copyright <span className="font-semibold">{brand}</span>. All Rights
         Reserved {year}

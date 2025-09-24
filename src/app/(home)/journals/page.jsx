@@ -2,6 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import JournalCard from "@/components/Home/Journals/JournalCard";
 import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+import PageHeader from "@/components/Home/PageHeader";
 
 export const generateMetadata = async () => {
   return await generateDynamicMeta("journals");
@@ -88,8 +89,9 @@ export default async function JournalsPage({ searchParams }) {
     : journals;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-6">
+    <div className="">
+      <PageHeader title="Journals" />
+      {/* <div className="mb-6">
         <nav className="text-sm text-slate-500">
           <ol className="flex items-center gap-2">
             <li>
@@ -101,31 +103,30 @@ export default async function JournalsPage({ searchParams }) {
             <li className="font-medium text-slate-700">Journals</li>
           </ol>
         </nav>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
-          Journals
-        </h1>
+      </div> */}
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-10">
+        {/* Query param search (?q=...) – hydration-safe */}
+        <form className="mb-6" action="/journals" method="get">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by journal name or ISSN…"
+            defaultValue={q}
+            className="w-full md:w-1/2 rounded border border-slate-300 px-3 py-2"
+          />
+        </form>
+
+        {visible.length === 0 ? (
+          <p className="text-slate-600">No journals found.</p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {visible.map((j) => (
+              <JournalCard key={j.id} j={j} />
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Query param search (?q=...) – hydration-safe */}
-      <form className="mb-6" action="/journals" method="get">
-        <input
-          type="text"
-          name="q"
-          placeholder="Search by journal name or ISSN…"
-          defaultValue={q}
-          className="w-full md:w-1/2 rounded border border-slate-300 px-3 py-2"
-        />
-      </form>
-
-      {visible.length === 0 ? (
-        <p className="text-slate-600">No journals found.</p>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {visible.map((j) => (
-            <JournalCard key={j.id} j={j} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

@@ -86,7 +86,7 @@ const HeroBanner = () => {
                             <motion.div
                               initial={{ opacity: 0, y: 50 }}
                               animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.8, ease: "easeOut" }}
+                              transition={{ duration: 0.8, ease: "easeInOut" }}
                               className={`max-w-3xl text-white space-y-5 ${marginSide}`}
                             >
                               <h1 className="text-3xl md:text-5xl font-semibold leading-tight text-white">

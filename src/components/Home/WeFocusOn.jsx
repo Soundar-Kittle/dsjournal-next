@@ -1,8 +1,26 @@
+"use client";
+
 import Image from "next/image";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 60 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
 
 export default function WeFocusOn() {
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-5 gap-5 px-4 sm:px-6 lg:px-8 py-12">
+    <motion.div
+      className="grid grid-cols-1 lg:grid-cols-5 gap-5 px-4 sm:px-6 lg:px-8 py-12"
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.2 }}
+    >
       {/* Left side - Image */}
       <div className="relative w-full h-80 col-span-2">
         <Image
@@ -42,6 +60,6 @@ export default function WeFocusOn() {
           outcomes achieved.
         </p>
       </div>
-    </section>
+    </motion.div>
   );
 }
