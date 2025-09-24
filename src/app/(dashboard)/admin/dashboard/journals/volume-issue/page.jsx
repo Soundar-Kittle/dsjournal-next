@@ -1509,18 +1509,22 @@ export default function VolumeIssuePage() {
     year: "",
   });
   const [issueForm, setIssueForm] = useState({
-    journal_id: "",
-    issue_number: "",
-    issue_label: "",
-    alias_name_issue: "",
-    year: "",
-  });
-  const [monthForm, setMonthForm] = useState({
-    journal_id: "",
-    issue_id: "",
-    from_month: "",
-    to_month: "",
-  });
+  journal_id: "",
+  volume_id: "",   // ✅ add volume_id
+  issue_number: "",
+  issue_label: "",
+  alias_name_issue: "",
+  year: "",
+});
+
+const [monthForm, setMonthForm] = useState({
+  journal_id: "",
+  volume_id: "",   // ✅ add volume_id
+  issue_id: "",
+  from_month: "",
+  to_month: "",
+});
+
 
   // summary
   const [summaryJournalId, setSummaryJournalId] = useState("");
@@ -1864,119 +1868,180 @@ export default function VolumeIssuePage() {
         </Tabs.Content>
 
         {/* Issue form */}
-        <Tabs.Content value="issue">
-          <Card>
-            <CardHeader>
-              <CardTitle>Add Issue</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <select
-                className="border p-2 w-full"
-                value={issueForm.journal_id}
-                onChange={(e) => setIssueForm({ ...issueForm, journal_id: e.target.value })}
-              >
-                <option value="">Select Journal</option>
-                {journals.map((j) => (
-                  <option key={j.id} value={j.id}>
-                    {j.journal_name}
-                  </option>
-                ))}
-              </select>
-              <Input
-                placeholder="Issue Number"
-                type="number"
-                value={issueForm.issue_number}
-                onChange={(e) => setIssueForm({ ...issueForm, issue_number: e.target.value })}
-              />
-              <Input
-                placeholder="Issue Label"
-                value={issueForm.issue_label}
-                onChange={(e) => setIssueForm({ ...issueForm, issue_label: e.target.value })}
-              />
-              <Input
-                placeholder="Alias Name (Issue)"
-                value={issueForm.alias_name_issue}
-                onChange={(e) => setIssueForm({ ...issueForm, alias_name_issue: e.target.value })}
-              />
-              <Button onClick={handleIssueSubmit}>Add Issue</Button>
-            </CardContent>
-          </Card>
-        </Tabs.Content>
+   <Tabs.Content value="issue">
+  <Card>
+    <CardHeader>
+      <CardTitle>Add Issue</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-2">
+      {/* Select Journal */}
+      <select
+        className="border p-2 w-full"
+        value={issueForm.journal_id}
+        onChange={async (e) => {
+          const journal_id = e.target.value;
+          setIssueForm({ ...issueForm, journal_id, volume_id: "" });
+
+          if (journal_id) {
+            const res = await fetch(`/api/volume?journal_id=${journal_id}`);
+            const data = await res.json();
+            if (data.success) setVolumesList(data.volumes || []);
+          } else {
+            setVolumesList([]);
+          }
+        }}
+      >
+        <option value="">Select Journal</option>
+        {journals.map((j) => (
+          <option key={j.id} value={j.id}>
+            {j.journal_name}
+          </option>
+        ))}
+      </select>
+
+      {/* Select Volume */}
+      <select
+        className="border p-2 w-full"
+        value={issueForm.volume_id}
+        onChange={(e) => setIssueForm({ ...issueForm, volume_id: e.target.value })}
+      >
+        <option value="">Select Volume</option>
+        {volumesList
+          .filter((v) => String(v.journal_id) === String(issueForm.journal_id))
+          .map((v) => (
+            <option key={v.id} value={v.id}>
+              Volume {v.volume_number} ({v.year})
+            </option>
+          ))}
+      </select>
+
+      <Input
+        placeholder="Issue Number"
+        type="number"
+        value={issueForm.issue_number}
+        onChange={(e) => setIssueForm({ ...issueForm, issue_number: e.target.value })}
+      />
+      <Input
+        placeholder="Issue Label"
+        value={issueForm.issue_label}
+        onChange={(e) => setIssueForm({ ...issueForm, issue_label: e.target.value })}
+      />
+      <Input
+        placeholder="Alias Name (Issue)"
+        value={issueForm.alias_name_issue}
+        onChange={(e) => setIssueForm({ ...issueForm, alias_name_issue: e.target.value })}
+      />
+      <Button onClick={handleIssueSubmit}>Add Issue</Button>
+    </CardContent>
+  </Card>
+</Tabs.Content>
+
 
         {/* Month form */}
-        <Tabs.Content value="month">
-          <Card>
-            <CardHeader>
-              <CardTitle>Add Month Group</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <select
-                className="border p-2 w-full"
-                value={monthForm.journal_id}
-                onChange={async (e) => {
-                  const journal_id = e.target.value;
-                  setMonthForm({ ...monthForm, journal_id, issue_id: "" });
-                  if (journal_id) {
-                    const res = await fetch(`/api/issues?journal_id=${journal_id}`);
-                    const data = await res.json();
-                    if (data.success) setIssues(data.issues || []);
-                    else setIssues([]);
-                  } else {
-                    setIssues([]);
-                  }
-                }}
-              >
-                <option value="">Select Journal</option>
-                {journals.map((j) => (
-                  <option key={j.id} value={j.id}>
-                    {j.journal_name}
-                  </option>
-                ))}
-              </select>
+     <Tabs.Content value="month">
+  <Card>
+    <CardHeader>
+      <CardTitle>Add Month Group</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-2">
+      {/* Select Journal */}
+      <select
+        className="border p-2 w-full"
+        value={monthForm.journal_id}
+        onChange={async (e) => {
+          const journal_id = e.target.value;
+          setMonthForm({ ...monthForm, journal_id, volume_id: "", issue_id: "" });
 
-              <select
-                className="border p-2 w-full"
-                value={monthForm.issue_id}
-                onChange={(e) => setMonthForm({ ...monthForm, issue_id: e.target.value })}
-              >
-                <option value="">Select Issue</option>
-                {issues.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    Issue {i.issue_number} ({i.issue_label})
-                  </option>
-                ))}
-              </select>
+          if (journal_id) {
+            const res = await fetch(`/api/volume?journal_id=${journal_id}`);
+            const data = await res.json();
+            if (data.success) setVolumesList(data.volumes || []);
+          } else {
+            setVolumesList([]);
+          }
+          setIssues([]);
+        }}
+      >
+        <option value="">Select Journal</option>
+        {journals.map((j) => (
+          <option key={j.id} value={j.id}>
+            {j.journal_name}
+          </option>
+        ))}
+      </select>
 
-              <select
-                className="border p-2 w-full"
-                value={monthForm.from_month}
-                onChange={(e) => setMonthForm({ ...monthForm, from_month: e.target.value })}
-              >
-                <option value="">Select From Month</option>
-                {monthOptions.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+      {/* Select Volume */}
+      <select
+        className="border p-2 w-full"
+        value={monthForm.volume_id}
+        onChange={async (e) => {
+          const volume_id = e.target.value;
+          setMonthForm({ ...monthForm, volume_id, issue_id: "" });
 
-              <select
-                className="border p-2 w-full"
-                value={monthForm.to_month}
-                onChange={(e) => setMonthForm({ ...monthForm, to_month: e.target.value })}
-              >
-                <option value="">Select To Month (optional)</option>
-                {monthOptions.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+          if (volume_id) {
+            const res = await fetch(`/api/issues?journal_id=${monthForm.journal_id}&volume_id=${volume_id}`);
+            const data = await res.json();
+            if (data.success) setIssues(data.issues || []);
+            else setIssues([]);
+          }
+        }}
+      >
+        <option value="">Select Volume</option>
+        {volumesList
+          .filter((v) => String(v.journal_id) === String(monthForm.journal_id))
+          .map((v) => (
+            <option key={v.id} value={v.id}>
+              Volume {v.volume_number} ({v.year})
+            </option>
+          ))}
+      </select>
 
-              <Button onClick={handleMonthSubmit}>Add Month</Button>
-            </CardContent>
-          </Card>
-        </Tabs.Content>
+      {/* Select Issue */}
+      <select
+        className="border p-2 w-full"
+        value={monthForm.issue_id}
+        onChange={(e) => setMonthForm({ ...monthForm, issue_id: e.target.value })}
+      >
+        <option value="">Select Issue</option>
+        {issues.map((i) => (
+          <option key={i.id} value={i.id}>
+            Issue {i.issue_number} ({i.issue_label})
+          </option>
+        ))}
+      </select>
+
+      {/* From/To months */}
+      <select
+        className="border p-2 w-full"
+        value={monthForm.from_month}
+        onChange={(e) => setMonthForm({ ...monthForm, from_month: e.target.value })}
+      >
+        <option value="">Select From Month</option>
+        {monthOptions.map((m) => (
+          <option key={m} value={m}>
+            {m}
+          </option>
+        ))}
+      </select>
+
+      <select
+        className="border p-2 w-full"
+        value={monthForm.to_month}
+        onChange={(e) => setMonthForm({ ...monthForm, to_month: e.target.value })}
+      >
+        <option value="">Select To Month (optional)</option>
+        {monthOptions.map((m) => (
+          <option key={m} value={m}>
+            {m}
+          </option>
+        ))}
+      </select>
+
+      <Button onClick={handleMonthSubmit}>Add Month</Button>
+    </CardContent>
+  </Card>
+</Tabs.Content>
+
       </Tabs.Root>
 
       {/* ===================== Edit Modal ===================== */}
