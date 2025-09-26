@@ -16,10 +16,17 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
+import { Pen, Trash } from "lucide-react";
 
 function SortableCard({ id, children }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -41,9 +48,9 @@ export default function JournalsGrid({
   journals = [],
   setJournals,
   search = "",
-  setSavingOrder = () => { },
-  onEdit = () => { },
-  onDelete = () => { },
+  setSavingOrder = () => {},
+  onEdit = () => {},
+  onDelete = () => {},
 }) {
   // items MUST be strings
   const items = (visible || []).map((j) => String(j.id));
@@ -75,7 +82,8 @@ export default function JournalsGrid({
         body: JSON.stringify({ orderedIds: next.map((j) => j.id) }),
       });
       const data = await res.json();
-      if (!data.success && !data.ok) throw new Error(data.message || "Failed to save order");
+      if (!data.success && !data.ok)
+        throw new Error(data.message || "Failed to save order");
     } catch (e) {
       setJournals(prev);
       alert(e.message);
@@ -85,7 +93,11 @@ export default function JournalsGrid({
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragEnd={onDragEnd}
+    >
       <SortableContext items={items} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {visible.map((journal) => (
@@ -93,35 +105,51 @@ export default function JournalsGrid({
               <div className="relative rounded border shadow p-2 bg-white">
                 <div className="relative">
                   <img
-                    src={journal.cover_image ? `/${journal.cover_image}` : "/placeholder.svg"}
+                    src={
+                      journal.cover_image
+                        ? `/${journal.cover_image}`
+                        : "/placeholder.svg"
+                    }
                     alt={journal.journal_name}
                     className="h-64 w-full object-cover rounded"
                     draggable={false}
-                    onError={(e) => { e.currentTarget.src = "/placeholder.svg"; }}
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.svg";
+                    }}
                   />
                   <div className="absolute top-2 right-2 flex gap-1">
                     <Button
                       size="icon"
                       variant="outline"
                       className="h-8 w-8 p-0"
-                      onClick={(e) => { e.stopPropagation(); onEdit(journal); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(journal);
+                      }}
                       title="Edit"
                     >
-                      ✏️
+                      <Pen />
                     </Button>
                     <Button
                       size="icon"
                       variant="destructive"
                       className="h-8 w-8 p-0"
-                      onClick={(e) => { e.stopPropagation(); onDelete(journal.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(journal.id);
+                      }}
                       title="Delete"
                     >
-                      🗑️
+                      <Trash />
                     </Button>
                   </div>
                 </div>
                 <div className="mt-3 text-center">
-                  <Link href={`/admin/dashboard/journals/${journal.short_name || journal.id}`}>
+                  <Link
+                    href={`/admin/dashboard/journals/${
+                      journal.short_name || journal.id
+                    }`}
+                  >
                     <p className="text-sm font-semibold hover:underline">
                       {journal.journal_name}
                     </p>

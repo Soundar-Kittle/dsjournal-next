@@ -246,18 +246,26 @@ import fs from "fs/promises";
 export const runtime = "nodejs"; // needed to use fs in App Router
 
 // ---------- helpers ----------
-const intOrNull = (v) => (v === undefined || v === null || v === "" ? null : parseInt(v, 10));
+const intOrNull = (v) =>
+  v === undefined || v === null || v === "" ? null : parseInt(v, 10);
 
 async function computeSortIndex(conn, { position, afterId }) {
   // default = last
   if (position === "first") {
-    const [[r]] = await conn.query("SELECT COALESCE(MIN(sort_index),10) AS min_idx FROM journals");
+    const [[r]] = await conn.query(
+      "SELECT COALESCE(MIN(sort_index),10) AS min_idx FROM journals"
+    );
     return r.min_idx - 10; // put at top
   }
   if (afterId) {
-    const [[prev]] = await conn.query("SELECT sort_index FROM journals WHERE id=? LIMIT 1", [afterId]);
+    const [[prev]] = await conn.query(
+      "SELECT sort_index FROM journals WHERE id=? LIMIT 1",
+      [afterId]
+    );
     if (!prev) {
-      const [[mx]] = await conn.query("SELECT COALESCE(MAX(sort_index),0) AS max_idx FROM journals");
+      const [[mx]] = await conn.query(
+        "SELECT COALESCE(MAX(sort_index),0) AS max_idx FROM journals"
+      );
       return mx.max_idx + 10;
     }
     const [[nx]] = await conn.query(
@@ -269,7 +277,9 @@ async function computeSortIndex(conn, { position, afterId }) {
     }
     return prev.sort_index + 10;
   }
-  const [[mx]] = await conn.query("SELECT COALESCE(MAX(sort_index),0) AS max_idx FROM journals");
+  const [[mx]] = await conn.query(
+    "SELECT COALESCE(MAX(sort_index),0) AS max_idx FROM journals"
+  );
   return mx.max_idx + 10;
 }
 
@@ -288,7 +298,10 @@ function toYearOrNull(s) {
 async function saveCoverFromFormData(file, subdir = "uploads/covers") {
   if (!file || typeof file === "string") return null; // no file selected
 
-  const relDir = String(subdir).replace(/\\/g, "/").replace(/^\/+/, "").replace(/\.\./g, "");
+  const relDir = String(subdir)
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/\.\./g, "");
   const base = (file.name || "cover").replace(/[^\w.-]/g, "_");
   const ext = path.extname(base) || ".png";
   const fileName = `cover_${Date.now()}${ext}`;
@@ -310,21 +323,25 @@ export async function POST(req) {
     const form = await req.formData();
 
     const journal_name = form.get("journal_name")?.toString().trim() || "";
-    const short_name   = form.get("short_name")?.toString().trim() || "";
+    const short_name = form.get("short_name")?.toString().trim() || "";
     if (!journal_name || !short_name) {
-      return NextResponse.json({ success: false, message: "journal_name and short_name are required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "journal_name and short_name are required" },
+        { status: 400 }
+      );
     }
 
     const row = {
       journal_name,
       short_name,
       issn_online: form.get("issn_online")?.toString() || null,
-      issn_print:  form.get("issn_print")?.toString()  || null,
+      issn_print: form.get("issn_print")?.toString() || null,
       is_print_issn: form.get("is_print_issn")?.toString() === "1" ? 1 : 0,
-      is_e_issn:     form.get("is_e_issn")?.toString() === "1" ? 1 : 0,
+      is_e_issn: form.get("is_e_issn")?.toString() === "1" ? 1 : 0,
       subject: form.get("subject")?.toString() || null,
       year_started: toYearOrNull(form.get("year_started")?.toString() || ""),
-      publication_frequency: form.get("publication_frequency")?.toString() || null,
+      publication_frequency:
+        form.get("publication_frequency")?.toString() || null,
       language: form.get("language")?.toString() || null,
       paper_submission_id: form.get("paper_submission_id")?.toString() || null,
       format: form.get("format")?.toString() || null,
@@ -332,7 +349,8 @@ export async function POST(req) {
       publisher: form.get("publisher")?.toString() || null,
       doi_prefix: form.get("doi_prefix")?.toString() || null,
       cover_image: null, // set below
-      sort_index: 0,     // set below
+      banner_image: null, // set below
+      sort_index: 0, // set below
     };
 
     // File from native formData
@@ -340,8 +358,15 @@ export async function POST(req) {
     const savedPath = await saveCoverFromFormData(coverFile, "uploads/covers"); // or "uploads/cover"
     row.cover_image = savedPath ? savedPath.replace(/\\/g, "/") : null;
 
+    const bannerFile = form.get("banner_image"); // File | null
+    const savedBanner = await saveCoverFromFormData(
+      bannerFile,
+      "uploads/journal_banners"
+    );
+    row.banner_image = savedBanner ? savedBanner.replace(/\\/g, "/") : null;
+
     const position = form.get("position")?.toString() || "";
-    const afterId  = intOrNull(form.get("after_id"));
+    const afterId = intOrNull(form.get("after_id"));
 
     conn = await createDbConnection();
     row.sort_index = await computeSortIndex(conn, {
@@ -355,9 +380,15 @@ export async function POST(req) {
 
     return NextResponse.json({ success: true, message: "Journal created" });
   } catch (e) {
-    if (conn) try { await conn.end(); } catch {}
+    if (conn)
+      try {
+        await conn.end();
+      } catch {}
     console.error("POST /api/journals error:", e);
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: e.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -368,12 +399,18 @@ export async function PATCH(req) {
     const form = await req.formData();
     const id = intOrNull(form.get("id"));
     if (!id) {
-      return NextResponse.json({ success: false, message: "valid id required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "valid id required" },
+        { status: 400 }
+      );
     }
 
     const sets = [];
     const params = [];
-    const setIf = (col, val) => { sets.push(`${col} = ?`); params.push(val); };
+    const setIf = (col, val) => {
+      sets.push(`${col} = ?`);
+      params.push(val);
+    };
 
     const journal_name = form.get("journal_name");
     if (journal_name !== null) setIf("journal_name", journal_name.toString());
@@ -382,16 +419,19 @@ export async function PATCH(req) {
     if (short_name !== null) setIf("short_name", short_name.toString());
 
     const issn_online = form.get("issn_online");
-    if (issn_online !== null) setIf("issn_online", issn_online.toString() || null);
+    if (issn_online !== null)
+      setIf("issn_online", issn_online.toString() || null);
 
     const issn_print = form.get("issn_print");
     if (issn_print !== null) setIf("issn_print", issn_print.toString() || null);
 
     const is_print_issn = form.get("is_print_issn");
-    if (is_print_issn !== null) setIf("is_print_issn", is_print_issn.toString() === "1" ? 1 : 0);
+    if (is_print_issn !== null)
+      setIf("is_print_issn", is_print_issn.toString() === "1" ? 1 : 0);
 
     const is_e_issn = form.get("is_e_issn");
-    if (is_e_issn !== null) setIf("is_e_issn", is_e_issn.toString() === "1" ? 1 : 0);
+    if (is_e_issn !== null)
+      setIf("is_e_issn", is_e_issn.toString() === "1" ? 1 : 0);
 
     const subject = form.get("subject");
     if (subject !== null) setIf("subject", subject.toString() || null);
@@ -400,19 +440,22 @@ export async function PATCH(req) {
     if (ys !== null) setIf("year_started", toYearOrNull(ys.toString() || ""));
 
     const publication_frequency = form.get("publication_frequency");
-    if (publication_frequency !== null) setIf("publication_frequency", publication_frequency.toString() || null);
+    if (publication_frequency !== null)
+      setIf("publication_frequency", publication_frequency.toString() || null);
 
     const language = form.get("language");
     if (language !== null) setIf("language", language.toString() || null);
 
     const paper_submission_id = form.get("paper_submission_id");
-    if (paper_submission_id !== null) setIf("paper_submission_id", paper_submission_id.toString() || null);
+    if (paper_submission_id !== null)
+      setIf("paper_submission_id", paper_submission_id.toString() || null);
 
     const format = form.get("format");
     if (format !== null) setIf("format", format.toString() || null);
 
     const publication_fee = form.get("publication_fee");
-    if (publication_fee !== null) setIf("publication_fee", publication_fee.toString() || null);
+    if (publication_fee !== null)
+      setIf("publication_fee", publication_fee.toString() || null);
 
     const publisher = form.get("publisher");
     if (publisher !== null) setIf("publisher", publisher.toString() || null);
@@ -422,12 +465,22 @@ export async function PATCH(req) {
 
     // Optional new file (native formData)
     const coverFile = form.get("cover_image");
-    const newCoverPath = await saveCoverFromFormData(coverFile, "uploads/covers");
+    const newCoverPath = await saveCoverFromFormData(
+      coverFile,
+      "uploads/covers"
+    );
     if (newCoverPath) setIf("cover_image", newCoverPath.replace(/\\/g, "/"));
+
+    const bannerFile = form.get("banner_image");
+    const newBannerPath = await saveCoverFromFormData(
+      bannerFile,
+      "uploads/journal_banners"
+    );
+    if (newBannerPath) setIf("banner_image", newBannerPath.replace(/\\/g, "/"));
 
     // Optional reposition
     const position = form.get("position")?.toString() || "";
-    const afterId  = intOrNull(form.get("after_id"));
+    const afterId = intOrNull(form.get("after_id"));
     const sortIndexRaw = intOrNull(form.get("sort_index"));
     let newSortIndex = sortIndexRaw;
 
@@ -446,14 +499,23 @@ export async function PATCH(req) {
     }
 
     params.push(id);
-    await conn.query(`UPDATE journals SET ${sets.join(", ")} WHERE id = ? LIMIT 1`, params);
+    await conn.query(
+      `UPDATE journals SET ${sets.join(", ")} WHERE id = ? LIMIT 1`,
+      params
+    );
     await conn.end();
 
     return NextResponse.json({ success: true, message: "Journal updated" });
   } catch (e) {
-    if (conn) try { await conn.end(); } catch {}
+    if (conn)
+      try {
+        await conn.end();
+      } catch {}
     console.error("PATCH /api/journals error:", e);
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: e.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -490,9 +552,9 @@ export async function PATCH(req) {
 // ---------- READ ----------
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const id    = searchParams.get("jid") || searchParams.get("id");
+  const id = searchParams.get("jid") || searchParams.get("id");
   const short = searchParams.get("short");
-  const slug  = searchParams.get("slug"); // cleaned slug like "lll"
+  const slug = searchParams.get("slug"); // cleaned slug like "lll"
 
   let conn;
   try {
@@ -500,7 +562,10 @@ export async function GET(req) {
     let result;
 
     if (id) {
-      [result] = await conn.query("SELECT * FROM journals WHERE id = ? LIMIT 1", [id]);
+      [result] = await conn.query(
+        "SELECT * FROM journals WHERE id = ? LIMIT 1",
+        [id]
+      );
     } else if (short) {
       [result] = await conn.query(
         "SELECT * FROM journals WHERE LOWER(TRIM(short_name)) = LOWER(TRIM(?)) LIMIT 1",
@@ -514,8 +579,8 @@ export async function GET(req) {
            REPLACE(LOWER(TRIM(short_name)), 'ds-', '') = LOWER(TRIM(?))
            OR REPLACE(LOWER(TRIM(short_name)), 'ds', '') = LOWER(TRIM(?))
            OR LOWER(TRIM(short_name)) = LOWER(TRIM(?))          -- allow exact short_name
-           OR LOWER(TRIM(slug))       = LOWER(TRIM(?))          -- if you have a slug column
-           OR LOWER(TRIM(alias))      = LOWER(TRIM(?))          -- if you have an alias column
+           OR LOWER(TRIM(short_name))       = LOWER(TRIM(?))          -- if you have a slug column
+           OR LOWER(TRIM(short_name))      = LOWER(TRIM(?))          -- if you have an alias column
          LIMIT 1`,
         [slug, slug, slug, slug, slug]
       );
@@ -530,8 +595,14 @@ export async function GET(req) {
     const rows = Array.isArray(result) ? result : result ? [result] : [];
     return NextResponse.json({ success: true, journals: rows });
   } catch (err) {
-    if (conn) try { await conn.end(); } catch {}
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    if (conn)
+      try {
+        await conn.end();
+      } catch {}
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -539,7 +610,10 @@ export async function DELETE(req) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
   if (!id) {
-    return NextResponse.json({ success: false, error: "ID is required" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: "ID is required" },
+      { status: 400 }
+    );
   }
 
   try {
@@ -549,6 +623,9 @@ export async function DELETE(req) {
     return NextResponse.json({ success: true, message: "Journal deleted" });
   } catch (err) {
     console.error("DELETE /api/journals error:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 500 }
+    );
   }
 }

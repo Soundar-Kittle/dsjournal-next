@@ -1,4 +1,4 @@
-import Link from "next/link";
+
 import { headers } from "next/headers";
 import JournalCard from "@/components/Home/Journals/JournalCard";
 import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
@@ -90,25 +90,13 @@ export default async function JournalsPage({ searchParams }) {
     : journals;
 
   return (
-    <div className="">
-      <PageHeader title="Journals" />
-      <Breadcrumbs />
-      {/* <div className="mb-6">
-        <nav className="text-sm text-slate-500">
-          <ol className="flex items-center gap-2">
-            <li>
-              <Link href="/" className="hover:text-slate-700">
-                Home
-              </Link>
-            </li>
-            <li className="select-none">/</li>
-            <li className="font-medium text-slate-700">Journals</li>
-          </ol>
-        </nav>
-      </div> */}
+    <main>
+      <header>
+        <PageHeader title="Journals" />
+        <Breadcrumbs />
+      </header>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-10">
-        {/* Query param search (?q=...) – hydration-safe */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-10 py-10">
         <form className="mb-6" action="/journals" method="get">
           <input
             type="text"
@@ -122,13 +110,13 @@ export default async function JournalsPage({ searchParams }) {
         {visible.length === 0 ? (
           <p className="text-slate-600">No journals found.</p>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-6 max-sm:max-w-2xs max-sm:mx-auto sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {visible.map((j) => (
               <JournalCard key={j.id} j={j} />
             ))}
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }

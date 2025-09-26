@@ -1,41 +1,26 @@
-"use client";
-
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function JournalCard({ j }) {
-  const [failed, setFailed] = useState(false);
-  const cover = j.cover_url;
-
   return (
     <Link
       href={`/journals/${j.slug}`}
-      className="group block overflow-hidden rounded-lg bg-white shadow hover:shadow-lg transition"
+      className="group block overflow-hidden rounded shadow-[0_0_10px_rgba(0,0,0,0.2)] border border-[#ccc] p-2"
     >
       {/* Cover image */}
-      <div className="relative aspect-[3/4] w-full bg-white">
-        {!failed && cover ? (
-          <Image
-            src={j.cover_url}
-            alt={j.name}
-            fill
-            sizes="(max-width:768px) 50vw, (max-width:1200px) 25vw, 20vw"
-            className="object-contain p-2"
-            onError={() => setFailed(true)}
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-slate-400">
-            No Cover
-          </div>
-        )}
-
+      <div className="relative h-[320px] w-full overflow-hidden p-3 shadow-[0_0_10px_rgba(0,0,0,0.4)] rounded">
+        <Image
+          src={j.cover_url}
+          alt={j.name}
+          fill
+          className="object-fit p-0.5 bg-white rounded"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
       </div>
 
       {/* Journal title */}
-      <div className="p-3 text-center">
-        <h3 className="line-clamp-2 text-sm font-semibold text-sky-700 group-hover:text-sky-900">
+      <div className="text-center p-3 pb-5">
+        <h3 className="line-clamp-2 text-sm font-semibold text-blue">
           {j.name}
         </h3>
       </div>

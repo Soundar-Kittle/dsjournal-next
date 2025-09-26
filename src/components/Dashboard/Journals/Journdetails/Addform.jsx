@@ -26,6 +26,7 @@ export default function Addform({ editData = null, onSuccess }) {
   const [preview, setPreview] = useState(null);
   const [showPrintIssn, setShowPrintIssn] = useState(false);
   const [showEissn, setShowEissn] = useState(true);
+  const [bannerPreview, setBannerPreview] = useState(null);
 
   useEffect(() => {
     if (editData) {
@@ -36,6 +37,9 @@ export default function Addform({ editData = null, onSuccess }) {
           : "",
       });
       setPreview(editData.cover_image ? `/${editData.cover_image}` : null);
+      setBannerPreview(
+        editData.banner_image ? `/${editData.banner_image}` : null
+      );
       setShowPrintIssn(Boolean(editData.is_print_issn));
       setShowEissn(Boolean(editData.is_e_issn));
     }
@@ -46,6 +50,8 @@ export default function Addform({ editData = null, onSuccess }) {
     for (const key in data) {
       if (key === "cover_image" && data[key]?.[0]) {
         formData.append("cover_image", data[key][0]);
+      } else if (key === "banner_image" && data[key]?.[0]) {
+        formData.append("banner_image", data[key][0]);
       } else {
         formData.append(key, data[key]);
       }
@@ -66,6 +72,7 @@ export default function Addform({ editData = null, onSuccess }) {
     if (result.success) {
       reset();
       setPreview(null);
+      setBannerPreview(null);
       if (onSuccess) onSuccess();
     }
   };
@@ -236,6 +243,28 @@ export default function Addform({ editData = null, onSuccess }) {
           />
         )}
       </div>
+
+      <div className="md:col-span-2">
+        <Label>Banner Image</Label>
+        <Input
+          type="file"
+          accept="image/*"
+          {...register("banner_image")}
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              setBannerPreview(URL.createObjectURL(e.target.files[0]));
+            }
+          }}
+        />
+        {bannerPreview && (
+          <img
+            src={bannerPreview}
+            alt="Banner Preview"
+            className="mt-2 h-32 rounded border shadow"
+          />
+        )}
+      </div>
+
       <div className="md:col-span-2 text-right">
         <Button type="submit" className="cursor-pointer">
           {editData ? "Update Journal" : "Save Journal"}

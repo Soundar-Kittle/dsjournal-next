@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 const PageHeader = ({
   items = [],
   title = "Page Header",
-  image = "/images/hero-bgimg.jpg",
+  image = "images/hero-bgimg.jpg",
+  size = "",
 }) => {
   const pathname = usePathname();
   const matchedTitle = items.find((x) =>
@@ -17,7 +18,7 @@ const PageHeader = ({
     <div className="w-full h-full relative text-white">
       <div className="relative h-48 w-full">
         <Image
-          src={image}
+          src={`/${image}`}
           alt={title}
           fill
           className="object-cover"
@@ -29,9 +30,9 @@ const PageHeader = ({
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeInOut" }}
-        className="absolute top-1/2 left-1/2 -translate-1/2
-             text-2xl sm:text-3xl md:text-4xl lg:text-5xl 
-             font-semibold text-center z-10"
+        className={`absolute top-1/2 left-1/2 -translate-1/2
+              ${size ? size : "text-2xl sm:text-3xl md:text-4xl lg:text-5xl "}
+             font-semibold text-center z-10 `}
       >
         {title}
       </motion.h1>
