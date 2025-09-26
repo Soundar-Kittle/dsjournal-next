@@ -1,6 +1,6 @@
 const page = () => {
   return (
-    <section id="submitting-a-manuscript" className="space-y-3">
+    <section className="space-y-3">
       <h2 className="font-roboto text-4xl font-medium">
         Summary of Important Items When Submitting a Manuscript
       </h2>

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import JournalCard from "@/components/Home/Journals/JournalCard";
 import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 import PageHeader from "@/components/Home/PageHeader";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 
 export const generateMetadata = async () => {
   return await generateDynamicMeta("journals");
@@ -72,7 +73,7 @@ async function fetchJournals() {
 }
 
 export default async function JournalsPage({ searchParams }) {
-  const sp = await searchParams; // App Router requires awaiting searchParams here
+  const sp = await searchParams;
   const q = String(sp?.q ?? "")
     .trim()
     .toLowerCase();
@@ -91,6 +92,7 @@ export default async function JournalsPage({ searchParams }) {
   return (
     <div className="">
       <PageHeader title="Journals" />
+      <Breadcrumbs />
       {/* <div className="mb-6">
         <nav className="text-sm text-slate-500">
           <ol className="flex items-center gap-2">

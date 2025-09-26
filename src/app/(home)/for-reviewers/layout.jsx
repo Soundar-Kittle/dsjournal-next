@@ -24,24 +24,20 @@ const menu = [
 export default function ReviewerLayout({ children }) {
   return (
     <main className="bg-white">
-      <PageHeader items={menu} title="Reviewers" />
-      <Breadcrumbs
-        base={{
-          menu_label: "Reviewers",
-          menu_link: "/for-reviewers",
-        }}
-        menuItems={menu}
-      />
+      <header>
+        <PageHeader items={menu} title="Reviewers" />
+        <Breadcrumbs menuItems={menu} />
+      </header>
       <section className="mx-auto max-w-6xl  px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <aside className="md:col-span-4 lg:col-span-3">
+          <nav className="md:col-span-4 lg:col-span-3">
             <SideMenu
               title="Menu"
               items={menu}
               initiallyOpen={true}
               storageKey="reviewers-sidemenu"
             />
-          </aside>
+          </nav>
           <article className="md:col-span-8 lg:col-span-9 text-justify max-w-none pt-2 leading-relaxed">
             {children}
           </article>

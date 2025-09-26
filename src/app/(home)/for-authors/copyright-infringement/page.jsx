@@ -1,9 +1,9 @@
 const page = () => {
   return (
-    <section id="copyright-infringement" className="space-y-3">
-      <h1 className="font-roboto text-4xl font-medium">
+    <section className="space-y-3">
+      <h2 className="font-roboto text-4xl font-medium">
         Copyright Infringement
-      </h1>
+      </h2>
       <p>
         Any claims of copyright infringement should be addressed to the Editor
         at <b>queries@dsjournals.com</b> bearing the subject line "Copyright

@@ -141,7 +141,7 @@ h5 {
 }
 
 h6 {
-  @apply font-medium font-roboto;
+  @apply font-medium;
 }
 
 /* Global Scrollbar Styling */

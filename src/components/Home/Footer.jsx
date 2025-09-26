@@ -50,7 +50,7 @@ const DEFAULT_COLUMNS = [
     links: [
       { label: "Licensing Policy", href: "/for-authors/licensing-policy" },
       { label: "FAQ", href: "/faq" },
-      { label: "Contact Us", href: "/contact" },
+      { label: "Contact Us", href: "/contact-us" },
     ],
   },
 ];

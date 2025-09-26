@@ -3,10 +3,10 @@ import ContentAccordian from "@/components/ui/ContentAccordian";
 
 const page = () => {
   return (
-    <section id="conflicts-of-interest" className="space-y-3">
-      <h1 className="font-roboto text-4xl font-medium">
+    <section className="space-y-3">
+      <h2 className="font-roboto text-4xl font-medium">
         Conflicts of Interest
-      </h1>
+      </h2>
       <p>
         Conflicts of interest (also known as "competing interests") arise when
         external factors obstruct or appear to obstruct the impartiality or

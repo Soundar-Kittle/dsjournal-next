@@ -3,7 +3,7 @@ import ContentAccordian from "@/components/ui/ContentAccordian";
 
 const page = () => {
   return (
-    <section id="author-guideline" className="space-y-3">
+    <section className="space-y-3">
       <h2 className="font-roboto text-4xl font-medium">
         Step by step guideline for authors
       </h2>

@@ -1,10 +1,10 @@
 const ContentAccordian = ({ data }) => {
   return (
-    <div className="divide-y rounded border mt-5">
+    <div className="divide-y rounded border">
       {data.map((x, i) => (
         <details key={i} className="group">
           <summary className="flex cursor-pointer list-none items-center justify-between font-bold py-6 px-4">
-            <span>{x?.t}</span>
+            <h4>{x?.t}</h4>
             <span className="transition-transform group-open:rotate-45">
               ＋
             </span>

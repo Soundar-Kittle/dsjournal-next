@@ -38,7 +38,7 @@ const HeroBanner = () => {
 
   return (
     <>
-      {bannerLoading ? (
+      {bannerLoading || slides.length === 0 ? (
         <div className="w-full h-full relative">
           <div className="relative h-80 w-full py-15">
             <Image

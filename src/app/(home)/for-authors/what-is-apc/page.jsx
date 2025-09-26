@@ -1,9 +1,9 @@
 const page = () => {
   return (
-    <section id="what-is-apc" className="space-y-3">
-      <h1 className="font-roboto text-4xl font-medium">
+    <section className="space-y-3">
+      <h2 className="font-roboto text-4xl font-medium">
         What are Article Processing Charges?
-      </h1>
+      </h2>
       <p>
         Dream Science welcomes you to submit the high standardized paper for
         review process. We enhance the researchers to read/download the articles

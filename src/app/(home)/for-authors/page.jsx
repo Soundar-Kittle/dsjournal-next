@@ -3,9 +3,9 @@ import ContentAccordian from "@/components/ui/ContentAccordian";
 
 export default function AuthorsPage() {
   return (
-    <section id="publication-ethics" className="space-y-3">
-      <h1 className="font-roboto text-4xl font-medium mb-2">Authors</h1>
-      <h2 className="font-roboto text-2xl font-medium">Publication Ethics</h2>
+    <section className="space-y-3">
+      <h2 className="font-roboto text-4xl font-medium mb-2">Authors</h2>
+      <h3 className="font-roboto text-2xl font-medium">Publication Ethics</h3>
       <p>
         In order to ensure high-quality scientific publications, public
         confidence in scientific findings, and that people have been given

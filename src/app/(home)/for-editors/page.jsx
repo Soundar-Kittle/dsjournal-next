@@ -1,14 +1,14 @@
 const page = () => {
   return (
-    <section className="space-y-3">
-      <h1 className="font-roboto text-4xl font-medium">Editors</h1>
+    <section className="space-y-3 [&_h3]:font-semibold">
+      <h2 className="font-roboto text-4xl font-medium">Editors</h2>
       <p>
         We appreciate your interest in serving on the editorial board or as a
         reviewer for DS Journals, and we ask that you read the terms and
         conditions carefully.
       </p>
-      <section id="advantages" className="space-y-3 scroll-mt-28">
-        <h6>Advantages</h6>
+      <section id="advantages" className="space-y-3 scroll-mt-30">
+        <h3>Advantages</h3>
         <p>
           Being a member of a journal's editorial board or a reviewer is a
           rewarding, pleasurable, and distinguished experience that contributes
@@ -37,8 +37,8 @@ const page = () => {
         </p>
         <p>Gives you a leading role in your research community.</p>
       </section>
-      <section id="duties-and-responsibilities" className="space-y-3 scroll-mt-28">
-        <h6>Duties and Responsibilities</h6>
+      <section id="duties-and-responsibilities" className="space-y-3 scroll-mt-30">
+        <h3>Duties and Responsibilities</h3>
         <p>
           Our editorial board members and reviewers must be leaders in their
           fields and have previous experience publishing publications. Because a
@@ -51,8 +51,8 @@ const page = () => {
           following aspects in mind.
         </p>
       </section>
-      <section id="consensus" className="space-y-3 scroll-mt-28">
-        <h6>Consensus</h6>
+      <section id="consensus" className="space-y-3 scroll-mt-30">
+        <h3>Consensus</h3>
         <p>
           Acceptance of the accompanying terms and conditions confirms your
           appointment as a member of the Dream Science editorial board or

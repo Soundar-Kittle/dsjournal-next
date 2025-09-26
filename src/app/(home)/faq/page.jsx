@@ -7,14 +7,9 @@ export default function page() {
   return (
     <main className="bg-white">
       <PageHeader title="FAQs" />
-      <Breadcrumbs
-        base={{
-          menu_label: "FAQs",
-          menu_link: "/faq",
-        }}
-      />
+      <Breadcrumbs />
 
-      <div className="max-w-6xl mx-auto py-5 px-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <ContentAccordian data={faqs} />
       </div>
     </main>

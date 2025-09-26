@@ -1,6 +1,6 @@
 const page = () => {
   return (
-    <section id="review-process" className="space-y-3">
+    <section className="space-y-3">
       <h2 className="font-roboto text-4xl font-medium">Review Process</h2>
       <p>
         With the help of our knowledgeable Editors, Dream Science International
