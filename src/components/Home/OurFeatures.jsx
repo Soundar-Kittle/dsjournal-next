@@ -2,6 +2,7 @@
 
 import { BsJournalMedical } from "react-icons/bs";
 import { BiSolidBookContent, BiSolidLockOpenAlt } from "react-icons/bi";
+import { motion } from "framer-motion";
 
 const features = [
   {
@@ -30,28 +31,65 @@ const features = [
   },
 ];
 
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, staggerChildren: 0.2 },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, staggerChildren: 0.2 , delayChildren: 0.2 , ease: "easeOut"},
+  },
+};
+
 export default function OurFeatures() {
   return (
     <section className="py-16">
-      <div className="mx-auto sm:max-w-xl md:max-w-3xl lg:max-w-6xl px-4 sm:px-6 lg:px-8">
+      <motion.div
+        className="mx-auto sm:max-w-xl md:max-w-3xl lg:max-w-6xl px-4 sm:px-6 lg:px-8"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+      >
         {/* Section Title */}
         <div className="text-center mb-12">
-          <h2 className="text-2xl font-semibold text-gray-800">Our Features</h2>
-          <div className="relative mt-2 w-32 mx-auto">
+          <motion.h2
+            className="text-2xl font-semibold text-gray-800"
+            variants={cardVariants}
+          >
+            Our Features
+          </motion.h2>
+          <motion.div
+            className="relative mt-2 w-32 mx-auto"
+            variants={cardVariants}
+          >
             {/* Full gray line */}
             <div className="absolute inset-0 h-[1px] bg-gray-300"></div>
             {/* Centered colored part */}
-            <div className="absolute left-0 right-0 -bottom-[2px]  flex justify-center">
+            <div className="absolute left-0 right-0 -bottom-[2px] flex justify-center">
               <div className="w-14 h-[3px] bg-primary"></div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+          variants={containerVariants}
+        >
           {features.map((feature, idx) => (
-            <div
+            <motion.div
               key={idx}
+              variants={cardVariants}
               className={`bg-white shadow-[0_0_20px_3px_rgba(0,0,0,0.07)] p-8 text-center hover:shadow-lg border border-transparent transition duration-300 ${feature.hoverBorder}`}
             >
               {/* Icon */}
@@ -68,10 +106,10 @@ export default function OurFeatures() {
 
               {/* Description */}
               <p className="text-sm leading-relaxed">{feature.description}</p>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }

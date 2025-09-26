@@ -5,35 +5,50 @@ import { ChevronRight } from "lucide-react";
 import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
+import { motion } from "framer-motion";
+import ScrollToTop from "./ScrollToTop";
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 60 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
+
 const DEFAULT_COLUMNS = [
   {
     title: "",
     links: [
       { label: "Home", href: "/" },
       { label: "Journals", href: "/journals" },
-      { label: "About Us", href: "/about" },
+      { label: "About Us", href: "/about-us" },
     ],
   },
   {
     title: "",
     links: [
-      { label: "Authors Guidelines", href: "/authors" },
-      { label: "Editor Guidelines", href: "/editors" },
-      { label: "Reviewer Guidelines", href: "/reviewers" },
+      { label: "Authors Guidelines", href: "/for-authors" },
+      { label: "Editor Guidelines", href: "/for-editors" },
+      { label: "Reviewer Guidelines", href: "/for-reviewers" },
     ],
   },
   {
     title: "",
     links: [
-      { label: "Open Access", href: "/authors#open-access" },
-      { label: "Publication Ethics", href: "/authors#publication-ethics" },
-      { label: "Copyright Infringement", href: "/authors#copyright" },
+      { label: "Open Access", href: "/open-access" },
+      { label: "Publication Ethics", href: "/for-authors/publication-ethics" },
+      {
+        label: "Copyright Infringement",
+        href: "/for-authors/copyright-infringement",
+      },
     ],
   },
   {
     title: "",
     links: [
-      { label: "Licensing Policy", href: "/authors#licensing" },
+      { label: "Licensing Policy", href: "/for-authors/licensing-policy" },
       { label: "FAQ", href: "/faq" },
       { label: "Contact Us", href: "/contact" },
     ],
@@ -41,10 +56,22 @@ const DEFAULT_COLUMNS = [
 ];
 
 const DEFAULT_SOCIAL = [
-  { name: "Twitter", href: "https://twitter.com/", Icon: FaXTwitter },
-  { name: "Facebook", href: "https://facebook.com/", Icon: FaFacebookF },
-  { name: "Instagram", href: "https://instagram.com/", Icon: FaInstagram },
-  { name: "LinkedIn", href: "https://linkedin.com/", Icon: FaLinkedinIn },
+  { name: "Twitter", href: "https://x.com/DreamScience4", Icon: FaXTwitter },
+  {
+    name: "Facebook",
+    href: "https://www.facebook.com/Dream-Science-Journals-102737959201943",
+    Icon: FaFacebookF,
+  },
+  {
+    name: "Instagram",
+    href: "https://www.instagram.com/dreamsciencejournals/",
+    Icon: FaInstagram,
+  },
+  {
+    name: "LinkedIn",
+    href: "https://www.linkedin.com/in/dream-science-journals-a7a688246/",
+    Icon: FaLinkedinIn,
+  },
 ];
 
 export default function Footer({
@@ -56,7 +83,13 @@ export default function Footer({
 
   return (
     <footer className="bg-secondary text-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 items-start">
           {/* 4 columns of links */}
           {columns.slice(0, 4).map((col, idx) => (
@@ -102,11 +135,12 @@ export default function Footer({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
       <div className="pb-16 pt-10 text-center text-sm border-t border-white">
         © Copyright <span className="font-semibold">{brand}</span>. All Rights
         Reserved {year}
       </div>
+      <ScrollToTop />
     </footer>
   );
 }
