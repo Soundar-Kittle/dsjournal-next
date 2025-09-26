@@ -1,9 +1,11 @@
 import Image from "next/image";
 
-const AboutUs = () => {
+const AboutUs = ({ title }) => {
   return (
     <section className="px-4 sm:px-6 lg:px-8 py-12">
-      <h2 className="text-3xl font-bold text-center  mb-12">About Us</h2>
+      {title && (
+        <h2 className="text-3xl font-bold text-center  mb-12">{title}</h2>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Left: Image */}
@@ -14,7 +16,7 @@ const AboutUs = () => {
             fill
             className="object-cover"
             priority
-            sizes="100vw"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
 

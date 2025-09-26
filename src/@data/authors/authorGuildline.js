@@ -15,7 +15,7 @@ const autherGuideline = [
     t: "Online Submission",
     c: [
       `<div class="space-y-3">
-          <h6 class="font-medium font-roboto">Important information:</h6>
+          <h6>Important information:</h6>
           <p>
             If authors are prompted to submit a revised version of their manuscript,
             they must indicate all changes (for example, by using coloured text or the
@@ -46,7 +46,7 @@ const autherGuideline = [
       `<div>
         <p class="mb-3">Include the following on the title page:</p>
         <p>
-          <ul class="list-disc ml-8 space-y-1">
+          <ul class="list-disc ml-8 ">
             <li>The author's entire first name, middle initial, and last name(s).</li>
             <li>
               Avoid using undefined acronyms and write a title that is succinct and
@@ -81,7 +81,7 @@ const autherGuideline = [
     t: "Keywords",
     c: [
       `<p>
-         <ul class="list-disc ml-8 space-y-1">
+         <ul class="list-disc ml-8 ">
           <li>
             Please give 4 to 6 indexable keywords that can be used. Avoid using words
             that are already in the paper's title.
@@ -114,17 +114,15 @@ const autherGuideline = [
     t: "Text",
     c: [
       `<div class="space-y-3">
-          <h6 class="font-medium font-roboto">Headings</h6>
-          <p>
-            <ul class="list-disc ml-8 space-y-1">
-              <li>Please limit the number of visible heading levels to three.</li>
-              <li>
-                Abbreviations should be defined at the outset and used consistently
-                after that.
-              </li>
-            </ul>
-          </p>
-          <h6 class="font-medium font-roboto">Footnotes</h6>
+          <h6>Headings</h6>
+          <ul class="list-disc ml-8 ">
+            <li>Please limit the number of visible heading levels to three.</li>
+            <li>
+              Abbreviations should be defined at the outset and used consistently
+              after that.
+            </li>
+          </ul>
+          <h6>Footnotes</h6>
           <p>
             The citation of a source included in the reference list might be inserted in
             footnotes to provide further information. They shouldn't just be a reference
@@ -138,8 +136,6 @@ const autherGuideline = [
             symbols for footnotes to the article's title or authors.
           </p>
           <p>Never use endnotes; always use footnotes.</p>
-          <h6></h6>
-          <p></p>
         </div>`,
     ],
   },
@@ -162,7 +158,7 @@ const autherGuideline = [
     t: "References",
     c: [
       `<div class="space-y-3">
-        <h6 class="font-medium font-roboto">Citation</h6>
+        <h6>Citation</h6>
         <p>
           In the text, cite references by name and year in parentheses. Some
           instances:
@@ -177,7 +173,7 @@ const autherGuideline = [
           Many studies have been done on this impact (Abbott 1991; Barakat et al.
           1995a, b; Kelso and Smith 1998; Medvec et al. 1999, 2000).
         </p>
-        <h6 class="font-medium font-roboto">List of references</h6>
+        <h6>List of references</h6>
         <p>
           Only works that are acknowledged in the text and have been released or
           accepted for release should be listed as references. Only unpublished works
@@ -246,7 +242,7 @@ const autherGuideline = [
     t: "Tables",
     c: [
       `<p>
-        <ul class="list-disc ml-8 space-y-1">
+        <ul class="list-disc ml-8 ">
           <li>Arabic numbers must be used to identify each table.</li>
           <li>
             In the text, tables must always be mentioned in consecutive numerical
@@ -279,9 +275,9 @@ const autherGuideline = [
     t: "Electronic Submission of Figures",
     c: [
       `<div class="space-y-3">
-        <h6 class="font-medium font-roboto">Definition of line art: </h6>
+        <h6>Definition of line art: </h6>
         <p>
-          <ul class="list-disc ml-8 space-y-1">
+          <ul class="list-disc ml-8 ">
             <li>A graphic in black and white without any shading.</li>
             <li>
               Make sure that all of the lines and letters inside the figures are
@@ -297,8 +293,8 @@ const autherGuideline = [
             </li>
           </ul>
         </p>
-        <h6 class="font-medium font-roboto">Art in Halftone</h6>
-        <ul class="list-disc ml-8 space-y-1">
+        <h6>Art in Halftone</h6>
+        <ul class="list-disc ml-8 ">
           <li>Finely shaded images, sketches, or paintings are defined.</li>
           <li>
             Use scale bars within the figures themselves to indicate any magnification
@@ -306,7 +302,7 @@ const autherGuideline = [
           </li>
           <li>Halftones need to be at least 300 dpi in resolution.</li>
         </ul>
-        <h6 class="font-medium font-roboto">Combination Art</h6>
+        <h6>Combination Art</h6>
         <p>
           A mixture of halftone and line art, such as halftones with detailed
           typography, colour diagrams, or other elements, is referred to as
@@ -315,16 +311,16 @@ const autherGuideline = [
         <p>
           A resolution of 600 dpi should be required for combination artwork.
         </p>
-        <h6 class="font-medium font-roboto">Art in Color</h6>
+        <h6>Art in Color</h6>
         <p>
-          <ul class="list-disc ml-8 space-y-1">
+          <ul class="list-disc ml-8 ">
             <li>For use in print and online publications, colour art is free.</li>
             <li>The RGB format should be used for colour illustrations.</li>
           </ul>
         </p>
-        <h6 class="font-medium font-roboto">Figure Lettering</h6>
+        <h6>Figure Lettering</h6>
         <p>
-          <ul class="list-disc ml-8 space-y-1">
+          <ul class="list-disc ml-8 ">
             <li>
               The ideal fonts to use for lettering are Helvetica or Arial (sans serif
               fonts).
@@ -342,9 +338,9 @@ const autherGuideline = [
             <li>Your illustrations should not have titles or captions.</li>
           </ul>
         </p>
-        <h6 class="font-medium font-roboto">Figure referencing</h6>
+        <h6>Figure referencing</h6>
         <p>
-          <ul class="list-disc ml-8 space-y-1">
+          <ul class="list-disc ml-8 ">
             <li>
               Arabic numerals are should be used to number each and every figure.
             </li>
@@ -364,9 +360,9 @@ const autherGuideline = [
             </li>
           </ul>
         </p>
-        <h6 class="font-medium font-roboto">Images with captions</h6>
+        <h6>Images with captions</h6>
         <p>
-          <ul class="list-disc ml-8 space-y-1">
+          <ul class="list-disc ml-8 ">
             <li>
               Each figure should include a brief description that accurately describes
               what it represents. Include the captions in the manuscript's text file
@@ -390,9 +386,9 @@ const autherGuideline = [
             </li>
           </ul>
         </p>
-        <h6 class="font-medium font-roboto">Size and Position of the Figure</h6>
+        <h6>Size and Position of the Figure</h6>
         <p>
-          <ul class="list-disc ml-8 space-y-1">
+          <ul class="list-disc ml-8 ">
             <li>Size your figures to fit the column width while preparing them.</li>
             <li>
               For the majority of journals, the figures must be no taller than 234 mm
@@ -404,7 +400,7 @@ const autherGuideline = [
             </li>
           </ul>
         </p>
-        <h6 class="font-medium font-roboto">Permissions</h6>
+        <h6>Permissions</h6>
         <p>
           For both the print edition and the web version, you need the owner(s) of the
           copyright before including any figures that have already been published
@@ -413,11 +409,11 @@ const autherGuideline = [
           may have been used to obtain these permits. In these circumstances,
           information from other sources ought to be utilised.
         </p>
-        <h6 class="font-medium font-roboto">Accessibility</h6>
+        <h6>Accessibility</h6>
         <p>
           Please make sure that your figures' content is accessible to persons with
           all skills and impairments by following the following guidelines:
-          <ul class="list-disc ml-8 space-y-1">
+          <ul class="list-disc ml-8 ">
             <li>
               All images have detailed subtitles (blind users could then use a
               text-to-speech software or a text-to-Braille hardware).
@@ -449,8 +445,8 @@ const autherGuideline = [
           archived in data repositories.
         </p>
         <p>
-          <h6 class="font-medium font-roboto">Submission</h6>
-          <ul class="list-disc ml-8 space-y-1">
+          <h6>Submission</h6>
+          <ul class="list-disc ml-8 ">
             <li>
               Provide all supporting documents in industry-standard file formats.
             </li>
@@ -473,32 +469,32 @@ const autherGuideline = [
               mpeg, flv, mxf, mts, m4v, and 3gp.
             </li>
           </ul>
-          <h6 class="font-medium font-roboto">Text and Slide Shows</h6>
-          <ul class="list-disc ml-8 space-y-1">
+          <h6>Text and Slide Shows</h6>
+          <ul class="list-disc ml-8 ">
             <li>
               For long-term viability, submit your information in PDF format;.doc
               or.ppt files are not acceptable.
             </li>
             <li>A PDF file may also contain a collection of figures.</li>
           </ul>
-          <h6 class="font-medium font-roboto">Spreadsheets</h6>
-          <ul class="list-disc ml-8 space-y-1">
+          <h6>Spreadsheets</h6>
+          <ul class="list-disc ml-8 ">
             <li>
               Spreadsheet submissions must be made as.csv or.xlsx files (MS Excel).
             </li>
           </ul>
-          <h6 class="font-medium font-roboto">Dedicated Formats</h6>
-          <ul class="list-disc ml-8 space-y-1">
+          <h6>Dedicated Formats</h6>
+          <ul class="list-disc ml-8 ">
             <li>
               Spreadsheet submissions must be made as.csv or.xlsx files (MS Excel).
             </li>
           </ul>
-          <h6 class="font-medium font-roboto">Getting Several Files</h6>
-          <ul class="list-disc ml-8 space-y-1">
+          <h6>Getting Several Files</h6>
+          <ul class="list-disc ml-8 ">
             <li>A.zip or.gz file can contain a collection of many files.</li>
           </ul>
-          <h6 class="font-medium font-roboto">Numbering</h6>
-          <ul class="list-disc ml-8 space-y-1">
+          <h6>Numbering</h6>
+          <ul class="list-disc ml-8 ">
             <li>
               Similar to how figures and tables are cited, the text must specifically
               refer to any supplemental information if it is provided.
@@ -510,8 +506,8 @@ const autherGuideline = [
             </li>
             <li>Name the files in order, for example, "ESM 3.mpg," "ESM 4.pdf."</li>
           </ul>
-          <h6 class="font-medium font-roboto">Captions</h6>
-          <ul class="list-disc ml-8 space-y-1">
+          <h6>Captions</h6>
+          <ul class="list-disc ml-8 ">
             <li>
               Please provide a brief caption explaining the contents of each
               supplemental file.
@@ -576,7 +572,7 @@ const autherGuideline = [
         consulting services is improper. The following are only a few examples of
         potential conflicts of interest that might be directly or indirectly connected
         to the research:
-        <ul class="list-disc ml-8 space-y-1">
+        <ul class="list-disc ml-8 ">
           <li>
             Research financing from funding organisations (please give the research
             funder and the grant number)
@@ -617,8 +613,8 @@ const autherGuideline = [
       "Any researcher desiring to utilise the resources detailed in the publication for non-commercial reasons without violating participant confidentially will be entitled to do so without paying for them if they are submitted to the journal. This includes all relevant raw data.",
       "The publication highly recommends that readers get access to all datasets used to support the paper's conclusions. We advise authors to make sure that their datasets are either given in the primary publication or supplementary supporting files wherever feasible, or that they are deposited in publicly accessible repositories (where available and acceptable). Where suitable, general repositories for all forms of research data, like figshare and Dryad, may be used.",
       "The reference list may include references to datasets that have been given Digital Object Identifiers (DOIs) by a data repository. The bare minimum recommended by DataCite for data citations is authors, title, publisher (repository name), and identifier.",
-      `<h6 class="font-medium font-roboto">
-        <a href="https://datacite.org/" target="_blank">
+      `<h6 class="font-medium">
+        <a class="text-light-blue hover:text-blue" href="https://datacite.org/" target="_blank">
           DataCite
         </a>
       </h6>
@@ -629,15 +625,131 @@ const autherGuideline = [
         identifiers (such DOIs and accession numbers) for pertinent datasets.
       </p>`,
       "Submission to a publicly accessible repository recognised by the community is required for the following kinds of data sets:",
+      `<table class="border-separate border-spacing-x-5 md:border-spacing-x-10 -ml-5 md:-ml-10">
+          <tr>
+            <th>Mandatory deposition</th>
+            <th>Suitable repositories</th>
+          </tr>
+          <tr>
+            <td>Protein sequences</td>
+            <td>Uniprot</td>
+          </tr>
+          <tr>
+            <td>DNA and RNA sequences</td>
+            <td>Genbank<br>DNA DataBank of Japan (DDBJ)<br>EMBL Nucleotide Sequence Database (ENA)<br></td>
+          </tr>
+          <tr>
+            <td>Genetic polymorphisms</td>
+            <td>dbSNP<br>dbVar<br>European Variation Archive (EVA)<br></td>
+          </tr>
+          <tr>
+            <td>Linked genotype and phenotype data</td>
+            <td>dbGAP<br>The European Genome-phenome Archive (EGA)<br></td>
+          </tr>
+          <tr>
+            <td>Macromolecular structure</td>
+            <td>Worldwide Protein Data Bank (wwPDB)<br>Biological Magnetic Resonance Data Bank (BMRB)<br>Electron Microscopy Data Bank (EMDB)<br></td>
+          </tr>
+          <tr>
+            <td>Microarray data (must be MIAME compliant)</td>
+            <td>Gene Expression Omnibus (GEO)<br>ArrayExpress<br></td>
+          </tr>
+          <tr>
+            <td>Crystallographic data for small molecules</td>
+            <td>Cambridge Structural Database</td>
+          </tr>
+        </table>
+      `,
+      `<h6>Availability of Data</h6>
+      <p>
+        The publication invites writers to include a note about the availability of data in their work. Data availability statements should provide information on the sources of the data used to support the findings in the article, including, if appropriate, hyperlinks to publically available datasets used in the analysis or generation of the data. If necessary, data availability declarations can additionally declare whether or not data are accessible upon request from the authors and when none are.
+      </p>`,
+      "If necessary for numerous datasets, a mix of the following formats may be used for data availability statements:",
+      `<ul class="list-disc ml-8 ">
+        <li>
+          1. The [NAME] repository, [PERMANENT WEB LINK TO DATASETS], houses the
+          datasets created for and/or analysed in the current study.
+        </li>
+        <li>
+          2. The datasets created and/or analysed during the current study are not
+          publically available because of [REASON WHY DATA ARE NOT PUBLIC], but they
+          are available from the corresponding author upon justifiable request.
+        </li>
+        <li>
+          3. Upon reasonable request, the corresponding author will provide the
+          datasets created and/or analysed during the current work.
+        </li>
+        <li>
+          4. Since no datasets were created or analysed for this article, data sharing
+          is not relevant.
+        </li>
+        <li>
+          5. This published paper [and its additional information files] contain all
+          data produced or analysed during this investigation.
+        </li>
+      </ul>`,
     ],
   },
   {
-    t: "",
-    c: [""],
+    t: "After Approval",
+    c: [
+      "When your piece is accepted, you will receive a link in the mail that you may use to return the copyright transfer statement to the editor after signing it.",
+      "Your article will be processed when this step is finished, and you'll get the proofs.",
+      `<h6>Transfer of Copyright</h6>
+      <p>
+        Authors will be required to provide the publisher the article's copyright (or grant the publisher exclusive publication and dissemination rights). As a result, information will be protected and shared as widely as possible in accordance with copyright rules.
+      </p>`,
+      `<h6>Offprints</h6>
+      <p>
+        The associated author may place an order for offprints.
+      </p>`,
+      `<h6>Color Illustrations</h6>
+      <p>
+        Color illustrations can be published for free.
+      </p>`,
+      `<div class="space-y-3">
+        <h6>Checking for Accuracy</h6>
+        <p>
+         The proof's objective is to examine the text, tables, and figures for completeness and correctness as well as any typesetting or conversion mistakes. Significant material modifications, such as new findings, corrected values, title changes, and author changes, are not permitted without the Editor's consent.
+        </p>
+        <p>
+         Further edits after online publication are only permitted in the form of an erratum that links back to the original article.
+        </p>
+      </div>`,
+      `<div class="space-y-3">
+        <h6>Online Initial</h6>
+        <p>
+         After receiving the revised proofs, the article will be posted online. The official first publication that may be cited with a DOI is this one. The document can also be referenced by issue and page numbers after it has been published in print.
+        </p>
+        <p>
+         You may publish open access in Dream Science journals through special issues, increasing the visibility and use of your research as soon as it is published.
+        </p>
+      </div>`,
+      `<div class="space-y-3">
+        <h6>Benefits</h6>
+        <p>
+         Increased researcher involvement: Anyone with an internet connection may view SPECIAL ISSUES articles as soon as they are published.
+        </p>
+        <p>
+         Greater exposure and impact: SPECIAL ISSUES papers are read 4 times more frequently on average and are referenced 1.7 times more frequently on average in Dream Science journals than other journals.
+        </p>
+        <p>
+         Articles published under the terms of the CC BY Open Choice licence do not necessitate the transfer of any copyright because the author retains ownership of the material. The authors consent to publishing their work under the Creative Commons Attribution License by choosing open access.
+        </p>
+        <p>Verify the licensing agreements 
+        <a class="text-light-blue hover:text-blue" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">(https://creativecommons.org/licenses/by-nc-nd/4.0/)</a>.
+        </p>
+      </div>`,
+    ],
   },
   {
-    t: "",
-    c: [""],
+    t: "Language Editing in English",
+    c: [
+      "You must make sure the English language is of a suitable calibre to be understood if you want editors and reviewers to evaluate the work given in your submission appropriately. If you want assistance writing in English, take into account:",
+      "Requesting that a coworker who is a native English speaker go over your writing for clarity.",
+      "Seeking for the English language instruction that addresses the typical errors made when writing in English by using a professional language editing service, where editors will make your English more clear and point out any issues that need your assessment.",
+      "If your submission is approved, our copyeditors will review it for formality and spelling before publishing.",
+    ],
   },
 ];
 

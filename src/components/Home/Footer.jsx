@@ -6,6 +6,7 @@ import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
 import { motion } from "framer-motion";
+import ScrollToTop from "./ScrollToTop";
 
 const containerVariants = {
   hidden: { opacity: 0, y: 60 },
@@ -22,29 +23,32 @@ const DEFAULT_COLUMNS = [
     links: [
       { label: "Home", href: "/" },
       { label: "Journals", href: "/journals" },
-      { label: "About Us", href: "/about" },
+      { label: "About Us", href: "/about-us" },
     ],
   },
   {
     title: "",
     links: [
-      { label: "Authors Guidelines", href: "/authors" },
-      { label: "Editor Guidelines", href: "/editors" },
-      { label: "Reviewer Guidelines", href: "/reviewers" },
+      { label: "Authors Guidelines", href: "/for-authors" },
+      { label: "Editor Guidelines", href: "/for-editors" },
+      { label: "Reviewer Guidelines", href: "/for-reviewers" },
     ],
   },
   {
     title: "",
     links: [
-      { label: "Open Access", href: "/authors#open-access" },
-      { label: "Publication Ethics", href: "/authors#publication-ethics" },
-      { label: "Copyright Infringement", href: "/authors#copyright" },
+      { label: "Open Access", href: "/open-access" },
+      { label: "Publication Ethics", href: "/for-authors/publication-ethics" },
+      {
+        label: "Copyright Infringement",
+        href: "/for-authors/copyright-infringement",
+      },
     ],
   },
   {
     title: "",
     links: [
-      { label: "Licensing Policy", href: "/authors#licensing" },
+      { label: "Licensing Policy", href: "/for-authors/licensing-policy" },
       { label: "FAQ", href: "/faq" },
       { label: "Contact Us", href: "/contact" },
     ],
@@ -52,10 +56,22 @@ const DEFAULT_COLUMNS = [
 ];
 
 const DEFAULT_SOCIAL = [
-  { name: "Twitter", href: "https://twitter.com/", Icon: FaXTwitter },
-  { name: "Facebook", href: "https://facebook.com/", Icon: FaFacebookF },
-  { name: "Instagram", href: "https://instagram.com/", Icon: FaInstagram },
-  { name: "LinkedIn", href: "https://linkedin.com/", Icon: FaLinkedinIn },
+  { name: "Twitter", href: "https://x.com/DreamScience4", Icon: FaXTwitter },
+  {
+    name: "Facebook",
+    href: "https://www.facebook.com/Dream-Science-Journals-102737959201943",
+    Icon: FaFacebookF,
+  },
+  {
+    name: "Instagram",
+    href: "https://www.instagram.com/dreamsciencejournals/",
+    Icon: FaInstagram,
+  },
+  {
+    name: "LinkedIn",
+    href: "https://www.linkedin.com/in/dream-science-journals-a7a688246/",
+    Icon: FaLinkedinIn,
+  },
 ];
 
 export default function Footer({
@@ -124,6 +140,7 @@ export default function Footer({
         © Copyright <span className="font-semibold">{brand}</span>. All Rights
         Reserved {year}
       </div>
+      <ScrollToTop />
     </footer>
   );
 }

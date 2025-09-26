@@ -2,4 +2,6 @@
 @import "tailwindcss";
 
 /* your custom styles below if needed */
-:root { color-scheme: light; }
+:root {
+  color-scheme: light;
+}

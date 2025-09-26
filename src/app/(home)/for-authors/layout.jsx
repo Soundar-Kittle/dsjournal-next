@@ -20,10 +20,22 @@ const authorMenu = [
     menu_link: "/for-authors/open-access-author",
   },
   { menu_label: "Review Process", menu_link: "/for-authors/review-process" },
-  { menu_label: "Conflicts of Interest", menu_link: "/for-authors/conflicts-of-interest" },
-  { menu_label: "Licensing Policy", menu_link: "/for-authors/licensing-policy" },
-  { menu_label: "Copyright Infringement", menu_link: "/for-authors/copyright-infringement" },
-  { menu_label: "Correction Policy", menu_link: "/for-authors/correction-policy" },
+  {
+    menu_label: "Conflicts of Interest",
+    menu_link: "/for-authors/conflicts-of-interest",
+  },
+  {
+    menu_label: "Licensing Policy",
+    menu_link: "/for-authors/licensing-policy",
+  },
+  {
+    menu_label: "Copyright Infringement",
+    menu_link: "/for-authors/copyright-infringement",
+  },
+  {
+    menu_label: "Correction Policy",
+    menu_link: "/for-authors/correction-policy",
+  },
   { menu_label: "What is APC ?", menu_link: "/for-authors/what-is-apc" },
 ];
 
@@ -38,9 +50,9 @@ export default function AuthorLayout({ children }) {
         }}
         menuItems={authorMenu}
       />
-      <section className="mx-auto max-w-7xl  px-4 sm:px-6 lg:px-8 py-10">
+      <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <aside className="md:col-span-4 lg:col-span-3">
+          <aside className="lg:col-span-3">
             <SideMenu
               title="Menu"
               items={authorMenu}
@@ -48,7 +60,9 @@ export default function AuthorLayout({ children }) {
               storageKey="authors-sidemenu"
             />
           </aside>
-          {children}
+          <article className="lg:col-span-9 text-justify max-w-none pt-2 leading-relaxed">
+            {children}
+          </article>
         </div>
       </section>
     </main>

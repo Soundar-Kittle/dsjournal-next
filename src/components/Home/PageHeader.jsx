@@ -29,7 +29,7 @@ const PageHeader = ({
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeInOut" }}
-        className="absolute top-1/2 left-1/2 -translate-1/2 text-4xl font-bold text-center z-1"
+        className="absolute top-1/2 left-1/2 -translate-1/2 text-5xl font-semibold text-center z-1"
       >
         {title}
       </motion.h1>

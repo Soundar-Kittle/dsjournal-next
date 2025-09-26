@@ -7,7 +7,7 @@ export default function Page() {
   return (
     <div className="min-h-screen flex flex-col shadow-md bg-white">
       <HeroBanner />
-      <AboutUs />
+      <AboutUs title="About Us" />
       <OurFeatures />
       <WeFocusOn />
     </div>

@@ -10,8 +10,8 @@ const NAV = [
   { label: "Home", href: "/" },
   { label: "Journals", href: "/journals" },
   { label: "Authors", href: "/for-authors" },
-  { label: "Reviewers", href: "/reviewers" },
-  { label: "Editors", href: "/editors" },
+  { label: "Reviewers", href: "/for-reviewers" },
+  { label: "Editors", href: "/for-editors" },
 ];
 
 export default function Header() {
