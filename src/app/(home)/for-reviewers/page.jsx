@@ -1,7 +1,7 @@
 const page = () => {
   return (
     <section className="space-y-3 [&_h3,h4]:font-semibold">
-      <h2 className="font-roboto text-4xl font-medium">Reviewers</h2>
+      <h2 className="text-4xl font-medium">Reviewers</h2>
       <h3>1. Respond Promptly to Invitations</h3>
       <p>
         When you receive an invitation to review, the article’s abstract will

@@ -1,7 +1,7 @@
 const page = () => {
   return (
     <section className="space-y-3">
-      <h2 className="font-roboto text-4xl font-medium">Correction Policy</h2>
+      <h2 className="text-4xl font-medium">Correction Policy</h2>
       <h6>Online Corrections</h6>
       <p>
         The final and complete version of an article is the one that is posted

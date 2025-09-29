@@ -22,7 +22,7 @@ export default function page() {
       <div className="max-w-6xl mx-auto space-y-3 px-4 sm:px-6 lg:px-8 py-10">
         <div className="text-center mt-10">
           <motion.h2
-            className="text-2xl mb-3 font-roboto"
+            className="text-2xl mb-3"
             variants={cardVariants}
           >
             Who We Are

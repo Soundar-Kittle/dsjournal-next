@@ -5,7 +5,7 @@ import React from "react";
 const page = () => {
   return (
     <section className="space-y-3">
-      <h2 className="font-roboto text-4xl font-medium">Publication Ethics</h2>
+      <h2 className="text-4xl font-medium">Publication Ethics</h2>
       <p>
         In order to ensure high-quality scientific publications, public
         confidence in scientific findings, and that people have been given

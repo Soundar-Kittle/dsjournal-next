@@ -1,7 +1,7 @@
 const page = () => {
   return (
     <section className="space-y-3">
-      <h2 className="font-roboto text-4xl font-medium">
+      <h2 className="text-4xl font-medium">
         Copyright Infringement
       </h2>
       <p>

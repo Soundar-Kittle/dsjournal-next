@@ -24,13 +24,13 @@ const PageHeader = ({
           className="object-cover"
           priority={true}
         />
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 bg-black/20"></div>
       </div>
       <motion.h1
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeInOut" }}
-        className={`absolute top-1/2 left-1/2 -translate-1/2
+        className={`absolute top-1/2 left-1/2 -translate-1/2 w-full
               ${size ? size : "text-2xl sm:text-3xl md:text-4xl lg:text-5xl "}
              font-semibold text-center z-10 `}
       >

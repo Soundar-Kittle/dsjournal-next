@@ -53,7 +53,7 @@ export default function SideMenu({
             {/* {open ? <CircleArrowDown  size={24} /> : <CircleArrowUp  size={24} />} */}
             <CircleArrowUp
               size={24}
-              className={`${open ? "rotate-180" : ""} duration-300`}
+              className={`${!open ? "rotate-180" : ""} duration-300`}
             />
           </span>
         </div>
@@ -78,7 +78,18 @@ export default function SideMenu({
                 >
                   <Link
                     href={it.menu_link || "#"}
-                    scroll={true}
+                    scroll={false}
+                    // onClick={(e) => {
+                    //   if (it.menu_link?.includes("#")) {
+                    //     e.preventDefault();
+                    //     const id = it.menu_link.split("#")[1];
+                    //     const el = document.getElementById(id);
+                    //     if (el) {
+                    //       el.scrollIntoView({ behavior: "smooth" });
+                    //       window.history.pushState(null, "", it.menu_link);
+                    //     }
+                    //   }
+                    // }}
                     onClick={(e) => {
                       if (it.menu_link?.includes("#")) {
                         e.preventDefault();
@@ -88,6 +99,8 @@ export default function SideMenu({
                           el.scrollIntoView({ behavior: "smooth" });
                           window.history.pushState(null, "", it.menu_link);
                         }
+                      } else {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
                       }
                     }}
                     className={`flex w-full px-3 py-2.5 text-md transition

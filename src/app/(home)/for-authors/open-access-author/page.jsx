@@ -1,7 +1,7 @@
 const page = () => {
   return (
     <section className="space-y-3">
-      <h2 className="font-roboto text-4xl font-medium">Open Access</h2>
+      <h2 className="text-4xl font-medium">Open Access</h2>
       <p>
         According to important definitions of open access found in the academic
         literature (namely the Budapest, Berlin, and Bethesda declarations), the

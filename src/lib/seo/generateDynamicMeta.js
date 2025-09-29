@@ -7,8 +7,17 @@ export const generateDynamicMeta = async (slug) => {
     slug = normalizeSlug(slug);
     const seoRes = await getMetaSlug(slug);
 
+    // 🔹 Fallbacks
+    const fallbackTitle = "Dream Science | Engineering and Technology Journals";
+    const fallbackDesc = `Explore ${fallbackTitle}`;
+    const fallbackImage = "";
+
     if (!seoRes?.ok || !seoRes.meta) {
-      throw new Error(seoRes?.message || "SEO data not found");
+      console.log(seoRes?.message || "SEO data not found");
+      return {
+        title: fallbackTitle,
+        description: fallbackDesc,
+      };
     }
 
     const { meta } = seoRes;
@@ -63,11 +72,6 @@ export const generateDynamicMeta = async (slug) => {
         }
       });
     }
-
-    // 🔹 Fallbacks
-    const fallbackTitle = "DS-Journals";
-    const fallbackDesc = `Explore ${fallbackTitle}`;
-    const fallbackImage = "";
 
     metadata.title ??= fallbackTitle;
     metadata.description ??= fallbackDesc;

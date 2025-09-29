@@ -4,7 +4,7 @@ import ContentAccordian from "@/components/ui/ContentAccordian";
 const page = () => {
   return (
     <section className="space-y-3">
-      <h2 className="font-roboto text-4xl font-medium">
+      <h2 className="text-4xl font-medium">
         Conflicts of Interest
       </h2>
       <p>

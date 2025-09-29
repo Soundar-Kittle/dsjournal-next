@@ -1,7 +1,7 @@
 const page = () => {
   return (
     <section className="space-y-3 [&_h3]:font-semibold">
-      <h2 className="font-roboto text-4xl font-medium">Editors</h2>
+      <h2 className="text-4xl font-medium">Editors</h2>
       <p>
         We appreciate your interest in serving on the editorial board or as a
         reviewer for DS Journals, and we ask that you read the terms and

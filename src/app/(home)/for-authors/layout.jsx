@@ -2,7 +2,7 @@ import PageHeader from "@/components/Home/PageHeader";
 import SideMenu from "@/components/Home/SideMenu";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 
-const authorMenu = [
+const menu = [
   {
     menu_label: "Publication Ethics",
     menu_link: "/for-authors/publication-ethics",
@@ -42,14 +42,14 @@ const authorMenu = [
 export default function AuthorLayout({ children }) {
   return (
     <main className="bg-white">
-      <PageHeader items={authorMenu} title="Authors" />
-      <Breadcrumbs menuItems={authorMenu} />
+      <PageHeader items={menu} title="Authors" />
+      <Breadcrumbs menuItems={menu} />
       <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <aside className="lg:col-span-3">
             <SideMenu
               title="Menu"
-              items={authorMenu}
+              items={menu}
               initiallyOpen={true}
               storageKey="authors-sidemenu"
             />

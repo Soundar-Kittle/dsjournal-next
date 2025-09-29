@@ -1,14 +1,16 @@
 const page = () => {
   return (
     <section className="space-y-3">
-      <h2 className="font-roboto text-4xl font-medium">Review Process</h2>
-      <p>
-        With the help of our knowledgeable Editors, Dream Science International
-        Journals uses a double-blind peer review procedure for an efficient
-        evaluation technique. Senior employees who have a thorough understanding
-        of the subject matter are in charge of the journal's content. With the
-        assistance of internal journal editors, several of the portfolio's
-        journals have external Editors-in-Chief.
+      <h2 className="text-4xl font-medium">Review Process</h2>
+      <section>
+        <p>
+          With the help of our knowledgeable Editors, Dream Science
+          International Journals uses a double-blind peer review procedure for
+          an efficient evaluation technique. Senior employees who have a
+          thorough understanding of the subject matter are in charge of the
+          journal's content. With the assistance of internal journal editors,
+          several of the portfolio's journals have external Editors-in-Chief.
+        </p>
         <ul className="list-disc ml-8">
           <li>
             Every article is initially evaluated by our editorial staff based on
@@ -63,7 +65,7 @@ const page = () => {
             factually correct, and topical material.
           </li>
         </ul>
-      </p>
+      </section>
     </section>
   );
 };

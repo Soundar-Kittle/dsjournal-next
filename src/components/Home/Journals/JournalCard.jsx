@@ -4,17 +4,18 @@ import Link from "next/link";
 export default function JournalCard({ j }) {
   return (
     <Link
-      href={`/journals/${j.slug}`}
+      href={`/${j.slug}`}
       className="group block overflow-hidden rounded shadow-[0_0_10px_rgba(0,0,0,0.2)] border border-[#ccc] p-2"
     >
       {/* Cover image */}
       <div className="relative h-[320px] w-full overflow-hidden p-3 shadow-[0_0_10px_rgba(0,0,0,0.4)] rounded">
         <Image
-          src={j.cover_url}
+          src={`/${j.cover_image}`}
           alt={j.name}
           fill
           className="object-fit p-0.5 bg-white rounded"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          priority
         />
       </div>
 

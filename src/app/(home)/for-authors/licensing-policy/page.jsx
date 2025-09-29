@@ -3,7 +3,7 @@ import Image from "next/image";
 const page = () => {
   return (
     <section className="space-y-3">
-      <h1 className="font-roboto text-4xl font-medium">
+      <h1 className="text-4xl font-medium">
         Copyright and Licensing Policy
       </h1>
       <h5>Copyright</h5>
