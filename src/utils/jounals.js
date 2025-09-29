@@ -1,5 +1,14 @@
 import { createDbConnection } from "@/lib/db";
 
+function slugFromShortName(s) {
+  if (!s) return null;
+  return s
+    .replace(/^DS-?/i, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export async function getJournalBySlug(slug) {
   if (!slug) return null;
   const normalized = `DS-${slug.toUpperCase()}`;
@@ -15,15 +24,6 @@ export async function getJournalBySlug(slug) {
   } finally {
     await connection.end();
   }
-}
-
-function slugFromShortName(s) {
-  if (!s) return null;
-  return s
-    .replace(/^DS-?/i, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 export async function getJournals(q) {
@@ -61,6 +61,58 @@ export async function getJournals(q) {
       issn_print: r.issn_print,
       issn_online: r.issn_online,
     }));
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getMonthGroupsBySlug(slug) {
+  if (!slug) return [];
+
+  const journal = await getJournalBySlug(slug);
+  if (!journal) return [];
+
+  const connection = await createDbConnection();
+  try {
+    const sql = `
+      SELECT 
+        mg.id,
+        mg.journal_id,
+        mg.volume_id,
+        mg.issue_id,
+        mg.from_month,
+        mg.to_month,
+        v.volume_number AS volume,
+        i.issue_number  AS issue,
+        v.year AS year
+      FROM month_groups mg
+      JOIN volumes v ON mg.volume_id = v.id
+      JOIN issues  i ON mg.issue_id  = i.id
+      WHERE mg.journal_id = ?
+      ORDER BY v.year DESC, v.volume_number DESC, i.issue_number ASC
+    `;
+
+    const [rows] = await connection.execute(sql, [journal.id]);
+
+    // group by year
+    const grouped = rows.reduce((acc, row) => {
+      const year = row.year;
+      if (!acc[year]) acc[year] = [];
+
+      acc[year].push({
+        label: `Volume ${row.volume} Issue ${row.issue}, ${row.from_month}-${row.to_month}`,
+        href: `/volume${row.volume}/issue${row.issue}`,
+      });
+
+      return acc;
+    }, {});
+
+    return Object.entries(grouped)
+      .sort(([a], [b]) => b - a)
+      .map(([year, items]) => ({
+        year,
+        items,
+      }));
   } finally {
     await connection.end();
   }

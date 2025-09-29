@@ -273,3 +273,297 @@ export default function Addform({ editData = null, onSuccess }) {
     </form>
   );
 }
+
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
+
+// "use client";
+
+// import { useForm, Controller } from "react-hook-form";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
+// import { Button } from "@/components/ui/button";
+// import { Checkbox } from "@/components/ui/checkbox";
+// import { useEffect, useState } from "react";
+// import moment from "moment";
+// import {
+//   publicationFrequencies,
+//   languages,
+//   formatofpublication,
+// } from "@/@data/data";
+
+// export default function Addform({ editData = null, onSuccess }) {
+//   const {
+//     register,
+//     handleSubmit,
+//     control,
+//     reset,
+//     formState: { errors },
+//   } = useForm();
+
+//   const [preview, setPreview] = useState(null);
+//   const [bannerPreview, setBannerPreview] = useState(null);
+
+//   useEffect(() => {
+//     if (editData) {
+//       reset({
+//         ...editData,
+//         year_started: editData.year_started
+//           ? `${editData.year_started}-01-01`
+//           : "",
+//         is_print_issn: Boolean(editData.is_print_issn),
+//         is_e_issn: Boolean(editData.is_e_issn),
+//       });
+//       setPreview(editData.cover_image ? `/${editData.cover_image}` : null);
+//       setBannerPreview(
+//         editData.banner_image ? `/${editData.banner_image}` : null
+//       );
+//     }
+//   }, [editData, reset]);
+
+//   const onSubmit = async (data) => {
+//     const formData = new FormData();
+//     for (const key in data) {
+//       if (key === "cover_image" && data[key]?.[0]) {
+//         formData.append("cover_image", data[key][0]);
+//       } else if (key === "banner_image" && data[key]?.[0]) {
+//         formData.append("banner_image", data[key][0]);
+//       } else if (key === "is_print_issn" || key === "is_e_issn") {
+//         formData.append(key, data[key] ? "1" : "0");
+//       } else {
+//         formData.append(key, data[key]);
+//       }
+//     }
+
+//     if (data.year_started) {
+//       formData.set("year_started", new Date(data.year_started).getFullYear());
+//     }
+
+//     const res = await fetch("/api/journals", {
+//       method: editData ? "PATCH" : "POST",
+//       body: formData,
+//     });
+
+//     const result = await res.json();
+//     if (result.success) {
+//       reset();
+//       setPreview(null);
+//       setBannerPreview(null);
+//       if (onSuccess) onSuccess();
+//     }
+//   };
+
+//   return (
+//     <form
+//       onSubmit={handleSubmit(onSubmit)}
+//       className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6"
+//     >
+//       <div className="md:col-span-2">
+//         <Label className="text-lg">Journal Page</Label>
+//       </div>
+
+//       <div>
+//         <Label>Journal Name</Label>
+//         <Input {...register("journal_name", { required: true })} />
+//       </div>
+//       <div>
+//         <Label>Short Name</Label>
+//         <Input {...register("short_name", { required: true })} />
+//       </div>
+
+//       {/* Checkbox toggles */}
+//       <div className="col-span-2 flex gap-6">
+//         <Controller
+//           name="is_print_issn"
+//           control={control}
+//           defaultValue={false}
+//           render={({ field }) => (
+//             <label className="flex items-center gap-2">
+//               <Checkbox
+//                 checked={field.value}
+//                 onCheckedChange={field.onChange}
+//               />
+//               <span>Print ISSN</span>
+//             </label>
+//           )}
+//         />
+//         <Controller
+//           name="is_e_issn"
+//           control={control}
+//           defaultValue={true}
+//           render={({ field }) => (
+//             <label className="flex items-center gap-2">
+//               <Checkbox
+//                 checked={field.value}
+//                 onCheckedChange={field.onChange}
+//               />
+//               <span>e-ISSN</span>
+//             </label>
+//           )}
+//         />
+//       </div>
+
+//       {/* Conditional fields */}
+//       <Controller
+//         name="is_print_issn"
+//         control={control}
+//         render={({ field }) =>
+//           field.value ? (
+//             <div>
+//               <Label>Print ISSN</Label>
+//               <Input {...register("issn_print")} />
+//             </div>
+//           ) : null
+//         }
+//       />
+//       <Controller
+//         name="is_e_issn"
+//         control={control}
+//         render={({ field }) =>
+//           field.value ? (
+//             <div>
+//               <Label>e-ISSN</Label>
+//               <Input {...register("issn_online")} />
+//             </div>
+//           ) : null
+//         }
+//       />
+
+//       <div>
+//         <Label>Subject</Label>
+//         <Input {...register("subject")} />
+//       </div>
+//       <div>
+//         <Label>Year Started</Label>
+//         <Controller
+//           control={control}
+//           name="year_started"
+//           render={({ field }) => (
+//             <Input
+//               type="date"
+//               onChange={(e) =>
+//                 field.onChange(moment(e.target.value, "YYYY-MM-DD").toDate())
+//               }
+//               value={field.value ? moment(field.value).format("YYYY-MM-DD") : ""}
+//             />
+//           )}
+//         />
+//       </div>
+
+//       <div>
+//         <Label>Publication Frequency</Label>
+//         <select
+//           {...register("publication_frequency")}
+//           className="w-full border rounded px-2 py-1"
+//         >
+//           <option value="">Select</option>
+//           {publicationFrequencies.map((freq) => (
+//             <option key={freq} value={freq}>
+//               {freq}
+//             </option>
+//           ))}
+//         </select>
+//       </div>
+//       <div>
+//         <Label>Language</Label>
+//         <select
+//           {...register("language")}
+//           className="w-full border rounded px-2 py-1"
+//         >
+//           <option value="">Select</option>
+//           {languages.map((lang) => (
+//             <option key={lang} value={lang}>
+//               {lang}
+//             </option>
+//           ))}
+//         </select>
+//       </div>
+//       <div>
+//         <Label>Submission Email</Label>
+//         <Input type="email" {...register("paper_submission_id")} />
+//       </div>
+//       <div>
+//         <Label>Format</Label>
+//         <select
+//           {...register("format")}
+//           className="w-full border rounded px-2 py-1"
+//         >
+//           <option value="">Select</option>
+//           {formatofpublication.map((publishtype) => (
+//             <option key={publishtype} value={publishtype}>
+//               {publishtype}
+//             </option>
+//           ))}
+//         </select>
+//       </div>
+//       <div>
+//         <Label>Publication Fee</Label>
+//         <Input {...register("publication_fee")} />
+//       </div>
+//       <div>
+//         <Label>Publisher</Label>
+//         <Input {...register("publisher")} />
+//       </div>
+//       <div>
+//         <Label>DOI Prefix</Label>
+//         <Input {...register("doi_prefix")} />
+//       </div>
+
+//       {/* Cover Image */}
+//       <div className="md:col-span-2">
+//         <Label>Cover Image</Label>
+//         <Input
+//           type="file"
+//           accept="image/*"
+//           {...register("cover_image")}
+//           onChange={(e) => {
+//             if (e.target.files?.[0]) {
+//               setPreview(URL.createObjectURL(e.target.files[0]));
+//             }
+//           }}
+//         />
+//         {preview && (
+//           <img
+//             src={preview}
+//             alt="Preview"
+//             className="mt-2 h-32 rounded border shadow"
+//           />
+//         )}
+//       </div>
+
+//       {/* Banner Image */}
+//       <div className="md:col-span-2">
+//         <Label>Banner Image</Label>
+//         <Input
+//           type="file"
+//           accept="image/*"
+//           {...register("banner_image")}
+//           onChange={(e) => {
+//             if (e.target.files?.[0]) {
+//               setBannerPreview(URL.createObjectURL(e.target.files[0]));
+//             }
+//           }}
+//         />
+//         {bannerPreview && (
+//           <img
+//             src={bannerPreview}
+//             alt="Banner Preview"
+//             className="mt-2 h-32 rounded border shadow"
+//           />
+//         )}
+//       </div>
+
+//       <div className="md:col-span-2 text-right">
+//         <Button type="submit" className="cursor-pointer">
+//           {editData ? "Update Journal" : "Save Journal"}
+//         </Button>
+//       </div>
+//     </form>
+//   );
+// }
