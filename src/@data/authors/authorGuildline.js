@@ -737,7 +737,7 @@ const autherGuideline = [
          Articles published under the terms of the CC BY Open Choice licence do not necessitate the transfer of any copyright because the author retains ownership of the material. The authors consent to publishing their work under the Creative Commons Attribution License by choosing open access.
         </p>
         <p>Verify the licensing agreements 
-        <a class="text-light-blue hover:text-blue" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">(https://creativecommons.org/licenses/by-nc-nd/4.0/)</a>.
+        <a class="text-light-blue hover:text-blue" target="_blank" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">(https://creativecommons.org/licenses/by-nc-nd/4.0/)</a>.
         </p>
       </div>`,
     ],

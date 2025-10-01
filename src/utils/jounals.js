@@ -100,6 +100,8 @@ export async function getMonthGroupsBySlug(slug) {
       if (!acc[year]) acc[year] = [];
 
       acc[year].push({
+        volume: row.volume,
+        issue: row.issue,
         label: `Volume ${row.volume} Issue ${row.issue}, ${row.from_month}-${row.to_month}`,
         href: `/volume${row.volume}/issue${row.issue}`,
       });
@@ -111,7 +113,10 @@ export async function getMonthGroupsBySlug(slug) {
       .sort(([a], [b]) => b - a)
       .map(([year, items]) => ({
         year,
-        items,
+        items: items.sort((a, b) => {
+          if (b.issue !== a.issue) return b.issue - a.issue;
+          return a.issue - b.issue;
+        }),
       }));
   } finally {
     await connection.end();
