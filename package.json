@@ -6,7 +6,8 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "analyze": "cross-env ANALYZE=true next build"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^44.3.0",
@@ -58,6 +59,7 @@
     "multer": "^1.4.5-lts.2",
     "mysql2": "^3.14.1",
     "next": "15.3.2",
+    "next-bundle-analyzer": "^0.6.8",
     "next-connect": "^1.0.0",
     "nodemailer": "^7.0.6",
     "nprogress": "^0.2.0",
@@ -79,8 +81,10 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@next/bundle-analyzer": "^15.5.4",
     "@tailwindcss/postcss": "^4",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "postcss": "^8.5.3",
