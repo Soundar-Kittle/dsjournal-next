@@ -39,7 +39,7 @@ export default function Breadcrumbs({ menuItems = [], parents = [] }) {
   }, [pathname, menuItems, parents]);
 
   return (
-    <nav className="py-5 border-b border-gray-200">
+    <nav className="py-3 border-b border-gray-200">
       <ol
         className="
           flex flex-wrap items-center space-x-1 

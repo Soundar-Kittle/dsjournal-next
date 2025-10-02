@@ -5,7 +5,7 @@ import ContentAccordian from "@/components/ui/ContentAccordian";
 const Page = async ({ params }) => {
   const { slug } = await params;
   const monthGroups = await getMonthGroupsBySlug(slug);
-  const formattedData = monthGroups.map((group) => ({
+  const formattedData = monthGroups.grouped.map((group) => ({
     t: group.year,
     c: [
       <div className="space-y-3" key={group.year}>
@@ -26,7 +26,7 @@ const Page = async ({ params }) => {
   }));
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div>
       <h2 className="text-xl font-medium text-center mb-3">Archives</h2>
       <ContentAccordian data={formattedData} open />
     </div>

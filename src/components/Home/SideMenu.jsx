@@ -1,41 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FaCaretRight } from "react-icons/fa6";
-import { CircleArrowDown, CircleArrowUp } from "lucide-react";
+import { CircleArrowUp } from "lucide-react";
 
 export default function SideMenu({
   title = "Menu",
-  items = [], // [{ menu_label, menu_link }]
-  initiallyOpen = true,
+  items = [],
   className = "",
-  storageKey,
 }) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(initiallyOpen);
+  const [open, setOpen] = useState(false);
 
-  // restore saved state
+  // set default open depending on screen size
   useEffect(() => {
-    if (!storageKey) return;
-    try {
-      const v = localStorage.getItem(storageKey);
-      if (v !== null) setOpen(v === "1");
-    } catch {}
-  }, [storageKey]);
+    const mql = window.matchMedia("(min-width: 1024px)"); // lg breakpoint
+    setOpen(mql.matches);
 
-  // persist state
-  useEffect(() => {
-    if (!storageKey) return;
-    try {
-      localStorage.setItem(storageKey, open ? "1" : "0");
-    } catch {}
-  }, [open, storageKey]);
+    const handler = (e) => setOpen(e.matches); // auto adjust on resize
+    mql.addEventListener("change", handler);
+
+    return () => mql.removeEventListener("change", handler);
+  }, []);
 
   const isActive = (href) => {
     if (!pathname || !href) return false;
-    return pathname === href || pathname.startsWith(href + "/");
+    return pathname === href;
   };
 
   return (
@@ -50,7 +42,6 @@ export default function SideMenu({
         <span className="font-medium">{title}</span>
         <div className="flex items-center gap-1">
           <span className="cursor-pointer">
-            {/* {open ? <CircleArrowDown  size={24} /> : <CircleArrowUp  size={24} />} */}
             <CircleArrowUp
               size={24}
               className={`${!open ? "rotate-180" : ""} duration-300`}
@@ -61,35 +52,24 @@ export default function SideMenu({
 
       {/* body */}
       <div
-        className={`border-1 border-[#ccc]  ${
+        className={`border-1 border-[#ccc] ${
           open ? "p-2" : ""
-        } bg-[#eee]  grid transition-[grid-template-rows] duration-300 ease-in-out ${
+        } bg-[#eee] grid transition-[grid-template-rows] duration-300 ease-in-out ${
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >
         <div className="overflow-hidden">
           <ul className="bg-white">
-            {items.map((it, index) => {
+            {items.map((it) => {
               const active = isActive(it.menu_link);
               return (
                 <li
                   key={it.menu_link}
-                  className=" hover:bg-gray-100 border-1 border-[#ccc] group border-b-0 last:border-b-1"
+                  className="hover:bg-gray-100 border-1 border-[#ccc] group border-b-0 last:border-b-1"
                 >
                   <Link
                     href={it.menu_link || "#"}
                     scroll={false}
-                    // onClick={(e) => {
-                    //   if (it.menu_link?.includes("#")) {
-                    //     e.preventDefault();
-                    //     const id = it.menu_link.split("#")[1];
-                    //     const el = document.getElementById(id);
-                    //     if (el) {
-                    //       el.scrollIntoView({ behavior: "smooth" });
-                    //       window.history.pushState(null, "", it.menu_link);
-                    //     }
-                    //   }
-                    // }}
                     onClick={(e) => {
                       if (it.menu_link?.includes("#")) {
                         e.preventDefault();
@@ -114,11 +94,10 @@ export default function SideMenu({
                     <span>
                       <FaCaretRight
                         size={18}
-                        className={`mr-1 inline-flex  ${
+                        className={`mr-1 inline-flex ${
                           active ? "text-white" : "group-hover:text-[#555]"
                         }`}
                       />
-
                       {it.menu_label}
                     </span>
                   </Link>

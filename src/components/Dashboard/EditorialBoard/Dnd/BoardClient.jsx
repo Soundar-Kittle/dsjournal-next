@@ -17,7 +17,6 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 
-/** board  = [{ title:{id,title}, people:[…] }, … ]  */
 export default function BoardClient({ journalId, board }) {
   const [blocks, setBlocks] = useState(board);
 
@@ -82,10 +81,7 @@ function Section({ block }) {
           )}
           {p.email && (
             <p className="text-sm">
-              <a
-                href={`mailto:${p.email}`}
-                className="text-blue-600 underline"
-              >
+              <a href={`mailto:${p.email}`} className="text-blue-600 underline">
                 {p.email}
               </a>
             </p>
