@@ -120,8 +120,8 @@ function buildUrl(path) {
 }
 
 export default async function EditorialBoardPage({ params, searchParams }) {
-  const short = await params["journal-name"];
-  const journalId = searchParams?.jid;
+  const short = await params;
+  const journalId = await searchParams?.jid;
 
   /* Fetch journal only when we don't have the id */
   let journal;
@@ -178,8 +178,7 @@ export default async function EditorialBoardPage({ params, searchParams }) {
 
       return { title, people };
     })
-    // .filter((group) => group.people.length > 0);
-
+    .filter((group) => group.people.length > 0);
 
   return (
     <main className="max-w-4xl mx-auto p-6 space-y-8">

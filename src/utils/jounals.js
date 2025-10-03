@@ -66,63 +66,6 @@ export async function getJournals(q) {
   }
 }
 
-// export async function getMonthGroupsBySlug(slug) {
-//   if (!slug) return [];
-
-//   const journal = await getJournalBySlug(slug);
-//   if (!journal) return [];
-
-//   const connection = await createDbConnection();
-//   try {
-//     const sql = `
-//       SELECT 
-//         mg.id,
-//         mg.journal_id,
-//         mg.volume_id,
-//         mg.issue_id,
-//         mg.from_month,
-//         mg.to_month,
-//         v.volume_number AS volume,
-//         i.issue_number  AS issue,
-//         v.year AS year
-//       FROM month_groups mg
-//       JOIN volumes v ON mg.volume_id = v.id
-//       JOIN issues  i ON mg.issue_id  = i.id
-//       WHERE mg.journal_id = ?
-//       ORDER BY v.year DESC, v.volume_number DESC, i.issue_number ASC
-//     `;
-
-//     const [rows] = await connection.execute(sql, [journal.id]);
-
-//     // group by year
-//     const grouped = rows.reduce((acc, row) => {
-//       const year = row.year;
-//       if (!acc[year]) acc[year] = [];
-
-//       acc[year].push({
-//         volume: row.volume,
-//         issue: row.issue,
-//         label: `Volume ${row.volume} Issue ${row.issue}, ${row.from_month}-${row.to_month}`,
-//         href: `/volume${row.volume}/issue${row.issue}`,
-//       });
-
-//       return acc;
-//     }, {});
-
-//     return Object.entries(grouped)
-//       .sort(([a], [b]) => b - a)
-//       .map(([year, items]) => ({
-//         year,
-//         items: items.sort((a, b) => {
-//           if (b.issue !== a.issue) return b.issue - a.issue;
-//           return a.issue - b.issue;
-//         }),
-//       }));
-//   } finally {
-//     await connection.end();
-//   }
-// }
-
 export async function getMonthGroupsBySlug(slug) {
   if (!slug) return { grouped: [], currentIssue: null };
 

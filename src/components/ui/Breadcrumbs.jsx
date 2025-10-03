@@ -41,11 +41,9 @@ export default function Breadcrumbs({ menuItems = [], parents = [] }) {
   return (
     <nav className="py-3 border-b border-gray-200">
       <ol
-        className="
-          flex flex-wrap items-center space-x-1 
-          max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 
-          text-sm sm:text-base md:text-lg
-        "
+        className="flex flex-wrap items-center space-x-1 
+        container mx-auto px-4 sm:px-6 lg:px-16 xxl:px-12
+        text-xs md:text-sm lg:text-base"
       >
         {crumbs.map((crumb, idx) => {
           const isLast = idx === crumbs.length - 1;

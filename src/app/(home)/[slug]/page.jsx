@@ -5,8 +5,7 @@ export async function generateMetadata({ params }) {
   const param = await params;
   let slug = param.slug;
   const journal = await getJournalBySlug(slug);
-
-  const baseUrl = "https://87xdbnfg-3000.inc1.devtunnels.ms";
+  const baseUrl = process.env.BASE_URL;
 
   return {
     title: journal.journal_name,

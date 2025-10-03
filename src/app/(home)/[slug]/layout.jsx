@@ -62,8 +62,8 @@ export default async function JournalDetailLayout({ params, children }) {
     <main>
       <header>
         <PageHeader
-          size="text-[25px]"
-          title={`${journal.journal_name} (${journal.short_name})`}
+          size="md:text-[25px] sm:text-base text-xs"
+          title={`${journal?.journal_name} (${journal?.short_name})`}
           image={journal?.banner_image}
         />
         <Breadcrumbs
@@ -72,7 +72,8 @@ export default async function JournalDetailLayout({ params, children }) {
         />
       </header>
       {journal ? (
-        <section className="mx-auto xl:max-w-6xl xxl:max-w-8xl px-4 sm:px-6 lg:px-8 py-10">
+        // <section className="mx-auto sm:max-w-xl md:max-w-3xl xl:max-w-6xl xxl:max-w-full px-4 sm:px-6 lg:px-8 py-10">
+        <section className="container mx-auto px-4 sm:px-6 lg:px-16 xxl:px-12 py-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <aside className="lg:col-span-3">
               <SideMenu

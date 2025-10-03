@@ -1,6 +1,88 @@
 import { getArticleById } from "@/utils/article";
 import { BsDownload } from "react-icons/bs";
 
+export async function generateMetadata({ params }) {
+  const { article: articleId } = await params;
+  const article = await getArticleById(articleId);
+
+  const baseUrl = process.env.BASE_URL;
+  if (!article) {
+    return {
+      title: "Article Not Found",
+      description: "The requested article could not be found.",
+    };
+  }
+
+  const authors = article.authors?.join(", ") || "";
+  const keywords = article.keywords?.join(", ") || "";
+  const pdfUrl = article.pdf_path
+    ? `${baseUrl.replace(/\/$/, "")}/${article.pdf_path.replace(
+        /^(\.\.\/)+/,
+        ""
+      )}`
+    : "";
+  const articleUrl = `${baseUrl}/DST/${article.article_id}`;
+  const coverImage = article.cover_image?.startsWith("http")
+    ? article.cover_image
+    : `${baseUrl}/${article.cover_image}`;
+
+  return {
+    title: article.article_title,
+    description: article.abstract,
+    keywords,
+
+    openGraph: {
+      url: articleUrl,
+      siteName: "dsjournals",
+      title: article.article_title,
+      description: article.abstract,
+      type: "website",
+      images: [
+        {
+          url: coverImage,
+          type: "image/webp",
+        },
+      ],
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      site: "website",
+      title: article.article_title,
+      description: article.abstract,
+      images: [coverImage],
+      url: "https://twitter.com/DreamScience4",
+    },
+
+    other: {
+      Author: authors,
+      title: article.article_title,
+      description: article.abstract,
+      keywords,
+      rights: `Copyright ${article.publisher}`,
+
+      citation_title: article.article_title,
+      citation_journal_title: article.journal_name,
+      citation_publisher: article.publisher,
+      citation_author: authors,
+      citation_volume: `Volume ${article.volume_number}`,
+      citation_year: article.year,
+      citation_date: new Date(article.published).toLocaleDateString("en-CA"),
+      citation_online_date: new Date(article.published).toLocaleDateString(
+        "en-CA"
+      ),
+      citation_doi: article.doi,
+      citation_issn: article.issn_online,
+      citation_abstract: article.abstract,
+      citation_pdf_url: pdfUrl,
+      citation_language: article.language,
+
+      "og:image:type": "image/webp",
+      robots: "index, follow",
+    },
+  };
+}
+
 export default async function Page({ params }) {
   const { article: articleId } = await params;
   const article = await getArticleById(articleId);
@@ -27,9 +109,7 @@ export default async function Page({ params }) {
               className="text-blue font-bold hover:text-light-blue inline-flex items-center gap-1"
             >
               <BsDownload className="h-4 w-4" />
-             <span>
-               Download Full Text
-             </span>
+              <span>Download Full Text</span>
             </a>
           )}
         </p>
@@ -46,12 +126,12 @@ export default async function Page({ params }) {
           )}
         </p>
 
-        <h1 className="text-[24px] font-medium mt-4 pb-3 border-b-2 leading-snug">
+        <h1 className="text-[24px] font-medium mt-4 pb-3 border-b leading-snug">
           {article.article_title}
         </h1>
 
         {article.authors?.length > 0 && (
-          <p className="text-xs mt-2 font-semibold">
+          <p className="text-xs mt-4 font-semibold">
             {article.authors.join(", ")}
           </p>
         )}

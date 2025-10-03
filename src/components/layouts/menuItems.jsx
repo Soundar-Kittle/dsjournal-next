@@ -1,10 +1,10 @@
 import {
   LayoutDashboard,
   BookImage,
-  Stethoscope,
   GalleryHorizontal,
   ChevronsLeftRight,
 } from "lucide-react";
+import { MdEditDocument } from "react-icons/md";
 
 export const getMenuItems = (role) => {
   const adminPath = "/admin/dashboard";
@@ -25,7 +25,7 @@ export const getMenuItems = (role) => {
         title: "Journals",
         icon: <BookImage size={18} />,
         subItems: [
-           {
+          {
             title: "Volume & Issue",
             path: `${adminPath}/journals/volume-issue`,
           },
@@ -41,7 +41,7 @@ export const getMenuItems = (role) => {
       },
       {
         title: "Editorial Board",
-        icon: <Stethoscope size={18} />,
+        icon: <MdEditDocument size={18} />,
         subItems: [
           {
             title: "Members",
