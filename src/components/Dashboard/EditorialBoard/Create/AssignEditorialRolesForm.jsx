@@ -614,7 +614,7 @@ export function AssignEditorialRolesForm() {
   const { data: allMembers = [] } = useQuery({
     queryKey: ["editorial-members"],
     queryFn: async () => {
-      const res = await axios.get("/api/editorial-members");
+      const res = await axios.get("/api/editorial-members?all=true");
       return res.data.members ?? [];
     },
   });

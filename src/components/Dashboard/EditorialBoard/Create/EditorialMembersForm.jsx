@@ -64,8 +64,7 @@ export default function EditorialMembersForm() {
   const { data: members = [], refetch } = useQuery({
     queryKey: ["editorial-members"],
     queryFn: async () =>
-      (await axios.get("/api/editorial-members?page=1&limit=1000")).data
-        .members,
+      (await axios.get("/api/editorial-members?all=true")).data.members,
   });
 
   /* ---------------- mutations ---------------- */

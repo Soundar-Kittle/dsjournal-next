@@ -4,24 +4,65 @@ import { randomInt } from "crypto";
 import { sendEmail } from "@/lib/email";
 // import { getJournalSettings } from "@/lib/settings"; // fetch journal-wise settings
 
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const page = parseInt(searchParams.get("page")) || 1;
+//   const limit = parseInt(searchParams.get("limit")) || 10;
+//   const offset = (page - 1) * limit;
+
+//   const conn = await createDbConnection();
+//   const [rows] = await conn.query(
+//     `SELECT *
+//     FROM editorial_members
+//     ORDER BY name ASC
+//     LIMIT ? OFFSET ?`,
+//     [limit, offset]
+//   );
+
+//   const [[{ total }]] = await conn.query(
+//     "SELECT COUNT(*) as total FROM editorial_members"
+//   );
+//   await conn.end();
+
+//   return NextResponse.json({ success: true, members: rows, total });
+// }
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
+  const all = searchParams.get("all") === "true";
   const page = parseInt(searchParams.get("page")) || 1;
   const limit = parseInt(searchParams.get("limit")) || 10;
   const offset = (page - 1) * limit;
 
   const conn = await createDbConnection();
-  const [rows] = await conn.query(
-    `SELECT *
-    FROM editorial_members
-    ORDER BY name ASC
-    LIMIT ? OFFSET ?`,
-    [limit, offset]
-  );
 
-  const [[{ total }]] = await conn.query(
-    "SELECT COUNT(*) as total FROM editorial_members"
-  );
+  let rows;
+  let total;
+
+  if (all) {
+    // Fetch everything (no pagination)
+    [rows] = await conn.query(
+      `SELECT * 
+       FROM editorial_members
+       ORDER BY name ASC`
+    );
+    [[{ total }]] = await conn.query(
+      "SELECT COUNT(*) as total FROM editorial_members"
+    );
+  } else {
+    // Fetch with pagination
+    [rows] = await conn.query(
+      `SELECT *
+       FROM editorial_members
+       ORDER BY name ASC
+       LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
+    [[{ total }]] = await conn.query(
+      "SELECT COUNT(*) as total FROM editorial_members"
+    );
+  }
+
   await conn.end();
 
   return NextResponse.json({ success: true, members: rows, total });
