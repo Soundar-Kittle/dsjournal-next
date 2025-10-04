@@ -11,16 +11,17 @@ export async function GET(req) {
   const offset = (page - 1) * limit;
 
   const conn = await createDbConnection();
- const [rows] = await conn.query(
-   `SELECT id, name, email, university, status,
-           has_address, address_lines   -- 🆕 include flag
+  const [rows] = await conn.query(
+    `SELECT *
     FROM editorial_members
     ORDER BY name ASC
     LIMIT ? OFFSET ?`,
-   [limit, offset]
- );
+    [limit, offset]
+  );
 
-  const [[{ total }]] = await conn.query("SELECT COUNT(*) as total FROM editorial_members");
+  const [[{ total }]] = await conn.query(
+    "SELECT COUNT(*) as total FROM editorial_members"
+  );
   await conn.end();
 
   return NextResponse.json({ success: true, members: rows, total });
@@ -36,12 +37,12 @@ export async function POST(req) {
     country,
     state,
     city,
-    address_lines,           // HTML string
-    has_address = 0,         // 👈 add with default
-    email, 
-    profile_link, 
-    is_active, 
-    journal_id
+    address_lines, // HTML string
+    has_address = 0, // 👈 add with default
+    email,
+    profile_link,
+    is_active,
+    journal_id,
   } = body;
 
   const conn = await createDbConnection();
@@ -51,24 +52,34 @@ export async function POST(req) {
   // const [settingsRows] = await conn.query("SELECT email FROM journal_settings WHERE journal_id = ?", [journal_id]);
   // const systemEmail = settingsRows.length > 0 ? settingsRows[0].email : null;
 
-//   const [settingsRows] = await conn.query(
-//   `SELECT email FROM journal_mail_accounts 
-//    WHERE journal_id = ? AND purpose = 'editor' AND is_active = 1 
-//    LIMIT 1`, 
-//   [journal_id]
-// );
-// const systemEmail = settingsRows.length > 0 ? settingsRows[0].email : null;
+  //   const [settingsRows] = await conn.query(
+  //   `SELECT email FROM journal_mail_accounts
+  //    WHERE journal_id = ? AND purpose = 'editor' AND is_active = 1
+  //    LIMIT 1`,
+  //   [journal_id]
+  // );
+  // const systemEmail = settingsRows.length > 0 ? settingsRows[0].email : null;
 
- await conn.query(
+  await conn.query(
     `INSERT INTO editorial_members
        (name, designation, department, university, country, state, city,
         address_lines, has_address, email, profile_link, status, otp, is_verified)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      name, designation, department, university, country, state, city,
-      address_lines || "",              // store HTML string
-      has_address ? 1 : 0,              // 0/1 flag
-      email, profile_link, is_active, otp, 0
+      name,
+      designation,
+      department,
+      university,
+      country,
+      state,
+      city,
+      address_lines || "", // store HTML string
+      has_address ? 1 : 0, // 0/1 flag
+      email,
+      profile_link,
+      is_active,
+      otp,
+      0,
     ]
   );
 
@@ -83,7 +94,10 @@ export async function POST(req) {
 
   await conn.end();
 
-  return NextResponse.json({ success: true, message: "Member added, OTP sent." });
+  return NextResponse.json({
+    success: true,
+    message: "Member added, OTP sent.",
+  });
 }
 
 export async function PATCH(req) {
@@ -97,16 +111,29 @@ export async function PATCH(req) {
     country,
     state,
     city,
-     address_lines, has_address = 0,
- email, profile_link, is_active, is_verified = null
+    address_lines,
+    has_address = 0,
+    email,
+    profile_link,
+    is_active,
+    is_verified = null,
   } = body;
 
   const conn = await createDbConnection();
 
-  const fields = [name, designation, department, university, country, state, city, 
+  const fields = [
+    name,
+    designation,
+    department,
+    university,
+    country,
+    state,
+    city,
     address_lines || "",
-   has_address ? 1 : 0,              // 🆕
-   email, profile_link, is_active
+    has_address ? 1 : 0, // 🆕
+    email,
+    profile_link,
+    is_active,
   ];
   let query = `UPDATE editorial_members SET
       name = ?, designation = ?, department = ?, university = ?,
@@ -139,4 +166,3 @@ export async function DELETE(req) {
 
   return NextResponse.json({ success: true, message: "Member deleted" });
 }
-

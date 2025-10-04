@@ -4,7 +4,11 @@ import Link from "next/link";
 export default async function Page({ params }) {
   const { slug } = await params;
 
-  const editorial = await getEditorialBoardBySlug(slug);
+  const sortedEditorial = await getEditorialBoardBySlug(slug);
+
+  const editorial = sortedEditorial.sort(
+    (a, b) => a.title_order - b.title_order
+  );
 
   return (
     <main>
@@ -20,13 +24,33 @@ export default async function Page({ params }) {
             {section.members.map((m) => (
               <div key={m.id} className="font-medium">
                 <p className="font-bold">{m.name},</p>
-                <p className="text-xs">{m.department && `${m.department},`}</p>
-                <p className="text-xs">{m.university && `${m.university},`}</p>
-                <p className="text-xs">
-                  {m.city && `${m.city}, `}
-                  {m.state && `${m.state}, `}
-                  {m.country && `${m.country},`}
-                </p>
+
+                {m.has_address ? (
+                  <div className="text-xs whitespace-pre-line">
+                    {m.address
+                      ?.replace(/<\/?strong>/gi, "")
+                      ?.replace(/<\/?b>/gi, "")
+                      ?.replace(/<br\s*\/?>/gi, "\n")
+                      ?.replace(/<\/?p>/gi, "\n")
+                      ?.replace(/<\/?[^>]+(>|$)/g, "")
+                      .trim()}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs">
+                      {m.department && `${m.department},`}
+                    </p>
+                    <p className="text-xs">
+                      {m.university && `${m.university},`}
+                    </p>
+                    <p className="text-xs">
+                      {m.city && `${m.city}, `}
+                      {m.state && `${m.state}, `}
+                      {m.country && `${m.country},`}
+                    </p>
+                  </>
+                )}
+
                 {m.email && (
                   <p className="text-xs">
                     <Link href={`mailto:${m.email}`}>{m.email}</Link>

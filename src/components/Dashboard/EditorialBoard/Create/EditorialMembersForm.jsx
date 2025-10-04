@@ -22,10 +22,11 @@ import dynamic from "next/dynamic";
 const TestEditor = dynamic(
   async () => {
     const { CKEditor } = await import("@ckeditor/ckeditor5-react");
-    const ClassicEditor = (await import("@ckeditor/ckeditor5-build-classic")).default;
+    const ClassicEditor = (await import("@ckeditor/ckeditor5-build-classic"))
+      .default;
     return () => <CKEditor editor={ClassicEditor} data="<p>Hello</p>" />;
   },
-  { ssr:false }
+  { ssr: false }
 );
 
 export default function EditorialMembersForm() {
@@ -36,7 +37,7 @@ export default function EditorialMembersForm() {
     control,
     reset,
     setValue,
-      watch,               
+    watch,
     formState: { isSubmitting },
   } = useForm({
     defaultValues: {
@@ -50,9 +51,8 @@ export default function EditorialMembersForm() {
       city: "",
       address_lines: "",
       profile_link: "",
-      journal_id: "",
       is_active: true,
-      has_address: false,  // 👈 NEW toggle
+      has_address: false, // 👈 NEW toggle
     },
   });
 
@@ -61,16 +61,11 @@ export default function EditorialMembersForm() {
 
   const hasAddress = watch("has_address");
 
-  /* ---------------- queries ---------------- */
-  const { data: journals = [] } = useQuery({
-    queryKey: ["journals"],
-    queryFn: async () => (await axios.get("/api/journals")).data.journals,
-  });
-
   const { data: members = [], refetch } = useQuery({
     queryKey: ["editorial-members"],
     queryFn: async () =>
-      (await axios.get("/api/editorial-members?page=1&limit=1000")).data.members,
+      (await axios.get("/api/editorial-members?page=1&limit=1000")).data
+        .members,
   });
 
   /* ---------------- mutations ---------------- */
@@ -97,17 +92,16 @@ export default function EditorialMembersForm() {
   });
 
   /* ---------------- submit handler ---------------- */
-const onSubmit = (data) => {
-  const payload = {
-    ...data,
-    is_active: data.is_active ? 1 : 0,
-   has_address: data.has_address ? 1 : 0,   // 🆕
-   address_lines: data.has_address ? data.address_lines : "",
+  const onSubmit = (data) => {
+    const payload = {
+      ...data,
+      is_active: data.is_active ? 1 : 0,
+      has_address: data.has_address ? 1 : 0, // 🆕
+      address_lines: data.has_address ? data.address_lines : "",
+    };
+    if (editingId) payload.id = editingId;
+    saveMutation.mutate(payload);
   };
-  if (editingId) payload.id = editingId;
-  saveMutation.mutate(payload);
-};
-
 
   /* ---------------- table setup ---------------- */
   const columnHelper = createColumnHelper();
@@ -120,18 +114,18 @@ const onSubmit = (data) => {
       header: "Status",
       cell: (info) => (info.getValue() === 1 ? "Active" : "Inactive"),
     }),
-columnHelper.accessor("address_lines", {
-  header: "Address",
-  cell: (info) =>
-    info.getValue() ? (
-      <div
-        className="text-sm"
-        dangerouslySetInnerHTML={{ __html: info.getValue() }}
-      />
-    ) : (
-      "—"
-    ),
-}),
+    columnHelper.accessor("address_lines", {
+      header: "Address",
+      cell: (info) =>
+        info.getValue() ? (
+          <div
+            className="text-sm"
+            dangerouslySetInnerHTML={{ __html: info.getValue() }}
+          />
+        ) : (
+          "—"
+        ),
+    }),
     columnHelper.display({
       id: "actions",
       header: "Actions",
@@ -140,31 +134,30 @@ columnHelper.accessor("address_lines", {
           <Button
             variant="outline"
             size="sm"
-          onClick={() => {
-  const m = row.original;
+            onClick={() => {
+              const m = row.original;
 
-  // 1. scalar fields
-  setValue("id", m.id ?? null);
-  setValue("name", m.name ?? "");
-  setValue("email", m.email ?? "");
-  setValue("designation", m.designation ?? "");
-  setValue("department", m.department ?? "");
-  setValue("university", m.university ?? "");
-  setValue("country", m.country ?? "");
-  setValue("state", m.state ?? "");
-  setValue("city", m.city ?? "");
-  setValue("profile_link", m.profile_link ?? "");
-  setValue("journal_id", m.journal_id ?? "");
-  setValue("is_active", m.status === 1);
+              // 1. scalar fields
+              setValue("id", m.id ?? null);
+              setValue("name", m.name ?? "");
+              setValue("email", m.email ?? "");
+              setValue("designation", m.designation ?? "");
+              setValue("department", m.department ?? "");
+              setValue("university", m.university ?? "");
+              setValue("country", m.country ?? "");
+              setValue("state", m.state ?? "");
+              setValue("city", m.city ?? "");
+              setValue("profile_link", m.profile_link ?? "");
+              setValue("is_active", m.status === 1);
 
-  // 2. address
-  const hasAddr = m.has_address === 1;
-  setValue("has_address", hasAddr);
-  setValue("address_lines", hasAddr ? m.address_lines || "" : "");
+              // 2. address
+              const hasAddr = m.has_address === 1;
+              setValue("has_address", hasAddr);
+              setValue("address_lines", hasAddr ? m.address_lines || "" : "");
 
-  // 3. switch to edit mode
-  setEditingId(m.id);
-}}
+              // 3. switch to edit mode
+              setEditingId(m.id);
+            }}
           >
             ✏️
           </Button>
@@ -241,28 +234,28 @@ columnHelper.accessor("address_lines", {
           <Input {...register("city")} />
         </div>
 
-{/* Address toggle stays the same */}
-<div className="flex items-center space-x-3 md:col-span-2">
+        {/* Address toggle stays the same */}
+        <div className="flex items-center space-x-3 md:col-span-2">
           <Label>Has address lines?</Label>
-<Controller
-  name="has_address"
-  control={control}
-  render={({ field }) => (
-    <Switch checked={field.value} onCheckedChange={field.onChange} />
-  )}
-/>
+          <Controller
+            name="has_address"
+            control={control}
+            render={({ field }) => (
+              <Switch checked={field.value} onCheckedChange={field.onChange} />
+            )}
+          />
         </div>
 
-{/* Show CKEditor when switch is on */}
- {hasAddress && (
-   <Controller
-     name="address_lines"
-     control={control}
-     render={({ field }) => (
-       <TiptapEditor value={field.value} onChange={field.onChange} />
-     )}
-   />
- )}
+        {/* Show CKEditor when switch is on */}
+        {hasAddress && (
+          <Controller
+            name="address_lines"
+            control={control}
+            render={({ field }) => (
+              <TiptapEditor value={field.value} onChange={field.onChange} />
+            )}
+          />
+        )}
         {/* <div className="md:col-span-2">
           <Label>Address lines (comma-separated)</Label>
           <Input {...register("address_lines")} />
@@ -271,21 +264,6 @@ columnHelper.accessor("address_lines", {
         <div className="md:col-span-2">
           <Label>Profile link (URL)</Label>
           <Input {...register("profile_link")} />
-        </div>
-
-        <div className="md:col-span-2">
-          <Label>Journal</Label>
-          <select
-            {...register("journal_id", { required: true })}
-            className="border p-2 rounded w-full"
-          >
-            <option value="">Choose journal</option>
-            {journals.map((j) => (
-              <option key={j.id} value={j.id}>
-                {j.journal_name}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -318,10 +296,7 @@ columnHelper.accessor("address_lines", {
               <tr key={hg.id}>
                 {hg.headers.map((h) => (
                   <th key={h.id} className="border p-2 bg-gray-100">
-                    {flexRender(
-                      h.column.columnDef.header,
-                      h.getContext()
-                    )}
+                    {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
                 ))}
               </tr>
@@ -332,10 +307,7 @@ columnHelper.accessor("address_lines", {
               <tr key={row.id}>
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className="border p-2">
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
               </tr>

@@ -14,6 +14,7 @@ export async function getEditorialBoardBySlug(slug) {
         t.id   AS title_id,
         t.title AS title_name,
         r.sort_order,
+        r.title_sort_order,
         m.id   AS member_id,
         m.name,
         m.designation,
@@ -35,7 +36,7 @@ export async function getEditorialBoardBySlug(slug) {
         AND r.is_active = 1
         AND t.status = 1
         AND m.status = 1
-      ORDER BY t.id ASC, r.sort_order ASC, m.id ASC
+      ORDER BY t.id ASC, r.title_sort_order ASC, r.sort_order ASC, m.id ASC
     `;
 
     const [rows] = await connection.execute(sql, [journal.id]);
@@ -44,6 +45,7 @@ export async function getEditorialBoardBySlug(slug) {
     const grouped = rows.reduce((acc, row) => {
       if (!acc[row.title_id]) {
         acc[row.title_id] = {
+          title_order: row.title_sort_order,
           title: row.title_name,
           members: [],
         };
