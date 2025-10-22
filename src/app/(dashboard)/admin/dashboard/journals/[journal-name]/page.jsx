@@ -29,11 +29,12 @@ export default async function JournalPage({ params }) {
 
   // --- tiles ---
   const tiles = [
-    { slug: "editorial-board", label: "Editorial Board", emoji: "📚" },
+    // { slug: "editorial-board", label: "Editorial Board", emoji: "📚" },
     { slug: "archives", label: "Archives", emoji: "🗃️" },
     { slug: "article", label: "Add +", emoji: "👉" },
     { slug: "citation", label: "Citation", emoji: "🤖" },
     { slug: "stage", label: "Stage", emoji: "🏋️" },
+    { slug: "pages", label: "Pages", emoji: "📖" },
 
   ];
 

@@ -62,15 +62,18 @@ export default async function Page({ params }) {
   const param = await params;
   let slug = param.slug;
   const journal = await getJournalBySlug(slug);
+  console.log(journal?.cover_image);
   return (
     <div>
       {/* Info Card */}
       <div className="rounded-md border shadow-sm bg-white p-6 flex flex-col md:flex-row gap-6">
         <div className="relative w-48 h-64 border rounded overflow-hidden">
-          {journal.cover_image && (
+          {journal?.cover_image && (
             <Image
-              src={`/${journal.cover_image}`}
-              alt={journal.journal_name}
+              src={
+                journal?.cover_image ? `/${journal?.cover_image}` : "/logo.png"
+              }
+              alt={journal?.journal_name}
               fill
               className="object-contain"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -82,36 +85,36 @@ export default async function Page({ params }) {
           <p>
             <b>Editor in Chief:</b> Prof. [Fill from editorial_members table]
           </p>
-          {journal.issn_online && (
+          {journal?.issn_online && (
             <p>
-              <b>ISSN (Online):</b> {journal.issn_online}
+              <b>ISSN (Online):</b> {journal?.issn_online}
             </p>
           )}
-          {journal.issn_print && (
+          {journal?.issn_print && (
             <p>
               <b>ISSN (Print):</b> {journal.issn_print}
             </p>
           )}
           <p>
-            <b>Subject:</b> {journal.subject}
+            <b>Subject:</b> {journal?.subject}
           </p>
           <p>
-            <b>Year of Starting:</b> {journal.year_started}
+            <b>Year of Starting:</b> {journal?.year_started}
           </p>
           <p>
-            <b>Publication Frequency:</b> {journal.publication_frequency}
+            <b>Publication Frequency:</b> {journal?.publication_frequency}
           </p>
           <p>
-            <b>Language:</b> {journal.language}
+            <b>Language:</b> {journal?.language}
           </p>
           <p>
-            <b>Paper Submission:</b> {journal.paper_submission_id}
+            <b>Paper Submission:</b> {journal?.paper_submission_id}
           </p>
           <p>
-            <b>Publisher:</b> {journal.publisher}
+            <b>Publisher:</b> {journal?.publisher}
           </p>
           <p>
-            <b>Publication Fee:</b> {journal.publication_fee}
+            <b>Publication Fee:</b> {journal?.publication_fee}
           </p>
         </div>
       </div>
@@ -120,7 +123,7 @@ export default async function Page({ params }) {
       <section id="aim" className="space-y-3">
         <h2 className="text-xl font-bold">Aim and Scope</h2>
         <p className="text-slate-700">
-          {journal.aim_scope || "This journal covers research topics in ..."}
+          {journal?.aim_scope || "This journal covers research topics in ..."}
         </p>
       </section>
 
@@ -128,7 +131,7 @@ export default async function Page({ params }) {
       <section id="topics" className="space-y-3">
         <h2 className="text-xl font-bold">Topics</h2>
         <ul className="grid sm:grid-cols-2 gap-x-8 text-slate-700 text-sm list-disc pl-6">
-          {(journal.topics?.split(",") || []).map((topic, i) => (
+          {(journal?.topics?.split(",") || []).map((topic, i) => (
             <li key={i}>{topic.trim()}</li>
           ))}
         </ul>

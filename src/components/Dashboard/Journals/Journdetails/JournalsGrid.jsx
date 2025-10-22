@@ -100,67 +100,69 @@ export default function JournalsGrid({
     >
       <SortableContext items={items} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {visible.map((journal) => (
-            <SortableCard key={journal.id} id={String(journal.id)}>
-              <div className="relative rounded border shadow p-2 bg-white">
-                <div className="relative">
-                  <img
-                    src={
-                      journal.cover_image
-                        ? `/${journal.cover_image}`
-                        : "/placeholder.svg"
-                    }
-                    alt={journal.journal_name}
-                    className="h-64 w-full object-cover rounded"
-                    draggable={false}
-                    onError={(e) => {
-                      e.currentTarget.src = "/placeholder.svg";
-                    }}
-                  />
-                  <div className="absolute top-2 right-2 flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(journal);
+          {visible.map((journal) => {
+            const imageSrc = journal?.cover_image?.startsWith("/")
+              ? journal.cover_image.slice(1)
+              : journal?.cover_image;
+
+            return (
+              <SortableCard key={journal.id} id={String(journal.id)}>
+                <div className="relative rounded border shadow p-2 bg-white">
+                  <div className="relative">
+                    <img
+                      src={imageSrc ? `/${imageSrc}` : "/logo.png"}
+                      alt={journal?.journal_name}
+                      className="h-64 w-full object-cover rounded"
+                      draggable={false}
+                      onError={(e) => {
+                        e.currentTarget.src = "/logo.png";
                       }}
-                      title="Edit"
+                    />
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(journal);
+                        }}
+                        title="Edit"
+                      >
+                        <Pen />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(journal.id);
+                        }}
+                        title="Delete"
+                      >
+                        <Trash />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-center">
+                    <Link
+                      href={`/admin/dashboard/journals/${
+                        journal?.short_name || journal.id
+                      }`}
                     >
-                      <Pen />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(journal.id);
-                      }}
-                      title="Delete"
-                    >
-                      <Trash />
-                    </Button>
+                      <p className="text-sm font-semibold hover:underline">
+                        {journal?.journal_name}
+                      </p>
+                    </Link>
+                    <p className="text-xs text-gray-500">
+                      {journal?.short_name || "—"}
+                    </p>
                   </div>
                 </div>
-                <div className="mt-3 text-center">
-                  <Link
-                    href={`/admin/dashboard/journals/${
-                      journal.short_name || journal.id
-                    }`}
-                  >
-                    <p className="text-sm font-semibold hover:underline">
-                      {journal.journal_name}
-                    </p>
-                  </Link>
-                  <p className="text-xs text-gray-500">
-                    {journal.short_name || "—"}
-                  </p>
-                </div>
-              </div>
-            </SortableCard>
-          ))}
+              </SortableCard>
+            );
+          })}
         </div>
       </SortableContext>
     </DndContext>

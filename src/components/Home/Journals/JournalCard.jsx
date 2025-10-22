@@ -2,6 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function JournalCard({ j }) {
+  const imageSrc = j?.cover_image?.startsWith("/")
+    ? j.cover_image.slice(1)
+    : j?.cover_image;
   return (
     <Link
       href={`/${j.slug}`}
@@ -10,7 +13,7 @@ export default function JournalCard({ j }) {
       {/* Cover image */}
       <div className="relative h-[320px] w-full overflow-hidden p-3 shadow-[0_0_10px_rgba(0,0,0,0.4)] rounded">
         <Image
-          src={`/${j.cover_image}`}
+          src={imageSrc ? `/${imageSrc}` : "/logo.png"}
           alt={j.name}
           fill
           className="object-fit p-0.5 bg-white rounded"

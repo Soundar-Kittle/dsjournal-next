@@ -40,7 +40,7 @@ export async function handleFileUploads(formData) {
             uploadedFiles[key] = [];
           }
 
-          uploadedFiles[key].push(`/uploads/${folder}/${fileName}`);
+          uploadedFiles[key].push(`uploads/${folder}/${fileName}`);
         }
       }
     }

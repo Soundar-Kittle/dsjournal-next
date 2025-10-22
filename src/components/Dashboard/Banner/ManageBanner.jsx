@@ -21,7 +21,7 @@ const ManageBanner = () => {
           cell: (info) => (
             <div className="h-12 w-12 rounded-md overflow-hidden relative">
               <Image
-                src={info.getValue()}
+                src={info.getValue() || "/logo.png"}
                 alt="banner"
                 fill
                 style={{ objectFit: "cover" }}

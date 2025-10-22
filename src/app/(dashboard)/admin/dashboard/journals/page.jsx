@@ -19,7 +19,6 @@
 //   const [editData, setEditData] = useState(null);
 //   const [search, setSearch] = useState("");
 
-
 //   const handleEdit = (journal) => {
 //     setEditData(journal);
 //     setOpen(true);
@@ -50,7 +49,6 @@
 //   useEffect(() => {
 //     fetchJournals();
 //   }, []);
-
 
 //   return (
 //     <div className="p-4">
@@ -141,7 +139,6 @@
 
 // export default page;
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -155,7 +152,6 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
-
 
 // ⬇️ import the grid component (adjust path if you place it elsewhere)
 import JournalsGrid from "@/components/Dashboard/Journals/Journdetails/JournalsGrid";
@@ -174,7 +170,8 @@ export default function Page() {
     try {
       const res = await fetch("/api/journals", { cache: "no-store" });
       const data = await res.json();
-      if (data.success) setJournals(Array.isArray(data.journals) ? data.journals : []);
+      if (data.success)
+        setJournals(Array.isArray(data.journals) ? data.journals : []);
     } finally {
       setLoading(false);
     }
@@ -217,10 +214,19 @@ export default function Page() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <h1 className="text-xl font-semibold">
-          Journal Page {savingOrder && <span className="text-sm text-gray-500">— saving order…</span>}
+          Journal Page{" "}
+          {savingOrder && (
+            <span className="text-sm text-gray-500">— saving order…</span>
+          )}
         </h1>
 
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditData(null); }}>
+        <Dialog
+          open={open}
+          onOpenChange={(v) => {
+            setOpen(v);
+            if (!v) setEditData(null);
+          }}
+        >
           <DialogTrigger asChild>
             <Button
               onClick={() => {
@@ -231,9 +237,11 @@ export default function Page() {
               + Add Journal
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
+          <DialogContent className="md:min-w-3xl lg:min-w-5xl xl:min-w-6xl max-h-[90vh] overflow-auto">
             <DialogHeader>
-              <DialogTitle>{editData ? "Edit Journal" : "Add New Journal"}</DialogTitle>
+              <DialogTitle className="bg-primary/10 text-primary p-4 text-center rounded-lg">
+                {editData ? "Edit Journal" : "Add New Journal"}
+              </DialogTitle>
             </DialogHeader>
             <Addform
               editData={editData}
@@ -243,8 +251,15 @@ export default function Page() {
                 fetchJournals();
               }}
             />
-            <DialogClose asChild>
-              <Button variant="outline" className="mt-4">Close</Button>
+            <DialogClose asChild className="flex justify-end">
+              <div>
+                <button
+                  variant="outline"
+                  className="mt-4 p-1.5 px-4 border rounded-lg cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </DialogClose>
           </DialogContent>
         </Dialog>

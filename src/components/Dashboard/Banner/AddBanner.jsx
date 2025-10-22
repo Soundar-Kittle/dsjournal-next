@@ -87,7 +87,6 @@ const AddBanner = ({ type = "add", editData = {}, onClose }) => {
     }
   }, [type, editData, reset]);
 
-
   // --------------- Mutation ----------------
   const mutation = useApiMutation({
     endpoint: type === "add" ? banners.add.url : banners.update.url,
@@ -130,6 +129,7 @@ const AddBanner = ({ type = "add", editData = {}, onClose }) => {
       fd.append("image", imageFile.image[0]);
     }
 
+    // console.log([...fd.entries()]);
     await mutation.mutateAsync(fd);
   };
 
