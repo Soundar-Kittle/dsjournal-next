@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const PageHeader = ({
   items = [],
   title = "Page Header",
-  image = "images/hero-bgimg.jpg",
+  image,
   size = "",
 }) => {
   const pathname = usePathname();
@@ -14,11 +14,13 @@ const PageHeader = ({
     pathname?.startsWith(x.menu_link)
   )?.menu_label;
   if (matchedTitle) title = matchedTitle;
+
+  const imageSrc = image ? `/${image}` : "/images/hero-bgimg.jpg";
   return (
     <div className="w-full h-full relative text-white">
       <div className="relative h-48 w-full">
         <Image
-          src={`/${image}`}
+          src={imageSrc}
           alt={title}
           fill
           className="object-cover"

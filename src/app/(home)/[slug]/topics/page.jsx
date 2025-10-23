@@ -7,7 +7,7 @@ const page = async ({ params }) => {
 
   const content = await getJournalPageByTitle(journal?.id, "topics");
 
-  if (!content || !content.content) {
+  if (!content || !content.content || content.is_active !== 1) {
     return (
       <div className="">
         <h1 className="text-2xl font-semibold mb-4">

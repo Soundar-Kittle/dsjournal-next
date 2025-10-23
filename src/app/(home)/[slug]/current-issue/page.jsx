@@ -7,10 +7,14 @@ import { FaFile } from "react-icons/fa";
 const Page = async ({ params }) => {
   const { slug } = await params;
   const {
-    currentIssue: { volume, issue },
+    currentIssue
   } = await getMonthGroupsBySlug(slug);
 
-  const articles = await getArticlesBySlugVolumeIssue(slug, volume, issue);
+  if (!currentIssue?.volume || !currentIssue?.issue) {
+    return <p>No cuurent issue found.</p>;
+  }
+
+  const articles = await getArticlesBySlugVolumeIssue(slug, currentIssue.volume, currentIssue.issue);
 
   if (!articles || articles.length === 0) {
     return <p>No cuurent issue articles found.</p>;
@@ -19,7 +23,7 @@ const Page = async ({ params }) => {
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-medium text-center">
-        Volume {volume} Issue {issue}
+        Volume {currentIssue.volume} Issue {currentIssue.issue}
       </h2>
 
       <div className="space-y-4">

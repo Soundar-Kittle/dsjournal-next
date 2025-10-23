@@ -1,4 +1,6 @@
 import { getArticleById } from "@/utils/article";
+import moment from "moment";
+import Link from "next/link";
 import { BsDownload } from "react-icons/bs";
 
 export async function generateMetadata({ params }) {
@@ -101,7 +103,7 @@ export default async function Page({ params }) {
         <p className="text-md font-medium mb-2">
           Research Article | Open Access |{" "}
           {article.pdf_path && (
-            <a
+            <Link
               href={article.pdf_path}
               download={`${article.article_title}-${articleId}.pdf`}
               target="_blank"
@@ -110,19 +112,19 @@ export default async function Page({ params }) {
             >
               <BsDownload className="h-4 w-4" />
               <span>Download Full Text</span>
-            </a>
+            </Link>
           )}
         </p>
         <p className="text-xs">
           Volume {article.volume_number} | Issue {article.issue_number} | Year{" "}
           {article.year} | Article Id: {articleId} |{" "}
           {article.doi && (
-            <a href={article.doi} target="_blank">
+            <Link href={article.doi} target="_blank">
               DOI :{" "}
               <span className="text-blue hover:text-light-blue">
                 {article.doi}
               </span>
-            </a>
+            </Link>
           )}
         </p>
 
@@ -131,7 +133,7 @@ export default async function Page({ params }) {
         </h1>
 
         {article.authors?.length > 0 && (
-          <p className="text-xs mt-4 font-semibold">
+          <p className="text-xs my-4 font-semibold">
             {article.authors.join(", ")}
           </p>
         )}
@@ -151,16 +153,24 @@ export default async function Page({ params }) {
           <tbody>
             <tr>
               <td className="px-3">
-                {new Date(article.received).toLocaleDateString()}
+                {(article?.received &&
+                  moment(article?.received).format("DD MMM YYYY")) ||
+                  "-"}
               </td>
               <td className="px-3 border-x">
-                {new Date(article.revised).toLocaleDateString()}
+                {(article?.revised &&
+                  moment(article?.revised).format("DD MMM YYYY")) ||
+                  "-"}
               </td>
               <td className="px-3 border-x">
-                {new Date(article.accepted).toLocaleDateString()}
+                {(article?.accepted &&
+                  moment(article?.accepted).format("DD MMM YYYY")) ||
+                  "-"}
               </td>
               <td className="px-3">
-                {new Date(article.published).toLocaleDateString()}
+                {(article?.published &&
+                  moment(article?.published).format("DD MMM YYYY")) ||
+                  "-"}
               </td>
             </tr>
           </tbody>
@@ -199,7 +209,8 @@ export default async function Page({ params }) {
         <div>
           <h2 className="text-lg font-semibold">References</h2>
           <div
-            className="prose prose-sm max-w-none whitespace-normal break-words"
+            // className="prose prose-sm max-w-none whitespace-normal break-words space-y-1"
+            className="whitespace-normal break-words"
             dangerouslySetInnerHTML={{ __html: article.references }}
           />
         </div>

@@ -60,14 +60,15 @@ export default function SideMenu({
       >
         <div className="overflow-hidden">
           <ul className="bg-white">
-            {items.map((it) => {
+            {items.map((it, i) => {
               const active = isActive(it.menu_link);
               return (
                 <li
-                  key={it.menu_link}
+                  key={i}
                   className="hover:bg-gray-100 border-1 border-[#ccc] group border-b-0 last:border-b-1"
                 >
                   <Link
+                    download={it?.name}
                     href={it.menu_link || "#"}
                     scroll={false}
                     onClick={(e) => {

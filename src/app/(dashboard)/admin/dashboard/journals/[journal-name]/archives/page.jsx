@@ -742,7 +742,8 @@ const handleDelete = async (id) => {
         <div className="mb-4">
   <h4 className="font-semibold mb-1 text-gray-800">Abstract</h4>
   <div
-    className="text-gray-700 leading-relaxed text-sm sm:text-base prose max-w-none"
+    // className="  prose max-w-none text-gray-700 leading-relaxed text-sm sm:text-base"
+    className="text-gray-700 leading-relaxed text-sm sm:text-base"
     dangerouslySetInnerHTML={{ __html: viewArticle.abstract }}
   />
 </div>

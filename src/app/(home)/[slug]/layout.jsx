@@ -50,11 +50,13 @@ export default async function JournalDetailLayout({ params, children }) {
     { menu_label: "APC", menu_link: `/${slug}/apc` },
     {
       menu_label: "Paper Template",
-      menu_link: "/for-authors/paper-template",
+      menu_link: `/${journal?.paper_template || ""}`,
+      name: `${journal?.short_name} Paper Template`,
     },
     {
       menu_label: "Copyright Form",
-      menu_link: "/for-authors/copyright-infringement",
+      menu_link: `/${journal?.copyright_form || ""}`,
+      name: `${journal?.short_name} Copyright Form`,
     },
   ];
 

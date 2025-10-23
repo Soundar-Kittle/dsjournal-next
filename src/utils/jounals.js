@@ -47,7 +47,7 @@ export async function getJournals(q) {
       params.push(like, like, like);
     }
 
-    sql += ` ORDER BY journal_name ASC`;
+    sql += ` ORDER BY sort_index ASC`;
 
     const [rows] = await connection.execute(sql, params);
 
@@ -89,6 +89,14 @@ export async function getMonthGroupsBySlug(slug) {
       JOIN volumes v ON mg.volume_id = v.id
       JOIN issues  i ON mg.issue_id  = i.id
       WHERE mg.journal_id = ?
+        AND EXISTS (
+          SELECT 1
+          FROM articles a
+          WHERE a.journal_id = mg.journal_id
+            AND a.volume_id = mg.volume_id
+            AND a.issue_id = mg.issue_id
+            AND a.article_status = 'published'
+        )
       ORDER BY v.year DESC, v.volume_number DESC, i.issue_number DESC
     `;
 
@@ -98,12 +106,13 @@ export async function getMonthGroupsBySlug(slug) {
       return { grouped: [], currentIssue: null };
     }
 
-    // pick the very first row as "current issue" since it's already sorted DESC
+    // ✅ pick the first row as currentIssue (it’s the latest with at least one article)
     const current = rows[0];
     const currentIssue = {
       volume: current.volume,
       issue: current.issue,
       label: `Volume ${current.volume} Issue ${current.issue}`,
+      href: `/volume${current.volume}/issue${current.issue}`,
     };
 
     // group by year

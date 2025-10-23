@@ -1,6 +1,6 @@
 /* app/globals.css */
 @import "tailwindcss";
-
+@plugin "@tailwindcss/typography";
 /* your custom styles below if needed */
 :root {
   color-scheme: light;

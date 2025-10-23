@@ -100,7 +100,7 @@ function Section({ block }) {
           )}
           {p.has_address === 1 && p.address_lines && (
             <div
-              className="prose prose-sm"
+              // className="prose prose-sm"
               dangerouslySetInnerHTML={{ __html: p.address_lines }}
             />
           )}
