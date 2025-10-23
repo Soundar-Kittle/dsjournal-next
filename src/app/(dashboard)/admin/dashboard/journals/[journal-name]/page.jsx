@@ -34,7 +34,9 @@ export default async function JournalPage({ params }) {
     { slug: "article", label: "Add +", emoji: "👉" },
     { slug: "citation", label: "Citation", emoji: "🤖" },
     { slug: "stage", label: "Stage", emoji: "🏋️" },
-    { slug: "pages", label: "Pages", emoji: "📖" },
+    { slug: "aim_and_scope", label: "Aim & Scope", emoji: "🎯" },
+    { slug: "topics", label: "Topics", emoji: "🏷️" },
+    { slug: "apc", label: "APC", emoji: "💰" },
 
   ];
 
@@ -61,7 +63,7 @@ export default async function JournalPage({ params }) {
       </header>
 
       {/* Tiles */}
-      <section className="grid gap-6 sm:grid-cols-2">
+      <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
         {tiles.map((t) => (
           <Link
             key={t.slug}

@@ -1,4 +1,5 @@
 import { getJournalBySlug } from "@/utils/jounals";
+import { getJournalPageByTitle } from "@/utils/journalPage";
 import Image from "next/image";
 
 export async function generateMetadata({ params }) {
@@ -62,12 +63,13 @@ export default async function Page({ params }) {
   const param = await params;
   let slug = param.slug;
   const journal = await getJournalBySlug(slug);
-  console.log(journal?.cover_image);
+  const content = await getJournalPageByTitle(journal?.id, "aim_and_scope");
+
   return (
     <div>
       {/* Info Card */}
-      <div className="rounded-md border shadow-sm bg-white p-6 flex flex-col md:flex-row gap-6">
-        <div className="relative w-48 h-64 border rounded overflow-hidden">
+      <div className="rounded-md border shadow-sm bg-white p-6 flex flex-col md:flex-row gap-6 mb-6">
+        <div className="relative w-48 h-64 border rounded overflow-hidden ">
           {journal?.cover_image && (
             <Image
               src={
@@ -119,23 +121,12 @@ export default async function Page({ params }) {
         </div>
       </div>
 
-      {/* Aim & Scope */}
-      <section id="aim" className="space-y-3">
-        <h2 className="text-xl font-bold">Aim and Scope</h2>
-        <p className="text-slate-700">
-          {journal?.aim_scope || "This journal covers research topics in ..."}
-        </p>
-      </section>
-
-      {/* Topics */}
-      <section id="topics" className="space-y-3">
-        <h2 className="text-xl font-bold">Topics</h2>
-        <ul className="grid sm:grid-cols-2 gap-x-8 text-slate-700 text-sm list-disc pl-6">
-          {(journal?.topics?.split(",") || []).map((topic, i) => (
-            <li key={i}>{topic.trim()}</li>
-          ))}
-        </ul>
-      </section>
+      {content?.content && (
+        <div
+          className="[&_ul]:list-disc [&_ol]:list-decimal"
+          dangerouslySetInnerHTML={{ __html: content?.content }}
+        />
+      )}
     </div>
   );
 }
