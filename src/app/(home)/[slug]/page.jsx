@@ -395,11 +395,11 @@ export default async function Page({ params }) {
         <div
           className="
             [&_li]:relative
-            [&_li]:pl-6
+            [&_li]:pl-5
             [&_li::before]:content-['']
             [&_li::before]:absolute
             [&_li::before]:left-0
-            [&_li::before]:top-[0.45em]
+            [&_li::before]:top-[0.3em]
             [&_li::before]:w-[1em]
             [&_li::before]:h-[1em]
             [&_li::before]:bg-[url('data:image/svg+xml,%3Csvg%20stroke=%22currentColor%22%20fill=%22currentColor%22%20stroke-width=%220%22%20viewBox=%220%200%2016%2016%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cpath%20fill-rule=%22evenodd%22%20d=%22M3.646%201.646a.5.5%200%200%201%20.708%200l6%206a.5.5%200%200%201%200%20.708l-6%206a.5.5%200%200%201-.708-.708L9.293%208%203.646%202.354a.5.5%200%200%201%200-.708%22%3E%3C/path%3E%3Cpath%20fill-rule=%22evenodd%22%20d=%22M7.646%201.646a.5.5%200%200%201%20.708%200l6%206a.5.5%200%200%201%200%20.708l-6%206a.5.5%200%200%201-.708-.708L13.293%208%207.646%202.354a.5.5%200%200%201%200-.708%22%3E%3C/path%3E%3C/svg%3E')]

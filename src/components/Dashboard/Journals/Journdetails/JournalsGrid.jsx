@@ -1,4 +1,3 @@
-// JournalsGrid.jsx
 "use client";
 import Link from "next/link";
 import {
@@ -16,7 +15,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
-import { Pen, Trash } from "lucide-react";
+import {  SquarePen, Trash } from "lucide-react";
+import { Switch } from "@/components/ui";
 
 function SortableCard({ id, children }) {
   const {
@@ -52,7 +52,6 @@ export default function JournalsGrid({
   onEdit = () => {},
   onDelete = () => {},
 }) {
-  // items MUST be strings
   const items = (visible || []).map((j) => String(j.id));
 
   const sensors = useSensors(
@@ -92,6 +91,35 @@ export default function JournalsGrid({
     }
   };
 
+  /* ---------------------- Toggle Active/Inactive ---------------------- */
+  const toggleActive = async (journal) => {
+    try {
+      const newStatus = !journal.is_active;
+
+      const res = await fetch("/api/journals/active", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          journal_id: journal.id,
+          is_active: newStatus,
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to update");
+
+      // Update UI instantly
+      setJournals((prev) =>
+        prev.map((j) =>
+          j.id === journal.id ? { ...j, is_active: newStatus } : j
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -99,7 +127,7 @@ export default function JournalsGrid({
       onDragEnd={onDragEnd}
     >
       <SortableContext items={items} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {visible.map((journal) => {
             const imageSrc = journal?.cover_image?.startsWith("/")
               ? journal.cover_image.slice(1)
@@ -118,31 +146,42 @@ export default function JournalsGrid({
                         e.currentTarget.src = "/logo.png";
                       }}
                     />
-                    <div className="absolute top-2 right-2 flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(journal);
-                        }}
-                        title="Edit"
+                    <div className="absolute top-0 flex items-center justify-between w-full px-2 bg-white/10 backdrop-blur-md py-2 shadow-lg">
+                      <div
+                        className={`w-12 h-8 bg-white/30  rounded-md flex items-center justify-center`}
                       >
-                        <Pen />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(journal.id);
-                        }}
-                        title="Delete"
-                      >
-                        <Trash />
-                      </Button>
+                        <Switch
+                          checked={journal.is_active}
+                          className="cursor-pointer"
+                          onCheckedChange={() => toggleActive(journal)}
+                        />
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(journal);
+                          }}
+                          title="Edit"
+                        >
+                          <SquarePen  />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(journal.id);
+                          }}
+                          title="Delete"
+                        >
+                          <Trash />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 text-center">

@@ -3,6 +3,7 @@ import {
   BookImage,
   GalleryHorizontal,
   ChevronsLeftRight,
+  Timer,
 } from "lucide-react";
 import { MdEditDocument } from "react-icons/md";
 
@@ -20,6 +21,11 @@ export const getMenuItems = (role) => {
         title: "Banners",
         path: `${adminPath}/banner`,
         icon: <GalleryHorizontal size={18} />,
+      },
+      {
+        title: "Call for Papers",
+        path: `${adminPath}/call-for-papers`,
+        icon: <Timer size={18} />,
       },
       {
         title: "Journals",

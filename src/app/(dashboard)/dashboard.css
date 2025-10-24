@@ -12,7 +12,7 @@
   --primary: oklch(37.956% 0.04639 210.401);
   --primary-foreground: oklch(0.985 0 0);
   /* --secondary: oklch(0.97 0 0); */
-  --secondary: oklch(37.956% 0.04639 210.401);
+  --secondary: oklch(75.416% 0.15865 127.029);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
@@ -153,7 +153,6 @@
   display: none;
 }
 
-
 /* -----------------------------
    CKEditor visual display fix
 ------------------------------*/
@@ -179,4 +178,3 @@
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
-

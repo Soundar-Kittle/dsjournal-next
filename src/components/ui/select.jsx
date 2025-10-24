@@ -113,15 +113,16 @@ function SelectTrigger({ className, size, isInvalid, children, ...props }) {
     <SelectPrimitive.Trigger
       className={cn(
         selectVariants({ size }),
+        "flex items-center justify-between gap-2",
         isInvalid && "border-destructive ring-destructive/20",
         className
       )}
       aria-invalid={isInvalid}
       {...props}
     >
-      {children}
+      <div className="flex-1 min-w-0 truncate">{children}</div>
       <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="size-4 opacity-50 shrink-0" />
+        <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -130,19 +131,19 @@ function SelectTrigger({ className, size, isInvalid, children, ...props }) {
 // --- Selected Value Display ---
 function SelectValue({ selectedOption, placeholder, showIcons }) {
   return (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        {selectedOption ? (
-          <>
-            {showIcons && selectedOption.icon && (
-              <selectedOption.icon className="size-4 shrink-0" />
-            )}
-            <span className="truncate">{selectedOption.label}</span>
-          </>
-        ) : (
-          <span className="text-muted-foreground truncate">{placeholder}</span>
-        )}
-      </div>
+    <div className="flex items-center gap-2 min-w-0">
+      {selectedOption ? (
+        <>
+          {showIcons && selectedOption.icon && (
+            <selectedOption.icon className="size-4 shrink-0" />
+          )}
+          <span className="truncate block">{selectedOption.label}</span>
+        </>
+      ) : (
+        <span className="text-muted-foreground truncate block">
+          {placeholder}
+        </span>
+      )}
     </div>
   );
 }
