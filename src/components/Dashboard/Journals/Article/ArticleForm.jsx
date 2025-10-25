@@ -1709,7 +1709,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import CKEditorField from "./CKEditorField";
 
-export default function ArticleForm({
+function ArticleForm({
   // data sources
   journals = [],
   volumesMeta = [],
@@ -1735,33 +1735,36 @@ export default function ArticleForm({
 }) {
   // ---- RHF setup (Option B: use context if available, else self-wrap) ----
 // Initialize once (and persist values through rerenders)
-// Initialize once (and persist values through rerenders)
 const ctx = useFormContext();
 const localForm = useForm({
-  defaultValues: useRef({
-    article_status: defaultArticleStatus,
-    journal_id: defaultJournalId ?? "",
-    volume_id: "",
-    issue_id: "",
-    article_id: "",
-    page_from: "",
-    page_to: "",
-    received: "",
-    revised: "",
-    accepted: "",
-    published: "",
-    month_from: "",
-    month_to: "",
-    doi: "",
-    article_title: "",
-    authors: "",
-    abstract: "",
-    keywords: "",
-    references: "",
-  }).current, // ✅ useRef ensures stable defaults across renders
+  defaultValues: useMemo(
+    () => ({
+      article_status: defaultArticleStatus,
+      journal_id: defaultJournalId ?? "",
+      volume_id: "",
+      issue_id: "",
+      article_id: "",
+      page_from: "",
+      page_to: "",
+      received: "",
+      revised: "",
+      accepted: "",
+      published: "",
+      month_from: "",
+      month_to: "",
+      doi: "",
+      article_title: "",
+      authors: "",
+      abstract: "",
+      keywords: "",
+      references: "",
+    }),
+    [] // ✅ never rebuilds on parent changes
+  ),
   shouldUnregister: false,
   mode: "onChange",
 });
+
 
 const methods = ctx ?? localForm;
 
@@ -1804,18 +1807,6 @@ const methods = ctx ?? localForm;
   // Step 2
   const references = useWatch({ control, name: "references" }) ?? "";
 
-  // ✅ Default journal pre-select (robust when journals load async)
-  // useEffect(() => {
-  //   if (journals.length > 0 && defaultJournalId) {
-  //     const current = getValues("journal_id");
-  //     if (!current || current === "") {
-  //       setValue("journal_id", String(defaultJournalId), {
-  //         shouldDirty: false,
-  //         shouldValidate: false,
-  //       });
-  //     }
-  //   }
-  // }, [journals, defaultJournalId, getValues, setValue]);
   useEffect(() => {
   if (defaultJournalId) {
     setValue("journal_id", String(defaultJournalId));
@@ -1826,25 +1817,59 @@ const methods = ctx ?? localForm;
 }, [defaultJournalId, volumesMeta, setValue]);
 
   // ✅ Auto-load issues list when volume changes
-  useEffect(() => {
-    const loadIssues = async () => {
-      if (!volume_id || !fetchIssuesByVolume) {
-        setIssuesMeta([]);
-        setValue("issue_id", "");
-        return;
+useEffect(() => {
+  const loadIssues = async () => {
+    if (!volume_id || !fetchIssuesByVolume) {
+      setIssuesMeta([]);
+      setValue("issue_id", "");
+      return;
+    }
+    try {
+      // clear current issue to avoid stale UI
+      setValue("issue_id", "", { shouldDirty: true, shouldValidate: true });
+      const issues = await fetchIssuesByVolume(volume_id);
+      setIssuesMeta(Array.isArray(issues) ? issues : []);
+    } catch (err) {
+      console.error("Failed to fetch issues:", err);
+      setIssuesMeta([]);
+    }
+  };
+  loadIssues();
+}, [volume_id, fetchIssuesByVolume, setValue]);
+
+// ✅ Auto-fetch month range after issue changes
+// ✅ Auto-fetch month range whenever issue changes
+useEffect(() => {
+  const loadMonthRange = async () => {
+    if (!journal_id || !volume_id || !issue_id) return;
+
+    try {
+      const res = await fetch(
+        `/api/month-groups?journal_id=${journal_id}&volume_id=${volume_id}&issue_id=${issue_id}`
+      );
+      const data = await res.json();
+
+      if (data?.success && data.months?.length > 0) {
+        const { from_month, to_month } = data.months[0];
+        setValue("month_from", from_month || "", {
+          shouldDirty: true,
+          shouldValidate: false,
+        });
+        setValue("month_to", to_month || "", {
+          shouldDirty: true,
+          shouldValidate: false,
+        });
+      } else {
+        setValue("month_from", "", { shouldDirty: true });
+        setValue("month_to", "", { shouldDirty: true });
       }
-      try {
-        // clear current issue to avoid stale UI
-        setValue("issue_id", "", { shouldDirty: true, shouldValidate: true });
-        const issues = await fetchIssuesByVolume(volume_id);
-        setIssuesMeta(Array.isArray(issues) ? issues : []);
-      } catch (err) {
-        console.error("Failed to fetch issues:", err);
-        setIssuesMeta([]);
-      }
-    };
-    loadIssues();
-  }, [volume_id, fetchIssuesByVolume, setValue]);
+    } catch (err) {
+      console.error("❌ Failed to fetch month range:", err);
+    }
+  };
+
+  loadMonthRange();
+}, [journal_id, volume_id, issue_id, setValue]);
 
   // ---- Helpers ----
   const stripHtml = (html) =>
@@ -1869,26 +1894,37 @@ const isStepCompleted = (idx) => {
 
   // ---- Navigation ----
 const handleNext = async () => {
+  // 🔹 1. Run validation for current step
   await trigger(requiredByStep[step] || []);
-  const vals = getValues();
 
-  if (!isStepCompleted(step)) {
-    if (step === 0 && (!vals.journal_id || !vals.volume_id || !vals.issue_id)) {
-      alert("Please select Journal, Volume, and Issue.");
-      return;
-    }
-    if (step === 1 && (!vals.doi || !vals.article_title || !vals.authors)) {
-      alert("Please complete all required fields in this step.");
-      return;
-    }
-    if (step === 2 && !isFilled(vals.references)) {
-      alert("Please add references before continuing.");
-      return;
-    }
+  // 🔹 2. Get the freshest form values after trigger
+  const vals = getValues();
+  console.log("📋 RHF current values after trigger:", vals);
+
+  // 🔹 3. Skip validation re-check if all are filled
+  const missingRequired =
+    step === 0
+      ? !vals.journal_id || !vals.volume_id || !vals.issue_id
+      : step === 1
+      ? !vals.doi || !vals.article_title || !vals.authors
+      : step === 2
+      ? !isFilled(vals.references)
+      : false;
+
+  if (missingRequired) {
+    console.warn("⚠️ Missing required fields at step", step, vals);
+    if (step === 0) alert("Please select Journal, Volume, and Issue.");
+    if (step === 1) alert("Please complete all required fields in this step.");
+    if (step === 2) alert("Please add references before continuing.");
+    return;
   }
 
+  // 🔹 4. Advance safely
+  console.log("✅ Proceeding to next step:", step + 1);
   setStep((s) => Math.min(s + 1, 2));
 };
+
+
   const handlePrev = () => setStep((s) => Math.max(s - 1, 0));
 
   // ---- Select handlers (reset dependents) ----
@@ -2061,55 +2097,30 @@ const handleNext = async () => {
         </div>
       </div>
 
-      {/* Months (optional, only if months[] provided) */}
-      {Array.isArray(months) && months.length > 0 && (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium">Month From</label>
-            <select
-              {...register("month_from")}
-              value={month_from}
-              onChange={(e) =>
-                setValue("month_from", e.target.value, {
-                  shouldDirty: true,
-                  shouldValidate: false,
-                })
-              }
-              disabled={!issue_id}
-              className="border rounded-md p-2 w-full"
-            >
-              <option value="">Select</option>
-              {months.map((m) => (
-                <option key={m.id} value={`${m.id}`}>
-                  {m.label ?? m.id}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Month To</label>
-            <select
-              {...register("month_to")}
-              value={month_to}
-              onChange={(e) =>
-                setValue("month_to", e.target.value, {
-                  shouldDirty: true,
-                  shouldValidate: false,
-                })
-              }
-              disabled={!issue_id}
-              className="border rounded-md p-2 w-full"
-            >
-              <option value="">Select</option>
-              {months.map((m) => (
-                <option key={m.id} value={`${m.id}`}>
-                  {m.label ?? m.id}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
+{/* Auto-fill and display month range */}
+{/* Month Range (auto-filled) */}
+<div className="grid grid-cols-2 gap-4">
+  <div>
+    <label className="block text-sm font-medium">Month From</label>
+    <Input
+      {...register("month_from")}
+      value={month_from || ""}
+      readOnly
+      disabled
+      className="border rounded-md p-2 w-full bg-gray-100"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium">Month To</label>
+    <Input
+      {...register("month_to")}
+      value={month_to || ""}
+      readOnly
+      disabled
+      className="border rounded-md p-2 w-full bg-gray-100"
+    />
+  </div>
+</div>
 
       {/* Dates */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2319,12 +2330,11 @@ const handleNext = async () => {
       </div>
 
       {/* Step Content */}
-<div>
-  <div style={{ display: step === 0 ? "block" : "none" }}>{Step0}</div>
-  <div style={{ display: step === 1 ? "block" : "none" }}>{Step1}</div>
-  <div style={{ display: step === 2 ? "block" : "none" }}>{Step2}</div>
-</div>
-
+      <div>
+        <div style={{ display: step === 0 ? "block" : "none" }}>{Step0}</div>
+        <div style={{ display: step === 1 ? "block" : "none" }}>{Step1}</div>
+        <div style={{ display: step === 2 ? "block" : "none" }}>{Step2}</div>
+      </div>
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
@@ -2355,3 +2365,7 @@ const handleNext = async () => {
     </FormProvider>
   );
 }
+
+// 👇 add these lines at the very bottom of ArticleForm.jsx
+import React from "react";
+export default React.memo(ArticleForm);

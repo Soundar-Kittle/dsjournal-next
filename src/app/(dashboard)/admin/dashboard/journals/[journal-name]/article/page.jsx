@@ -685,7 +685,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef,useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import ArticleForm from "@/components/Dashboard/Journals/Article/ArticleForm";
 
@@ -791,6 +791,12 @@ export default function Page() {
     })();
   }, [jid]);
 
+  const fetchIssuesByVolume = useCallback(async (volumeId) => {
+  const res = await fetch(`/api/issues?journal_id=${jid}&volume_id=${volumeId}`);
+  const data = await res.json();
+  return data?.issues || [];
+}, [jid]);
+
   /** Issues on volume change */
   useEffect(() => {
     if (!form.volume_id) {
@@ -891,17 +897,7 @@ export default function Page() {
   /** Submit handler */
   const onSubmit = async () => {
     try {
-      if (!form.journal_id || !form.volume_id || !form.issue_id) {
-        alert("Please select Journal, Volume and Issue.");
-        return;
-      }
-      if (!form.article_title) {
-        alert("Please enter the article title.");
-        return;
-      }
-
       setSubmitting(true);
-
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => {
         if (k === "id" && !form.id) return;
@@ -942,11 +938,7 @@ export default function Page() {
 <ArticleForm
   journals={journals}
   volumesMeta={volumesMeta}
-  fetchIssuesByVolume={async (volumeId) => {
-    const res = await fetch(`/api/issues?journal_id=${jid}&volume_id=${volumeId}`);
-    const data = await res.json();
-    return data?.issues || [];
-  }}
+  fetchIssuesByVolume={fetchIssuesByVolume}  // ✅ stable reference
   defaultJournalId={jid}
   disabledJournal={true}
   onSubmit={onSubmit}
