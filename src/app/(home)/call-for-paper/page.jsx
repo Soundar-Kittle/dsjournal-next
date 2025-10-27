@@ -1,8 +1,14 @@
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import { getCallForPaper } from "@/utils/callForPaper";
+import moment from "moment";
 import Link from "next/link";
 
-export default function page() {
+export default async function page() {
+  const data = await getCallForPaper();
+
+  const date = moment(data.manual_date).format("Do MMMM YYYY");
+
   return (
     <main className="bg-white">
       <PageHeader title="Call for Paper" />
@@ -41,7 +47,7 @@ export default function page() {
         <div className="space-y-1">
           <p>
             <strong>Last Date for Paper Submission:</strong>{" "}
-            <span className="text-red-600 font-semibold">25 October 2025</span>
+            <span className="text-red-600 font-semibold">{date}</span>
           </p>
           <p>
             <strong>Acceptance/Rejection Notification:</strong> As early as

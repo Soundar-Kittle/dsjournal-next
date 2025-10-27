@@ -58,6 +58,10 @@ export default async function JournalDetailLayout({ params, children }) {
       menu_link: `/${journal?.copyright_form || ""}`,
       name: `${journal?.short_name} Copyright Form`,
     },
+    {
+      menu_label: "Call for Paper",
+      menu_link: `/${slug}/call-for-paper`,
+    },
   ];
 
   return (
