@@ -1,8 +1,6 @@
 import { getEditorialBoardBySlug } from "@/utils/editorialBoard";
 import { getJournalBySlug } from "@/utils/jounals";
 import { getJournalPageByTitle } from "@/utils/journalPage";
-import Image from "next/image";
-import { BsChevronDoubleRight } from "react-icons/bs";
 
 export async function generateMetadata({ params }) {
   const param = await params;
@@ -61,161 +59,12 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// export default async function Page({ params }) {
-//   const param = await params;
-//   const slug = param.slug;
-//   const journal = await getJournalBySlug(slug);
-//   const editorialBoard = await getEditorialBoardBySlug(slug);
-//   const content = await getJournalPageByTitle(journal?.id, "aim_and_scope");
-
-//   // ✅ Extract Editor in Chief details
-//   const editorInChiefGroup = editorialBoard?.find(
-//     (item) =>
-//       item.title?.toLowerCase().includes("editor in chief") ||
-//       item.title?.toLowerCase().includes("chief editor")
-//   );
-//   const editor = editorInChiefGroup?.members?.[0];
-
-//   // ✅ Build address text
-//   const addressHTML = editor?.has_address
-//     ? editor.address.replace(/<\/?strong>/g, "")
-//     : `<p>${[
-//         editor?.department,
-//         editor?.university,
-//         editor?.state,
-//         editor?.country,
-//       ]
-//         .filter(Boolean)
-//         .join(", ")}.</p>`;
-
-//   return (
-//     <div>
-//       {/* ----------- Journal Info Card ----------- */}
-//       <div className="px-5 mb-12">
-//         <div className="rounded border shadow-lg bg-white p-4 py-10 flex flex-col md:flex-row gap-6">
-//           {/* Cover Image */}
-//           <div className="relative w-48 h-64 overflow-hidden m-auto md:mx-0">
-//             {journal?.cover_image && (
-//               <Image
-//                 src={
-//                   journal?.cover_image ? `/${journal.cover_image}` : "/logo.png"
-//                 }
-//                 alt={journal?.journal_name}
-//                 fill
-//                 className="object-contain"
-//                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-//                 priority
-//               />
-//             )}
-//           </div>
-
-//           {/* Journal Details */}
-//           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 leading-tight">
-//             {/* ✅ Editor in Chief */}
-//             {editor && (
-//               <>
-//                 <p className="font-bold">Editor in Chief</p>
-//                 <div>
-//                   <p>{editor.name},</p>
-//                   <div dangerouslySetInnerHTML={{ __html: addressHTML }} />
-//                 </div>
-//               </>
-//             )}
-
-//             {/* ✅ ISSN */}
-//             {journal?.issn_online && (
-//               <>
-//                 <p className="font-bold">ISSN (Online)</p>
-//                 <p>{journal.issn_online}</p>
-//               </>
-//             )}
-//             {journal?.issn_print && (
-//               <>
-//                 <p className="font-bold">ISSN (Print)</p>
-//                 <p>{journal.issn_print}</p>
-//               </>
-//             )}
-
-//             {/* ✅ Subject */}
-//             {journal?.subject && (
-//               <>
-//                 <p className="font-bold">Subject</p>
-//                 <p>{journal?.subject}</p>
-//               </>
-//             )}
-
-//             {/* ✅ Year of Starting */}
-//             {journal?.year_started && (
-//               <>
-//                 <p className="font-bold">Year of Starting</p>
-//                 <p>{journal?.year_started}</p>
-//               </>
-//             )}
-
-//             {/* ✅ Frequency */}
-//             {journal?.publication_frequency && (
-//               <>
-//                 <p className="font-bold">Publication Frequency</p>
-//                 <p>{journal?.publication_frequency}</p>
-//               </>
-//             )}
-
-//             {/* ✅ Language */}
-//             {journal?.language && (
-//               <>
-//                 <p className="font-bold">Language</p>
-//                 <p>{journal?.language}</p>
-//               </>
-//             )}
-
-//             {/* ✅ Paper Submission */}
-//             {journal?.paper_submission_id && (
-//               <>
-//                 <p className="font-bold">Paper Submission</p>
-//                 <p>{journal?.paper_submission_id}</p>
-//               </>
-//             )}
-
-//             {/* ✅ Publisher */}
-//             {journal?.publisher && (
-//               <>
-//                 {" "}
-//                 <p className="font-bold">Publisher</p>
-//                 <p>{journal?.publisher}</p>
-//               </>
-//             )}
-
-//             {/* ✅ Publication Fee */}
-//             {journal?.publication_fee && (
-//               <>
-//                 <p className="font-bold">Publication Fee</p>
-//                 <p>{journal?.publication_fee}</p>
-//               </>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* ----------- Aim and Scope Section ----------- */}
-//       {content?.content && content?.is_active === 1 && (
-//         <div
-//           className="[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ml-6 [&_ol]:ml-6 [&_li]:mb-1"
-//           // className="prose max-w-none marker:text-black line"
-//           dangerouslySetInnerHTML={{ __html: content.content }}
-//         />
-//       )}
-//     </div>
-//   );
-// }
-
 export default async function Page({ params }) {
   const param = await params;
   const slug = param.slug;
   const journal = await getJournalBySlug(slug);
   const editorialBoard = await getEditorialBoardBySlug(slug);
   const content = await getJournalPageByTitle(journal?.id, "aim_and_scope");
-
-  console.log("journal", journal);
 
   // ✅ Extract Editor in Chief details
   const editorInChiefGroup = editorialBoard?.find(
@@ -266,7 +115,7 @@ export default async function Page({ params }) {
                 {editor && (
                   <tr className="align-top">
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      Editor in Chief
+                      <span className="text-[#222] font-bold">Editor in Chief</span>
                     </td>
                     <td>
                       <p>{editor.name},</p>
@@ -279,7 +128,7 @@ export default async function Page({ params }) {
                 {journal?.issn_online && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      ISSN (Online)
+                       <span className="text-[#222] font-bold">ISSN (Online)</span>
                     </td>
                     <td>{journal.issn_online}</td>
                   </tr>
@@ -289,7 +138,7 @@ export default async function Page({ params }) {
                 {journal?.issn_print && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      ISSN (Print)
+                       <span className="text-[#222] font-bold">ISSN (Print)</span>
                     </td>
                     <td>{journal.issn_print}</td>
                   </tr>
@@ -299,7 +148,7 @@ export default async function Page({ params }) {
                 {journal?.subject && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      Subject
+                       <span className="text-[#222] font-bold">Subject</span>
                     </td>
                     <td>{journal.subject}</td>
                   </tr>
@@ -309,7 +158,7 @@ export default async function Page({ params }) {
                 {journal?.year_started && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      Year of Starting
+                       <span className="text-[#222] font-bold">Year of Starting</span>
                     </td>
                     <td>{journal.year_started}</td>
                   </tr>
@@ -319,7 +168,7 @@ export default async function Page({ params }) {
                 {journal?.publication_frequency && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      Publication Frequency
+                       <span className="text-[#222] font-bold">Publication Frequency</span>
                     </td>
                     <td>{journal.publication_frequency}</td>
                   </tr>
@@ -329,7 +178,7 @@ export default async function Page({ params }) {
                 {journal?.language && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      Language
+                       <span className="text-[#222] font-bold">Language</span>
                     </td>
                     <td>{journal.language}</td>
                   </tr>
@@ -339,7 +188,7 @@ export default async function Page({ params }) {
                 {journal?.paper_submission_id && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      Paper Submission id
+                       <span className="text-[#222] font-bold">Paper Submission id</span>
                     </td>
                     <td className=" break-all">
                       {journal.paper_submission_id}
@@ -351,7 +200,7 @@ export default async function Page({ params }) {
                 {journal?.format && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      Format of Publication
+                       <span className="text-[#222] font-bold">Format of Publication</span>
                     </td>
                     <td>{journal.format}</td>
                   </tr>
@@ -361,7 +210,7 @@ export default async function Page({ params }) {
                 {journal?.publication_fee && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      Publication Fee
+                       <span className="text-[#222] font-bold">Publication Fee</span>
                     </td>
                     <td>{journal.publication_fee}</td>
                   </tr>
@@ -371,7 +220,7 @@ export default async function Page({ params }) {
                 {journal?.publisher && (
                   <tr>
                     <td className="font-semibold pr-4 whitespace-nowrap">
-                      Publisher
+                       <span className="text-[#222] font-bold">Publisher</span>
                     </td>
                     <td>{journal.publisher}</td>
                   </tr>

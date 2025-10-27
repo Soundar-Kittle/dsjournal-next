@@ -105,7 +105,6 @@ export default async function Page({ params }) {
           {article.pdf_path && (
             <Link
               href={article.pdf_path}
-              download={`${article.article_title}-${articleId}.pdf`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue font-bold hover:text-light-blue inline-flex items-center gap-1"

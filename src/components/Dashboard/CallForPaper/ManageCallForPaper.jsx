@@ -16,10 +16,14 @@ const ManageCallForPaper = () => {
     {
       header: "Call for Paper Information",
       columns: [
-        columnHelper.accessor("id", {
-          header: "ID",
-          cell: (info) => info.getValue(),
-          size: 50,
+        columnHelper.accessor("date_mode", {
+          header: "Mode",
+          cell: (info) =>
+            info.getValue() === "manual" ? (
+              <span className="text-orange-600 font-semibold">Manual</span>
+            ) : (
+              <span className="text-purple-600 font-semibold">Auto</span>
+            ),
         }),
         columnHelper.accessor("is_common", {
           header: "Type",
@@ -35,15 +39,6 @@ const ManageCallForPaper = () => {
         columnHelper.accessor("journal_name", {
           header: "Journal",
           cell: (info) => info.getValue() || "—",
-        }),
-        columnHelper.accessor("date_mode", {
-          header: "Mode",
-          cell: (info) =>
-            info.getValue() === "manual" ? (
-              <span className="text-orange-600 font-semibold">Manual</span>
-            ) : (
-              <span className="text-purple-600 font-semibold">Auto</span>
-            ),
         }),
         columnHelper.accessor("manual_date", {
           header: "Manual Date",
@@ -79,25 +74,19 @@ const ManageCallForPaper = () => {
               <span className="text-red-600 font-semibold">Inactive</span>
             ),
         }),
-        columnHelper.accessor("created_at", {
-          header: "Created On",
-          cell: (info) => info.getValue() || "—",
-        }),
       ],
     },
   ];
 
   const [columns, setColumns] = useState([
-    { value: "id", label: "ID", visible: true },
+    { value: "date_mode", label: "Mode", visible: true },
     { value: "is_common", label: "Type", visible: true },
     { value: "journal_name", label: "Journal", visible: true },
-    { value: "date_mode", label: "Mode", visible: true },
     { value: "manual_date", label: "Manual Date", visible: true },
     { value: "start_date", label: "Start Date", visible: true },
     { value: "end_date", label: "End Date", visible: true },
     { value: "permit_dates", label: "Permit (Days)", visible: true },
     { value: "is_active", label: "Status", visible: true },
-    { value: "created_at", label: "Created On", visible: false },
   ]);
 
   /* ------------------ SEARCH FILTER ------------------ */
