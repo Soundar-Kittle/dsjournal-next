@@ -1697,7 +1697,7 @@
 // ArticleForm.jsx
 "use client";
 
-import { useState, useEffect, useMemo, useRef} from "react";
+import React, { useState, useEffect, useMemo,useRef } from "react";
 import {
   useForm,
   useFormContext,
@@ -1732,6 +1732,7 @@ function ArticleForm({
   // defaults
   defaultJournalId,
   defaultArticleStatus = "unpublished",
+   resetSignal, 
 }) {
   // ---- RHF setup (Option B: use context if available, else self-wrap) ----
 // Initialize once (and persist values through rerenders)
@@ -1764,6 +1765,10 @@ const localForm = useForm({
   shouldUnregister: false,
   mode: "onChange",
 });
+const fileInputRef = useRef(null);
+
+
+
 
 
 const methods = ctx ?? localForm;
@@ -1776,11 +1781,44 @@ const methods = ctx ?? localForm;
     trigger,
     handleSubmit,
     getValues,
+    reset,      
     formState: { isSubmitting },
   } = methods;
 
   const [step, setStep] = useState(0);
   const [issuesMeta, setIssuesMeta] = useState(externalIssues || []);
+
+  useEffect(() => {
+  if (!resetSignal) return;
+    reset({
+      article_status: defaultArticleStatus,
+      journal_id: defaultJournalId ?? "",
+      volume_id: "",
+      issue_id: "",
+      article_id: "",
+      page_from: "",
+      page_to: "",
+      received: "",
+      revised: "",
+      accepted: "",
+      published: "",
+      month_from: "",
+      month_to: "",
+      doi: "",
+      article_title: "",
+      authors: "",
+      abstract: "",
+      keywords: "",
+      references: "",
+    });
+    // ✅ clear file input and selected file
+  if (fileInputRef.current) {
+    fileInputRef.current.value = "";
+  }
+  onFileSelect?.(null);
+    setStep(0);  // 👈 optional: jump back to first tab
+  
+}, [resetSignal, reset, defaultJournalId, defaultArticleStatus]);
 
   // ---- Watches (RHF is the source of truth) ----
   // Step 0
@@ -2248,6 +2286,7 @@ const handleNext = async () => {
       <div>
         <label className="block text-sm font-medium">Article PDF (optional)</label>
         <input
+         ref={fileInputRef}            // 👈 added
           type="file"
           accept="application/pdf"
           onChange={(e) => {
@@ -2299,66 +2338,102 @@ const handleNext = async () => {
   // ---- Body (Stepper + Steps + Nav) ----
   const stepLabels = ["Basic Info", "Abstract & Upload", "References"];
 
-  const body = (
-    <div className="space-y-6">
-      {/* Stepper */}
-      <div className="flex items-center justify-between mb-4">
-        {stepLabels.map((label, idx) => {
-          const isActive = idx === step;
-          const completed = isStepCompleted(idx);
-          return (
-            <div key={idx} className="flex-1 flex items-center">
-              <div
-                className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                  isActive
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : completed
-                    ? "bg-green-500 text-white border-green-500"
-                    : "border-gray-300 text-gray-500"
-                }`}
-                title={completed ? "Completed" : isActive ? "In progress" : "Incomplete"}
-              >
-                {completed ? "✓" : idx + 1}
-              </div>
-              <div className="ml-2 text-sm font-medium">{label}</div>
-              {idx < stepLabels.length - 1 && (
-                <div className="flex-1 h-0.5 bg-gray-300 mx-2" />
-              )}
+   const Stepper = (
+    <div className="flex items-center justify-between mb-4">
+      {stepLabels.map((label, idx) => {
+        const isActive = idx === step;
+        const completed = isStepCompleted(idx);
+        return (
+          <div key={idx} className="flex-1 flex items-center">
+            <div
+              className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                isActive
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : completed
+                  ? "bg-green-500 text-white border-green-500"
+                  : "border-gray-300 text-gray-500"
+              }`}
+            >
+              {completed ? "✓" : idx + 1}
             </div>
-          );
-        })}
-      </div>
-
-      {/* Step Content */}
-      <div>
-        <div style={{ display: step === 0 ? "block" : "none" }}>{Step0}</div>
-        <div style={{ display: step === 1 ? "block" : "none" }}>{Step1}</div>
-        <div style={{ display: step === 2 ? "block" : "none" }}>{Step2}</div>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex justify-between pt-4">
-        <Button variant="outline" disabled={step === 0} onClick={handlePrev}>
-          Previous
-        </Button>
-        {step < 2 ? (
-          <Button onClick={handleNext} disabled={!canGoNext}>
-            Next
-          </Button>
-        ) : (
-          <Button type="submit" disabled={submitting || isSubmitting}>
-            {submitting || isSubmitting ? "Saving..." : submitLabel}
-          </Button>
-        )}
-      </div>
+            <div className="ml-2 text-sm font-medium">{label}</div>
+            {idx < stepLabels.length - 1 && (
+              <div className="flex-1 h-0.5 bg-gray-300 mx-2" />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
+
+
+   // --- Step Content (trimmed for brevity) ---
+const Steps = (
+  <>
+    <div style={{ display: step === 0 ? "block" : "none" }}>{Step0}</div>
+    <div style={{ display: step === 1 ? "block" : "none" }}>{Step1}</div>
+    <div style={{ display: step === 2 ? "block" : "none" }}>{Step2}</div>
+  </>
+);
+
+// ---- Navigation Buttons ----
+// ✅ FIXED NAVIGATION — prevents auto submit
+// ---- Navigation Buttons ----
+const Navigation = (
+  <div className="flex justify-between pt-6 border-t mt-6">
+    {/* Use plain HTML button to avoid accidental form submit */}
+    <button
+      type="button"
+      disabled={step === 0}
+      onClick={handlePrev}
+      className="px-4 py-2 border rounded-md text-sm font-medium bg-white hover:bg-gray-50 disabled:opacity-50"
+    >
+      Previous
+    </button>
+
+    {step < 2 ? (
+      <button
+        type="button"
+        onClick={handleNext}
+        disabled={!canGoNext}
+        className="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+      >
+        Next
+      </button>
+    ) : (
+      <Button
+        type="submit"
+        disabled={submitting || isSubmitting}
+      >
+        {submitting || isSubmitting ? "Saving..." : submitLabel}
+      </Button>
+    )}
+  </div>
+);
+
+
+
+ const body = (
+    <div className="space-y-6">
+      {Stepper}
+      {Steps}
+      {Navigation}
+    </div>
+  );
+
 
   // If wrapped by an external FormProvider, render just the body.
   if (ctx) return body;
 
   // Otherwise, self-wrap so it works standalone.
-  const localOnSubmit = onSubmitProp || ((data) => console.log("submit", data));
+ const localOnSubmit = (data) => {
+    if (typeof onSubmitProp === "function") {
+      onSubmitProp(data); // Pass full form values to parent
+    } else {
+      console.log("Form submitted:", data);
+    }
+  };
+
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(localOnSubmit)}>{body}</form>
@@ -2366,6 +2441,4 @@ const handleNext = async () => {
   );
 }
 
-// 👇 add these lines at the very bottom of ArticleForm.jsx
-import React from "react";
 export default React.memo(ArticleForm);

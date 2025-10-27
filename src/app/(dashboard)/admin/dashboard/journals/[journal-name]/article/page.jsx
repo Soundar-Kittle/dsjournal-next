@@ -731,6 +731,7 @@ export default function Page() {
   const [submitting, setSubmitting] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
   const [journalSlug, setJournalSlug] = useState("");
+  const [resetSignal, setResetSignal] = useState(0);
 
   /** File select */
   const onFileSelect = (file) => {
@@ -895,56 +896,62 @@ export default function Page() {
   };
 
   /** Submit handler */
-  const onSubmit = async () => {
-    try {
-      setSubmitting(true);
-      const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => {
-        if (k === "id" && !form.id) return;
-        fd.append(k, v ?? "");
-      });
+const onSubmit = async (formValuesFromChild) => {
+  try {
+    setSubmitting(true);
 
-      if (pdfFile) fd.append("pdf", pdfFile);
+    const merged = { ...form, ...formValuesFromChild };
 
-      const method = form.id ? "PUT" : "POST";
-      const res = await fetch("/api/articles", { method, body: fd });
-      const data = await res.json();
-
-      if (!res.ok || !data?.success) throw new Error(data.message);
-
-      alert(
-        form.id
-          ? "Article updated successfully."
-          : "Article created successfully."
-      );
-
-      if (form.id) {
-        window.location.href = `/admin/dashboard/journals/${journalSlug}/archives?jid=${jid}`;
-      } else {
-        setPdfFile(null);
-        setForm({ ...resetForm, journal_id: jid || "" });
-      }
-    } catch (err) {
-      console.error("Save error:", err);
-      alert(err.message || "Something went wrong.");
-    } finally {
+    if (!merged.article_id || !merged.volume_id || !merged.issue_id) {
+      alert("Volume, Issue, and Article ID are required.");
       setSubmitting(false);
+      return;
     }
-  };
 
+    const fd = new FormData();
+    Object.entries(merged).forEach(([k, v]) => {
+      if (k === "id" && !merged.id) return;
+      fd.append(k, v ?? "");
+    });
+    if (pdfFile) fd.append("pdf", pdfFile);
+
+    const method = merged.id ? "PUT" : "POST";
+    const res = await fetch("/api/articles", { method, body: fd });
+    const data = await res.json();
+
+    if (!res.ok || !data?.success) throw new Error(data.message || "Save failed");
+    alert(merged.id ? "Article updated successfully." : "Article created successfully.");
+
+    if (merged.id) {
+      window.location.href = `/admin/dashboard/journals/${journalSlug}/archives?jid=${jid}`;
+    } else {
+      // ✅ clear parent & child forms
+      setPdfFile(null);
+      setForm({ ...resetForm, journal_id: jid || "" });
+      setResetSignal(Date.now());              // 🔹 tell child to reset
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  } catch (err) {
+    console.error("Save error:", err);
+    alert(err.message || "Something went wrong.");
+  } finally {
+    setSubmitting(false);
+  }
+};
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1>Add form</h1>
 <ArticleForm
   journals={journals}
   volumesMeta={volumesMeta}
-  fetchIssuesByVolume={fetchIssuesByVolume}  // ✅ stable reference
+  fetchIssuesByVolume={fetchIssuesByVolume}
   defaultJournalId={jid}
   disabledJournal={true}
-  onSubmit={onSubmit}
+  onSubmit={onSubmit}       // child will call with form data
   submitting={submitting}
   onFileSelect={onFileSelect}
   selectedFile={pdfFile}
+  resetSignal={resetSignal}     // 👈 added
 />
     </div>
   );
