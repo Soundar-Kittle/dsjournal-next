@@ -334,128 +334,113 @@ if (!validPrefixPattern.test(articleIdUpper)) {
   }
 }
 
-  export async function PUT(req) {
-    const conn = await createDbConnection();
-    try {
-      const { fields, files } = await parseForm(req);
-      const idNum = fields.id ? Number(fields.id) : 0;
-      if (!idNum) {
-        return NextResponse.json({ success: false, message: "ID is required for update" }, { status: 400 });
+
+// ==========================================================
+// PUT — Update article + manage PDF file
+// ==========================================================
+export async function PUT(req) {
+  const connection = await createDbConnection();
+  try {
+    const formData = await req.formData();
+    const id = formData.get("id");
+    if (!id)
+      return NextResponse.json({ success: false, message: "Article ID required" }, { status: 400 });
+
+    // --- collect form fields ---
+    const updates = {};
+    for (const [k, v] of formData.entries()) {
+      if (["pdf", "remove_pdf"].includes(k)) continue;
+      updates[k] = v;
+    }
+
+    // --- fetch existing article ---
+    const [rows] = await connection.query(`SELECT pdf_path FROM articles WHERE id = ?`, [id]);
+    const existing = rows[0] || {};
+    const oldPath =
+      existing.pdf_path && existing.pdf_path.trim() !== ""
+        ? path.join(process.cwd(), "public", existing.pdf_path.replace(/^\/+/, ""))
+        : null;
+
+    // --- define upload folder ---
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "articles");
+    await fs.promises.mkdir(uploadDir, { recursive: true });
+
+    // ==========================================================
+    // CASE 1️⃣: New file uploaded (same or different name)
+    // ==========================================================
+    const newFile = formData.get("pdf");
+    if (newFile && newFile.size > 0) {
+      const newName = newFile.name; // keep original filename
+      const newFullPath = path.join(uploadDir, newName);
+
+      // 🧹 Remove old file if exists (even if same name)
+      if (oldPath && fs.existsSync(oldPath)) {
+        try {
+          await fs.promises.unlink(oldPath);
+          console.log("🗑️ Deleted old file:", oldPath);
+        } catch (err) {
+          console.warn("⚠️ Failed to delete old file:", err.message);
+        }
       }
 
-      const {
-        journal_id,
-        volume_id,
-        issue_id,
-        month_from,
-        month_to,
-        article_id,
-        doi,
-        article_title,
-        authors,
-        abstract,
-        keywords,
-        references,
-        received,
-        revised,
-        accepted,
-        published,
-        page_from,
-        page_to,
-        article_status,
-      } = fields;
+      // 💾 Save new file (overwrite safe)
+      const buffer = Buffer.from(await newFile.arrayBuffer());
+      await writeFile(newFullPath, buffer);
+      console.log("✅ Saved new file:", newFullPath);
 
-      // ── Normalize arrays (same as POST)
-      const keywordArray =
-        typeof keywords === "string"
-          ? keywords.split(",").map((k) => k.trim()).filter(Boolean)
-          : Array.isArray(keywords)
-          ? keywords.map((k) => k.trim()).filter(Boolean)
-          : [];
-
-      const authorArray =
-        typeof authors === "string"
-          ? authors.split(",").map((a) => a.trim()).filter(Boolean)
-          : Array.isArray(authors)
-          ? authors.map((a) => a.trim()).filter(Boolean)
-          : [];
-
-      const payload = {
-        journal_id: toNull(journal_id),
-        volume_id: toNull(volume_id),
-        issue_id: toNull(issue_id),
-        month_from: toNull(month_from),
-        month_to: toNull(month_to),
-        article_id: toNull(article_id),
-        doi: toNull(doi),
-        article_title: toNull(article_title),
-        page_from: toNull(page_from),
-        page_to: toNull(page_to),
-        authors: JSON.stringify(authorArray),
-        abstract: abstract === undefined ? null : String(abstract),
-        keywords: JSON.stringify(keywordArray),
-        references: references === undefined ? null : String(references),
-        received: toNull(received),
-        revised: toNull(revised),
-        accepted: toNull(accepted),
-        published: toNull(published),
-        pdf_path: toNull(fields.pdf_path), // or resolve from files as you did in POST
-        article_status: toNull(article_status),
-      };
-
-      // ── Update SQL
-      const sql = `
-        UPDATE articles SET
-          journal_id = ?, volume_id = ?, issue_id = ?,
-          month_from = ?, month_to = ?,
-          article_id = ?, doi = ?, article_title = ?,
-          page_from = ?, page_to = ?, authors = ?, abstract = ?, keywords = ?, \`references\` = ?,
-          received = ?, revised = ?, accepted = ?, published = ?,
-          pdf_path = ?, article_status = ?, updated_at = NOW()
-        WHERE id = ?
-        LIMIT 1
-      `;
-      const params = [
-        payload.journal_id,
-        payload.volume_id,
-        payload.issue_id,
-        payload.month_from,
-        payload.month_to,
-        payload.article_id,
-        payload.doi,
-        payload.article_title,
-        payload.page_from,
-        payload.page_to,
-        payload.authors,
-        payload.abstract,
-        payload.keywords,
-        payload.references,
-        payload.received,
-        payload.revised,
-        payload.accepted,
-        payload.published,
-        payload.pdf_path,
-        payload.article_status,
-        idNum,
-      ];
-
-      const [result] = await conn.query(sql, params);
-      return NextResponse.json({
-        success: true,
-        message: "Article updated successfully",
-        affectedRows: result.affectedRows,
-      });
-    } catch (e) {
-      console.error("PUT /api/articles error:", e);
-      return NextResponse.json(
-        { success: false, message: e.message || "Update failed" },
-        { status: 500 }
-      );
-    } finally {
-      await conn.end();
+      updates.pdf_path = `/uploads/articles/${newName}`;
     }
-  }
 
+    // ==========================================================
+    // CASE 2️⃣: File explicitly removed (remove_pdf flag)
+    // ==========================================================
+    const removeFlag = formData.get("remove_pdf");
+    if (removeFlag === "1" && oldPath && fs.existsSync(oldPath)) {
+      try {
+        await fs.promises.unlink(oldPath);
+        console.log("🗑️ Removed PDF manually:", oldPath);
+      } catch (err) {
+        console.warn("⚠️ Failed to remove old file:", err.message);
+      }
+      updates.pdf_path = "";
+    }
+
+    // ==========================================================
+    // CASE 3️⃣: No new file + no removal → keep current file
+    // ==========================================================
+    if (!newFile && removeFlag !== "1") {
+      delete updates.pdf_path;
+    }
+
+    // --- update query dynamically ---
+    const fields = Object.keys(updates)
+      .map((k) => `${k} = ?`)
+      .join(", ");
+    const values = Object.values(updates);
+
+    await connection.query(`UPDATE articles SET ${fields}, updated_at = NOW() WHERE id = ?`, [
+      ...values,
+      id,
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      message: newFile
+        ? "✅ Article updated and file replaced."
+        : removeFlag === "1"
+        ? "✅ Article updated and file removed."
+        : "✅ Article updated successfully.",
+    });
+  } catch (err) {
+    console.error("❌ PUT /articles error:", err);
+    return NextResponse.json(
+      { success: false, message: err.message || "Error updating article" },
+      { status: 500 }
+    );
+  } finally {
+    await connection.end();
+  }
+}
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
@@ -463,18 +448,18 @@ export async function GET(req) {
   const journal_id = searchParams.get("journal_id");
   const checkTitle = searchParams.get("checkTitle");
   const title = searchParams.get("title");
-
+  
   // new filters
   const query = searchParams.get("query")?.toLowerCase() || "";
   const volume = searchParams.get("volume");
   const issue = searchParams.get("issue");
   const year = searchParams.get("year");
-
+  
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "0", 10); // 0 = no pagination
 
   const conn = await createDbConnection();
-
+  
   try {
     // ✅ title duplicate check
     if (checkTitle && journal_id && title) {
@@ -493,10 +478,10 @@ export async function GET(req) {
     if (id || article_id) {
       const where = id ? "a.id = ?" : "a.article_id = ?";
       const val = id ? Number(id) : article_id;
-
+      
       const [rows] = await conn.query(
         `SELECT 
-          a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
+        a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
           a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
           a.authors, a.abstract, a.keywords, a.\`references\`,
           DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
@@ -526,12 +511,12 @@ export async function GET(req) {
     // ✅ multiple articles with optional filters + pagination
     let baseWhere = "WHERE 1=1";
     const params = [];
-
+    
     if (journal_id) {
       baseWhere += " AND a.journal_id = ?";
       params.push(journal_id);
     }
-
+    
     if (query) {
       baseWhere += ` AND (
         LOWER(a.article_title) LIKE ? OR
@@ -540,12 +525,12 @@ export async function GET(req) {
       )`;
       params.push(`%${query}%`, `%${query}%`, `%${query}%`);
     }
-
+    
     if (volume) {
       baseWhere += " AND a.volume_id = ?";
       params.push(volume);
     }
-
+    
     if (issue) {
       baseWhere += " AND a.issue_id = ?";
       params.push(issue);
@@ -555,7 +540,7 @@ export async function GET(req) {
       baseWhere += " AND v.year = ?";
       params.push(year);
     }
-
+    
     // count for pagination
     const [countRows] = await conn.query(
       `SELECT COUNT(*) AS total
@@ -563,29 +548,29 @@ export async function GET(req) {
        LEFT JOIN volumes v ON a.volume_id = v.id
        LEFT JOIN issues i ON a.issue_id = i.id
        ${baseWhere}`,
-      params
+       params
     );
 
     const total = countRows[0]?.total ?? 0;
-
+    
     // main query
     let sql = `
-      SELECT 
-        a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
-        a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
-        a.authors, a.abstract, a.keywords, a.\`references\`,
-        DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
-        DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
-        DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
-        DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
-        a.pdf_path, a.article_status, a.created_at, a.updated_at,
-        v.volume_number, v.volume_label, v.year,
-        i.issue_number, i.issue_label
-      FROM articles a
-      LEFT JOIN volumes v ON a.volume_id = v.id
-      LEFT JOIN issues i ON a.issue_id = i.id
-      ${baseWhere}
-      ORDER BY a.id DESC
+    SELECT 
+    a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
+    a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
+    a.authors, a.abstract, a.keywords, a.\`references\`,
+    DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
+    DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
+    DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
+    DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
+    a.pdf_path, a.article_status, a.created_at, a.updated_at,
+    v.volume_number, v.volume_label, v.year,
+    i.issue_number, i.issue_label
+    FROM articles a
+    LEFT JOIN volumes v ON a.volume_id = v.id
+    LEFT JOIN issues i ON a.issue_id = i.id
+    ${baseWhere}
+    ORDER BY a.id DESC
     `;
 
     if (limit > 0) {
@@ -593,9 +578,9 @@ export async function GET(req) {
       sql += " LIMIT ?, ?";
       params.push(offset, limit);
     }
-
+    
     const [rows] = await conn.query(sql, params);
-
+    
     return NextResponse.json({
       success: true,
       articles: rows,
@@ -618,117 +603,13 @@ export async function GET(req) {
   }
 }
 
-// export async function GET(req) {
-//   const { searchParams } = new URL(req.url);
-//   const id = searchParams.get("id");
-//   const article_id = searchParams.get("article_id");
-//   const journal_id = searchParams.get("journal_id");
-//   const checkTitle = searchParams.get("checkTitle");
-//   const title = searchParams.get("title");
-//   const conn = await createDbConnection();
-
-//   try {
-//     // ✅ Title duplicate check (frontend live validation)
-// if (checkTitle && journal_id && title) {
-//   const [rows] = await conn.query(
-//     `SELECT id 
-//      FROM articles 
-//      WHERE journal_id = ? 
-//      AND LOWER(TRIM(article_title)) = LOWER(TRIM(?))
-//      LIMIT 1`,
-//     [journal_id, title]
-//   );
-
-//   return NextResponse.json({
-//     exists: rows.length > 0,
-//     success: true,
-//   });
-// }
-
-//     // 👉 Single article fetch
-//     if (id || article_id) {
-//       const where = id ? "a.id = ?" : "a.article_id = ?";
-//       const val = id ? Number(id) : article_id;
-
-//       const [rows] = await conn.query(
-//         `SELECT 
-//           a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
-//           a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
-//           a.authors, a.abstract, a.keywords, a.\`references\`,
-//           DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
-//           DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
-//           DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
-//           DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
-//           a.pdf_path, a.article_status, a.created_at, a.updated_at,
-//           v.volume_number, v.volume_label, v.year,
-//           i.issue_number, i.issue_label
-//         FROM articles a
-//         LEFT JOIN volumes v ON a.volume_id = v.id
-//         LEFT JOIN issues i ON a.issue_id = i.id
-//         WHERE ${where}
-//         LIMIT 1`,
-//         [val]
-//       );
-
-//       if (!rows.length) {
-//         return NextResponse.json(
-//           { success: false, message: "Article not found" },
-//           { status: 404 }
-//         );
-//       }
-//       return NextResponse.json({ success: true, article: rows[0] });
-//     }
-
-//     // 👉 Multiple articles fetch
-//     let sql = `
-//       SELECT 
-//         a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
-//         a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
-//         a.authors, a.abstract, a.keywords, a.\`references\`,
-//         DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
-//         DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
-//         DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
-//         DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
-//         a.pdf_path, a.article_status, a.created_at, a.updated_at,
-//         v.volume_number, v.volume_label, v.year,
-//         i.issue_number, i.issue_label
-//       FROM articles a
-//       LEFT JOIN volumes v ON a.volume_id = v.id
-//       LEFT JOIN issues i ON a.issue_id = i.id
-//     `;
-
-//     const params = [];
-//     if (journal_id) {
-//       sql += ` WHERE a.journal_id = ?`;
-//       params.push(journal_id);
-//     }
-
-//     const [rows] = await conn.query(sql, params);
-//     return NextResponse.json({ success: true, articles: rows });
-//   } catch (e) {
-//     console.error("GET /api/articles error:", e);
-//     return NextResponse.json(
-//       {
-//         success: false,
-//         message: "Failed to fetch articles",
-//         error: e.sqlMessage ?? e.message,
-//       },
-//       { status: 500 }
-//     );
-//   } finally {
-//     await conn.end();
-//   }
-// }
-
-
-
-  export async function DELETE(req) {
-    const conn = await createDbConnection();
-    try {
+export async function DELETE(req) {
+  const conn = await createDbConnection();
+  try {
       // 1) Accept id from either query string OR JSON body
       const { searchParams } = new URL(req.url);
       let id = searchParams.get("id");
-
+      
       if (!id) {
         const ct = req.headers.get("content-type") || "";
         if (ct.includes("application/json")) {
@@ -736,7 +617,7 @@ export async function GET(req) {
           if (body?.id) id = body.id;
         }
       }
-
+      
       id = Number(id);
       if (!id) {
         return NextResponse.json(
@@ -756,7 +637,7 @@ export async function GET(req) {
           { status: 404 }
         );
       }
-
+      
       // 3) Try to remove the PDF (fix: strip leading slash before joining)
       if (article.pdf_path) {
         const relative = String(article.pdf_path).replace(/^\/+/, ""); // <-- important
@@ -773,7 +654,7 @@ export async function GET(req) {
 
       // 4) Delete the row
       const [result] = await conn.query("DELETE FROM articles WHERE id = ?", [id]);
-
+      
       // MySQL returns affectedRows; if 0, nothing was deleted
       if (!result?.affectedRows) {
         return NextResponse.json(
@@ -794,7 +675,7 @@ export async function GET(req) {
           {
             success: false,
             message:
-              "Cannot delete: this article is referenced by other records (FK constraint).",
+            "Cannot delete: this article is referenced by other records (FK constraint).",
           },
           { status: 409 }
         );
@@ -810,3 +691,124 @@ export async function GET(req) {
     }
   }
 
+    // export async function PUT(req) {
+    //   const conn = await createDbConnection();
+    //   try {
+    //     const { fields, files } = await parseForm(req);
+    //     const idNum = fields.id ? Number(fields.id) : 0;
+    //     if (!idNum) {
+    //       return NextResponse.json({ success: false, message: "ID is required for update" }, { status: 400 });
+    //     }
+    
+    //     const {
+    //       journal_id,
+    //       volume_id,
+    //       issue_id,
+    //       month_from,
+    //       month_to,
+    //       article_id,
+    //       doi,
+    //       article_title,
+    //       authors,
+    //       abstract,
+    //       keywords,
+    //       references,
+    //       received,
+    //       revised,
+    //       accepted,
+    //       published,
+    //       page_from,
+    //       page_to,
+    //       article_status,
+    //     } = fields;
+    
+    //     // ── Normalize arrays (same as POST)
+    //     const keywordArray =
+    //       typeof keywords === "string"
+    //         ? keywords.split(",").map((k) => k.trim()).filter(Boolean)
+    //         : Array.isArray(keywords)
+    //         ? keywords.map((k) => k.trim()).filter(Boolean)
+    //         : [];
+    
+    //     const authorArray =
+    //       typeof authors === "string"
+    //         ? authors.split(",").map((a) => a.trim()).filter(Boolean)
+    //         : Array.isArray(authors)
+    //         ? authors.map((a) => a.trim()).filter(Boolean)
+    //         : [];
+    
+    //     const payload = {
+    //       journal_id: toNull(journal_id),
+    //       volume_id: toNull(volume_id),
+    //       issue_id: toNull(issue_id),
+    //       month_from: toNull(month_from),
+    //       month_to: toNull(month_to),
+    //       article_id: toNull(article_id),
+    //       doi: toNull(doi),
+    //       article_title: toNull(article_title),
+    //       page_from: toNull(page_from),
+    //       page_to: toNull(page_to),
+    //       authors: JSON.stringify(authorArray),
+    //       abstract: abstract === undefined ? null : String(abstract),
+    //       keywords: JSON.stringify(keywordArray),
+    //       references: references === undefined ? null : String(references),
+    //       received: toNull(received),
+    //       revised: toNull(revised),
+    //       accepted: toNull(accepted),
+    //       published: toNull(published),
+    //       pdf_path: toNull(fields.pdf_path), // or resolve from files as you did in POST
+    //       article_status: toNull(article_status),
+    //     };
+    
+    //     // ── Update SQL
+    //     const sql = `
+    //       UPDATE articles SET
+    //         journal_id = ?, volume_id = ?, issue_id = ?,
+    //         month_from = ?, month_to = ?,
+    //         article_id = ?, doi = ?, article_title = ?,
+    //         page_from = ?, page_to = ?, authors = ?, abstract = ?, keywords = ?, \`references\` = ?,
+    //         received = ?, revised = ?, accepted = ?, published = ?,
+    //         pdf_path = ?, article_status = ?, updated_at = NOW()
+    //       WHERE id = ?
+    //       LIMIT 1
+    //     `;
+    //     const params = [
+    //       payload.journal_id,
+    //       payload.volume_id,
+    //       payload.issue_id,
+    //       payload.month_from,
+    //       payload.month_to,
+    //       payload.article_id,
+    //       payload.doi,
+    //       payload.article_title,
+    //       payload.page_from,
+    //       payload.page_to,
+    //       payload.authors,
+    //       payload.abstract,
+    //       payload.keywords,
+    //       payload.references,
+    //       payload.received,
+    //       payload.revised,
+    //       payload.accepted,
+    //       payload.published,
+    //       payload.pdf_path,
+    //       payload.article_status,
+    //       idNum,
+    //     ];
+    
+    //     const [result] = await conn.query(sql, params);
+    //     return NextResponse.json({
+    //       success: true,
+    //       message: "Article updated successfully",
+    //       affectedRows: result.affectedRows,
+    //     });
+    //   } catch (e) {
+    //     console.error("PUT /api/articles error:", e);
+    //     return NextResponse.json(
+    //       { success: false, message: e.message || "Update failed" },
+    //       { status: 500 }
+    //     );
+    //   } finally {
+    //     await conn.end();
+    //   }
+    // }
