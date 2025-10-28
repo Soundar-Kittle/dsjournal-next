@@ -896,16 +896,71 @@ export default function Page() {
   };
 
   /** Submit handler */
+// const onSubmit = async (formValuesFromChild) => {
+//   try {
+//     setSubmitting(true);
+
+//     const merged = { ...form, ...formValuesFromChild };
+
+//     if (!merged.article_id || !merged.volume_id || !merged.issue_id) {
+//       alert("Volume, Issue, and Article ID are required.");
+//       setSubmitting(false);
+//       return;
+//     }
+
+//     const fd = new FormData();
+//     Object.entries(merged).forEach(([k, v]) => {
+//       if (k === "id" && !merged.id) return;
+//       fd.append(k, v ?? "");
+//     });
+//     if (pdfFile) fd.append("pdf", pdfFile);
+
+//     const method = merged.id ? "PUT" : "POST";
+//     const res = await fetch("/api/articles", { method, body: fd });
+//     const data = await res.json();
+
+//     if (!res.ok || !data?.success) throw new Error(data.message || "Save failed");
+//     alert(merged.id ? "Article updated successfully." : "Article created successfully.");
+
+//     if (merged.id) {
+//       window.location.href = `/admin/dashboard/journals/${journalSlug}/archives?jid=${jid}`;
+//     } else {
+//       // ✅ clear parent & child forms
+//       setPdfFile(null);
+//       setForm({ ...resetForm, journal_id: jid || "" });
+//       setResetSignal(Date.now());              // 🔹 tell child to reset
+//       window.scrollTo({ top: 0, behavior: "smooth" });
+//     }
+//   } catch (err) {
+//     console.error("Save error:", err);
+//     alert(err.message || "Something went wrong.");
+//   } finally {
+//     setSubmitting(false);
+//   }
+// };
+
+
 const onSubmit = async (formValuesFromChild) => {
   try {
     setSubmitting(true);
 
+    // 🔹 Always trust the final values from ArticleForm
     const merged = { ...form, ...formValuesFromChild };
 
+    // Basic validation
     if (!merged.article_id || !merged.volume_id || !merged.issue_id) {
       alert("Volume, Issue, and Article ID are required.");
       setSubmitting(false);
       return;
+    }
+
+    // 🔹 Auto-fill DOI only (PLACE HERE)
+    const jr = journals.find(j => String(j.id) === String(merged.journal_id));
+    if (jr && merged.article_id) {
+      const prefix = jr.doi_prefix?.replace(/\/$/, "") || "";
+      if (prefix) {
+        merged.doi = `${prefix}/${merged.article_id}`;
+      }
     }
 
     const fd = new FormData();
@@ -913,6 +968,7 @@ const onSubmit = async (formValuesFromChild) => {
       if (k === "id" && !merged.id) return;
       fd.append(k, v ?? "");
     });
+
     if (pdfFile) fd.append("pdf", pdfFile);
 
     const method = merged.id ? "PUT" : "POST";
@@ -920,16 +976,19 @@ const onSubmit = async (formValuesFromChild) => {
     const data = await res.json();
 
     if (!res.ok || !data?.success) throw new Error(data.message || "Save failed");
-    alert(merged.id ? "Article updated successfully." : "Article created successfully.");
 
-    if (merged.id) {
-      window.location.href = `/admin/dashboard/journals/${journalSlug}/archives?jid=${jid}`;
-    } else {
-      // ✅ clear parent & child forms
+    alert(
+      merged.id
+        ? "Article updated successfully."
+        : "Article created successfully."
+    );
+
+    if (!merged.id) {
       setPdfFile(null);
       setForm({ ...resetForm, journal_id: jid || "" });
-      setResetSignal(Date.now());              // 🔹 tell child to reset
       window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.location.href = `/admin/dashboard/journals/${journalSlug}/archives?jid=${jid}`;
     }
   } catch (err) {
     console.error("Save error:", err);
@@ -938,7 +997,9 @@ const onSubmit = async (formValuesFromChild) => {
     setSubmitting(false);
   }
 };
-  return (
+
+
+return (
     <div className="max-w-6xl mx-auto p-6">
       <h1>Add form</h1>
 <ArticleForm

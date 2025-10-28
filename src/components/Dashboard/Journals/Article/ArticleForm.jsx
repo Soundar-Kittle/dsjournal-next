@@ -1767,10 +1767,6 @@ const localForm = useForm({
 });
 const fileInputRef = useRef(null);
 
-
-
-
-
 const methods = ctx ?? localForm;
 
 
@@ -1842,8 +1838,28 @@ const methods = ctx ?? localForm;
   const authors = useWatch({ control, name: "authors" }) ?? "";
   const keywords = useWatch({ control, name: "keywords" }) ?? "";
 
+const [titleCheck, setTitleCheck] = useState({
+  checking: false,
+  exists: false,
+  message: "",
+});
+const titleCheckTimeout = useRef(null);
+
   // Step 2
   const references = useWatch({ control, name: "references" }) ?? "";
+
+
+  useEffect(() => {
+  if (!article_id || !journal_id) return;
+  const jr = journals.find(j => String(j.id) === String(journal_id));
+  if (!jr) return;
+
+  const prefix = jr.doi_prefix?.replace(/\/$/, "") || "";
+  if (prefix) {
+    setValue("doi", `${prefix}/${article_id}`, { shouldDirty: true });
+  }
+}, [article_id, journal_id, journals, setValue]);
+
 
   useEffect(() => {
   if (defaultJournalId) {
@@ -1909,6 +1925,48 @@ useEffect(() => {
   loadMonthRange();
 }, [journal_id, volume_id, issue_id, setValue]);
 
+
+// 🔍 Auto-check for duplicate title
+useEffect(() => {
+  if (!article_title || !journal_id) return;
+
+  clearTimeout(titleCheckTimeout.current);
+  titleCheckTimeout.current = setTimeout(async () => {
+    try {
+      setTitleCheck({ checking: true, exists: false, message: "" });
+
+      const res = await fetch(
+        `/api/articles?checkTitle=1&journal_id=${journal_id}&title=${encodeURIComponent(
+          article_title
+        )}`
+      );
+      const data = await res.json();
+
+      if (data?.exists) {
+        setTitleCheck({
+          checking: false,
+          exists: true,
+          message: "⚠️ Title already exists in this journal.",
+        });
+      } else {
+        setTitleCheck({
+          checking: false,
+          exists: false,
+          message: "✅ Title is unique and available.",
+        });
+      }
+    } catch (err) {
+      console.error("Title check error:", err);
+      setTitleCheck({
+        checking: false,
+        exists: false,
+        message: "⚠️ Could not verify title.",
+      });
+    }
+  }, 600);
+
+  return () => clearTimeout(titleCheckTimeout.current);
+}, [article_title, journal_id]);
   // ---- Helpers ----
   const stripHtml = (html) =>
     (html || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
@@ -1921,7 +1979,6 @@ useEffect(() => {
     2: ["references"],
   };
 
-  const allVals = methods.watch();
 const isStepCompleted = (idx) => {
   const vals = getValues();
   return (requiredByStep[idx] || []).every((k) => isFilled(vals[k]));
@@ -2197,37 +2254,49 @@ const handleNext = async () => {
         <label className="block text-sm font-medium">
           DOI <span className="text-red-500">*</span>
         </label>
-        <Input
-          {...register("doi")}
-          value={doi}
-          onChange={(e) =>
-            setValue("doi", e.target.value, {
-              shouldDirty: true,
-              shouldValidate: true,
-            })
-          }
-          placeholder="DOI"
-          className="border rounded-md p-2 w-full"
-        />
+       <Input
+  {...register("doi")}
+  value={doi || ""}
+  readOnly     // 👈 make it auto-filled & locked
+  placeholder="Auto-generated from prefix"
+  className="border rounded-md p-2 w-full bg-gray-100"
+/>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium">
-          Title <span className="text-red-500">*</span>
-        </label>
-        <Input
-          {...register("article_title")}
-          value={article_title}
-          onChange={(e) =>
-            setValue("article_title", e.target.value, {
-              shouldDirty: true,
-              shouldValidate: true,
-            })
-          }
-          placeholder="Title"
-          className="border rounded-md p-2 w-full"
-        />
-      </div>
+<div>
+  <label className="block text-sm font-medium">
+    Title <span className="text-red-500">*</span>
+  </label>
+  <Input
+    {...register("article_title")}
+    value={article_title}
+    onChange={(e) =>
+      setValue("article_title", e.target.value, {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    }
+    placeholder="Enter full article title"
+    className={`border rounded-md p-2 w-full ${
+      titleCheck.exists ? "border-red-500" : ""
+    }`}
+  />
+
+  {/* Status messages */}
+  {titleCheck.checking && (
+    <p className="text-xs text-gray-500 mt-1">Checking title...</p>
+  )}
+  {!titleCheck.checking && titleCheck.message && (
+    <p
+      className={`text-xs mt-1 ${
+        titleCheck.exists ? "text-red-600" : "text-green-600"
+      }`}
+    >
+      {titleCheck.message}
+    </p>
+  )}
+</div>
+
 
       <div>
         <label className="block text-sm font-medium">
@@ -2427,6 +2496,12 @@ const Navigation = (
 
   // Otherwise, self-wrap so it works standalone.
  const localOnSubmit = (data) => {
+  // 🚫 Prevent submission if duplicate title exists
+if (titleCheck.exists) {
+    alert("Duplicate title found. Please use a unique article title.");
+    return;
+  }
+
     if (typeof onSubmitProp === "function") {
       onSubmitProp(data); // Pass full form values to parent
     } else {

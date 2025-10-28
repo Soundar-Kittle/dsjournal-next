@@ -833,88 +833,108 @@ if (!validPrefixPattern.test(articleIdUpper)) {
 
 
 
-    export async function GET(req) {
-      const { searchParams } = new URL(req.url);
-      const id = searchParams.get("id");
-      const article_id = searchParams.get("article_id");
-      const journal_id = searchParams.get("journal_id");
-      const conn = await createDbConnection();
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  const article_id = searchParams.get("article_id");
+  const journal_id = searchParams.get("journal_id");
+  const checkTitle = searchParams.get("checkTitle");
+  const title = searchParams.get("title");
+  const conn = await createDbConnection();
 
-      try {
-        // 👉 Single article fetch
-        if (id || article_id) {
-          const where = id ? "a.id = ?" : "a.article_id = ?";
-          const val = id ? Number(id) : article_id;
+  try {
+    // ✅ Title duplicate check (frontend live validation)
+if (checkTitle && journal_id && title) {
+  const [rows] = await conn.query(
+    `SELECT id 
+     FROM articles 
+     WHERE journal_id = ? 
+     AND LOWER(TRIM(article_title)) = LOWER(TRIM(?))
+     LIMIT 1`,
+    [journal_id, title]
+  );
 
-          const [rows] = await conn.query(
-            `SELECT 
-              a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
-              a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
-              a.authors, a.abstract, a.keywords, a.\`references\`,
-              DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
-              DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
-              DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
-              DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
-              a.pdf_path, a.article_status, a.created_at, a.updated_at,
-              v.volume_number, v.volume_label, v.year,   -- 👈 year from volumes
-              i.issue_number, i.issue_label              -- ✅ issue data
-              FROM articles a
-            LEFT JOIN volumes v ON a.volume_id = v.id
-            LEFT JOIN issues i ON a.issue_id = i.id
-            WHERE ${where}
-            LIMIT 1`,
-            [val]
-          );
+  return NextResponse.json({
+    exists: rows.length > 0,
+    success: true,
+  });
+}
 
-          if (!rows.length) {
-            return NextResponse.json(
-              { success: false, message: "Article not found" },
-              { status: 404 }
-            );
-          }
-          return NextResponse.json({ success: true, article: rows[0] });
-        }
+    // 👉 Single article fetch
+    if (id || article_id) {
+      const where = id ? "a.id = ?" : "a.article_id = ?";
+      const val = id ? Number(id) : article_id;
 
-        // 👉 Multiple articles fetch
-        let sql = `
-          SELECT 
-            a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
-            a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
-            a.authors, a.abstract, a.keywords, a.\`references\`,
-            DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
-            DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
-            DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
-            DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
-            a.pdf_path, a.article_status, a.created_at, a.updated_at,
-            v.volume_number, v.volume_label, v.year,   -- 👈 year from volumes
-          i.issue_number, i.issue_label                -- ✅ issue data
-          FROM articles a
-          LEFT JOIN volumes v ON a.volume_id = v.id
-          LEFT JOIN issues i ON a.issue_id = i.id
-        `;
+      const [rows] = await conn.query(
+        `SELECT 
+          a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
+          a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
+          a.authors, a.abstract, a.keywords, a.\`references\`,
+          DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
+          DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
+          DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
+          DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
+          a.pdf_path, a.article_status, a.created_at, a.updated_at,
+          v.volume_number, v.volume_label, v.year,
+          i.issue_number, i.issue_label
+        FROM articles a
+        LEFT JOIN volumes v ON a.volume_id = v.id
+        LEFT JOIN issues i ON a.issue_id = i.id
+        WHERE ${where}
+        LIMIT 1`,
+        [val]
+      );
 
-        const params = [];
-        if (journal_id) {
-          sql += ` WHERE a.journal_id = ?`;
-          params.push(journal_id);
-        }
-
-        const [rows] = await conn.query(sql, params);
-        return NextResponse.json({ success: true, articles: rows });
-      } catch (e) {
-        console.error("GET /api/articles error:", e);
+      if (!rows.length) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "Failed to fetch articles",
-            error: e.sqlMessage ?? e.message,
-          },
-          { status: 500 }
+          { success: false, message: "Article not found" },
+          { status: 404 }
         );
-      } finally {
-        await conn.end();
       }
+      return NextResponse.json({ success: true, article: rows[0] });
     }
+
+    // 👉 Multiple articles fetch
+    let sql = `
+      SELECT 
+        a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
+        a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
+        a.authors, a.abstract, a.keywords, a.\`references\`,
+        DATE_FORMAT(a.received,  '%Y-%m-%d') AS received,
+        DATE_FORMAT(a.revised,   '%Y-%m-%d') AS revised,
+        DATE_FORMAT(a.accepted,  '%Y-%m-%d') AS accepted,
+        DATE_FORMAT(a.published, '%Y-%m-%d') AS published,
+        a.pdf_path, a.article_status, a.created_at, a.updated_at,
+        v.volume_number, v.volume_label, v.year,
+        i.issue_number, i.issue_label
+      FROM articles a
+      LEFT JOIN volumes v ON a.volume_id = v.id
+      LEFT JOIN issues i ON a.issue_id = i.id
+    `;
+
+    const params = [];
+    if (journal_id) {
+      sql += ` WHERE a.journal_id = ?`;
+      params.push(journal_id);
+    }
+
+    const [rows] = await conn.query(sql, params);
+    return NextResponse.json({ success: true, articles: rows });
+  } catch (e) {
+    console.error("GET /api/articles error:", e);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Failed to fetch articles",
+        error: e.sqlMessage ?? e.message,
+      },
+      { status: 500 }
+    );
+  } finally {
+    await conn.end();
+  }
+}
+
 
 
   export async function DELETE(req) {
