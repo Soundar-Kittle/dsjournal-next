@@ -220,7 +220,8 @@ useEffect(() => {
 
      setRow(j.staged);
 
-      setAuthors((j.authors || []).map((a) => a.full_name || a));
+      // setAuthors((j.authors || []).map((a) => a.full_name || a));
+      setAuthors(Array.isArray(j.authors) ? j.authors : JSON.parse(j.authors || "[]"));
 
       // 🔍 Debug refs
       console.log("🔎 API references raw:", j.references);
@@ -375,11 +376,11 @@ const updateStaged = async () => {
 
             {/* === References Section === */}
               <section className="w-full max-w-[720px] ml-auto pr-2">
-<CKEditorField
-  value={refs || ""}
-  onChange={(html) => setRefs(html)}   // full HTML
-  placeholder="Enter references here…"
-/>
+                <CKEditorField
+                  value={refs || ""}
+                  onChange={(html) => setRefs(html)}   // full HTML
+                  placeholder="Enter references here…"
+                />
               </section>
 
             {/* === Actions Section === */}

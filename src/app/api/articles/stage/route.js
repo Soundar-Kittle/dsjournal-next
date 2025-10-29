@@ -924,20 +924,75 @@ export async function POST(req) {
       }
 
       // authors
-      let authorsLine = "";
-      for (
-        let k = idxOrig >= 0 ? idxOrig + 1 : 0;
-        k < Math.min(lines.length, idxOrig >= 0 ? idxOrig + 6 : 6);
-        k++
-      ) {
-        if (/,/.test(lines[k]) && !/Received:/.test(lines[k])) {
-          authorsLine = lines[k];
-          break;
-        }
-      }
-      const authors = authorsLine
-        ? authorsLine.split(/,| and /i).map(cleanAuthor).filter(Boolean)
-        : [];
+    // ── AUTHORS extraction (handles "M. Shoikhedbrod*, I. Shoikhedbrod1")
+let authors = [];
+
+// 1️⃣ Try to find an explicit "Authors:" block in the doc
+const authorsMatch = fullText.match(
+  /(?:^|\n)\s*Authors?\s*[:\-]\s*([\s\S]+?)(?=\n\s*(Abstract|Keywords?|Received|Accepted|Published)\b)/i
+);
+if (authorsMatch && authorsMatch[1]) {
+  authors = authorsMatch[1]
+    .split(/,| and |\n/)
+    .map((name) =>
+      cleanAuthor(
+        name
+          .replace(/[*\d]+/g, "") // remove footnote markers like *,1
+      )
+    )
+    .filter(Boolean);
+}
+
+// 2️⃣ Fallback: lines right after "Original Article" header (your PDF style)
+if (!authors.length) {
+  const startIdx = idxOrig >= 0 ? idxOrig + 1 : 0;
+  for (
+    let i = startIdx;
+    i < Math.min(lines.length, startIdx + 8);
+    i++
+  ) {
+    const line = lines[i] || "";
+
+    // stop if we've hit affiliation, abstract header, or dates
+    if (
+      /^(r&d|department|faculty|university|institute|abstract|keywords?|received|accepted|published|introduction)/i.test(
+        line
+      )
+    ) {
+      break;
+    }
+
+    // look for "M. Shoikhedbrod*, I. Shoikhedbrod1" style
+    if (/[A-Z]\.\s*[A-Z][a-z]+/.test(line)) {
+      authors = line
+        .replace(/[*\d]+/g, "") // strip *, 1, 2 footnote refs
+        .split(/,| and /i)
+        .map((s) => cleanAuthor(s))
+        .filter(Boolean);
+      break;
+    }
+  }
+}
+
+// 3️⃣ Fallback: text before "Received:"
+if (!authors.length) {
+  const beforeReceived = fullText.split(/Received:/i)[0] || "";
+  const m = beforeReceived.match(
+    /([A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?(?:\s*,\s*[A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)+)/
+  );
+  if (m && m[1]) {
+    authors = m[1]
+      .replace(/[*\d]+/g, "")
+      .split(/,| and /i)
+      .map((s) => cleanAuthor(s))
+      .filter(Boolean);
+  }
+}
+
+// 4️⃣ Last resort
+if (!authors.length) {
+  authors = [];
+}
 
       // dates / abstract / keywords
       const datesLine =
@@ -1186,35 +1241,40 @@ if (fileDup.length > 0) {
       );
       const existing = new Set(colsRows.map((r) => r.COLUMN_NAME));
 
-      const payload = {
-        journal_id,
-        title: title || null,
-        year: year ?? null,
-        month_from: month_from ?? null,
-        month_to: month_to ?? null,
-        pages_from: pages_from ?? null,
-        pages_to: pages_to ?? null,
-        abstract: abstract || null,
-        keywords: keywords || null,
-        received_date: received_date || null,
-        revised_date: revised_date || null,
-        accepted_date: accepted_date || null,
-        published_date: published_date || null,
-        file_name: safeName,
-        original_name: originalName,
-        mime_type,
-        size_bytes,
-        storage_path,
-        status: "extracted",
-        article_id: suggested_article_id,
-        volume_number: vnum ?? null,
-        issue_number: inum ?? null,
-        volume_id: volume_id ?? null,
-        issue_id: issue_id ?? null,
-        doi_url: doi_url || null,
-        issn: issn || null,
-        references: referencesHtml,
-      };
+const payload = {
+  journal_id,
+  title: title || null,
+  year: year ?? null,
+  month_from: month_from ?? null,
+  month_to: month_to ?? null,
+  pages_from: pages_from ?? null,
+  pages_to: pages_to ?? null,
+  abstract: abstract || null,
+  keywords: keywords || null,
+
+  // 👇 add authors directly into staged_articles
+  authors: authors.length ? JSON.stringify(authors) : null,
+
+  received_date: received_date || null,
+  revised_date: revised_date || null,
+  accepted_date: accepted_date || null,
+  published_date: published_date || null,
+  file_name: safeName,
+  original_name: originalName,
+  mime_type,
+  size_bytes,
+  storage_path,
+  status: "extracted",
+  article_id: suggested_article_id,
+  volume_number: vnum ?? null,
+  issue_number: inum ?? null,
+  volume_id: volume_id ?? null,
+  issue_id: issue_id ?? null,
+  doi_url: doi_url || null,
+  issn: issn || null,
+  references: referencesHtml,
+};
+
 
       const cols = Object.keys(payload).filter((k) => existing.has(k));
       const vals = cols.map((k) =>
@@ -1227,18 +1287,6 @@ if (fileDup.length > 0) {
       const sql = `INSERT INTO staged_articles (${colsEsc}) VALUES (${placeholders})`;
       const [ins] = await conn.query(sql, vals);
       const stagedId = ins.insertId;
-
-      // authors
-      try {
-        if (authors.length) {
-          await conn.query(
-            "INSERT INTO staged_article_authors (staged_article_id, author_order, full_name) VALUES ?",
-            [authors.map((a, i) => [stagedId, i + 1, a])]
-          );
-        }
-      } catch (e) {
-        if (e?.code !== "ER_NO_SUCH_TABLE") throw e;
-      }
 
       return NextResponse.json({
         success: true,
@@ -1280,31 +1328,44 @@ if (fileDup.length > 0) {
   }
 }
 
-export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status");
-  const jid = searchParams.get("jid");
-
+export async function GET(req, { params }) {
+  const { id } = params;
   const conn = await createDbConnection();
+
   try {
-    let sql = `SELECT * FROM staged_articles WHERE 1=1`;
-    const params = [];
+    const [[row]] = await conn.query(
+      "SELECT * FROM staged_articles WHERE id=? LIMIT 1",
+      [id]
+    );
 
-    if (status) {
-      sql += ` AND status = ?`;
-      params.push(status);
+    if (!row) {
+      return NextResponse.json(
+        { success: false, message: "Not found" },
+        { status: 404 }
+      );
     }
-    if (jid) {
-      sql += ` AND journal_id = ?`;
-      params.push(jid);
+
+    // Parse JSON authors if stored as JSON string
+    let authors = [];
+    try {
+      authors = Array.isArray(row.authors)
+        ? row.authors
+        : JSON.parse(row.authors || "[]");
+    } catch {
+      authors = [];
     }
 
-    sql += ` ORDER BY updated_at DESC`;
-
-    const [rows] = await conn.query(sql, params);
-    return NextResponse.json({ success: true, records: rows });
+    return NextResponse.json({
+      success: true,
+      staged: row,
+      authors,
+      references: row.references || "",
+    });
   } catch (e) {
-    return NextResponse.json({ success: false, message: String(e) }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: String(e.message || e) },
+      { status: 500 }
+    );
   } finally {
     await conn.end();
   }
