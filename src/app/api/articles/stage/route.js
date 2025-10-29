@@ -13,6 +13,13 @@ export const dynamic = "force-dynamic";
 
 /* ───────── helpers for references ───────── */
 
+const safeJson = (v, fallback = []) => {
+  if (v == null || v === "") return fallback;
+  try { return typeof v === "string" ? JSON.parse(v) : v; } catch { return fallback; }
+};
+
+
+
 function textOnly(html) {
   return he.decode(String(html || "").replace(/<[^>]*>/g, " "));
 }
@@ -27,6 +34,9 @@ function labelForHref(href, anchorText = "") {
   if (/arxiv/i.test(t) || h.includes("arxiv.org")) return "arXiv";
   return "Publisher Link";
 }
+
+
+
 
 /** Robustly extract arrays of anchors for each reference item
  * Returns: Array< Array<{href,label}> >
@@ -1328,45 +1338,69 @@ const payload = {
   }
 }
 
-export async function GET(req, { params }) {
-  const { id } = params;
+/* ----------------------- LIST all staged articles ----------------------- */
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const jid = Number(searchParams.get("jid") ?? 0);
+  const status = (searchParams.get("status") ?? "extracted").toLowerCase();
+  const q = (searchParams.get("q") || "").trim();
+
+  if (!jid)
+    return NextResponse.json({ success: false, message: "jid required" }, { status: 400 });
+
   const conn = await createDbConnection();
 
   try {
-    const [[row]] = await conn.query(
-      "SELECT * FROM staged_articles WHERE id=? LIMIT 1",
-      [id]
+    const where = ["journal_id = ?", "status = ?"];
+    const params = [jid, status];
+    if (q) {
+      where.push("(title LIKE ? OR article_id LIKE ?)");
+      params.push(`%${q}%`, `%${q}%`);
+    }
+
+    const [rows] = await conn.query(
+      `
+      SELECT id, journal_id, file_name, storage_path, title, article_id, abstract,
+             authors, keywords, \`references\` AS refs,
+             volume_number, issue_number, year, pages_from, pages_to, status,
+             received_date, revised_date, accepted_date, published_date,
+             created_at, updated_at
+      FROM staged_articles
+      WHERE ${where.join(" AND ")}
+      ORDER BY id DESC
+      `,
+      params
     );
 
-    if (!row) {
-      return NextResponse.json(
-        { success: false, message: "Not found" },
-        { status: 404 }
-      );
-    }
-
-    // Parse JSON authors if stored as JSON string
-    let authors = [];
-    try {
-      authors = Array.isArray(row.authors)
-        ? row.authors
-        : JSON.parse(row.authors || "[]");
-    } catch {
-      authors = [];
-    }
+    const records = rows.map((r) => ({
+      ...r,
+      authors: (() => {
+        try {
+          return Array.isArray(r.authors)
+            ? r.authors
+            : JSON.parse(r.authors || "[]");
+        } catch {
+          return [];
+        }
+      })(),
+      keywords: Array.isArray(r.keywords)
+        ? r.keywords.join(", ")
+        : r.keywords ?? "",
+      references: r.refs ?? "",
+    }));
 
     return NextResponse.json({
       success: true,
-      staged: row,
-      authors,
-      references: row.references || "",
+      total: records.length,
+      records,
     });
   } catch (e) {
+    console.error("❌ GET /api/articles/stage failed:", e);
     return NextResponse.json(
-      { success: false, message: String(e.message || e) },
+      { success: false, message: e.message || "Internal Server Error" },
       { status: 500 }
     );
   } finally {
-    await conn.end();
+    try { await conn.end(); } catch {}
   }
 }

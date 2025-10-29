@@ -9,6 +9,14 @@ import CKEditorField from "@/components/Dashboard/Journals/Article/CKEditorField
 const cls = (...a) => a.filter(Boolean).join(" ");
 const fmt = (d) => (d ? new Date(d).toLocaleDateString() : "");
 
+function safeJson(str, fallback = []) {
+  try {
+    return JSON.parse(str || "[]");
+  } catch {
+    return fallback;
+  }
+}
+
 /* ---------- Inputs ---------- */
 function TextInput({ label, value, onChange, placeholder, type = "text" }) {
   return (
@@ -218,15 +226,16 @@ useEffect(() => {
       const j = await r.json();
       if (!j.success) throw new Error(j.message || "Failed to load");
 
-     setRow(j.staged);
+       const record = j.staged || j.record || j.item || j.data || null;
+       if (!record) throw new Error("No record found");
+       setRow(record);
+        setAuthors(
+          Array.isArray(record.authors)
+            ? record.authors
+            : safeJson(record.authors, [])
+        );
+       setRefs(typeof record.references === "string" ? record.references : record.refs || "");
 
-      // setAuthors((j.authors || []).map((a) => a.full_name || a));
-      setAuthors(Array.isArray(j.authors) ? j.authors : JSON.parse(j.authors || "[]"));
-
-      // 🔍 Debug refs
-      console.log("🔎 API references raw:", j.references);
-
-    setRefs(typeof j.references === "string" ? j.references : "");
       // 🔍 Debug after join
       console.log("🔎 refs (joined HTML):", j.references?.map((r) => r.raw_citation).join("") || "");
     } catch (e) {
@@ -275,25 +284,28 @@ const updateStaged = async () => {
 };
 
 
-  const accept = async () => {
-    if (!stagedId) return;
-    setPromoting(true);
-    try {
-      const r = await fetch(`/api/articles/stage/${stagedId}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "accept" }),
-      });
-      const j = await r.json();
-      if (!j.success) throw new Error(j.message || "Accept failed");
-      onApproved?.(j);
-      onClose();
-    } catch (e) {
-      alert(e.message || String(e));
-    } finally {
-      setPromoting(false);
-    }
-  };
+const accept = async () => {
+  if (!stagedId) return;
+  setPromoting(true);
+  try {
+    const r = await fetch(`/api/articles/stage/${stagedId}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "accept" }),
+    });
+
+    const text = await r.text();
+    const j = text ? JSON.parse(text) : {};
+
+    if (!r.ok || !j.success) throw new Error(j.message || "Accept failed");
+    onApproved?.(j);
+    onClose();
+  } catch (e) {
+    alert(e.message || String(e));
+  } finally {
+    setPromoting(false);
+  }
+};
 
   const reject = async () => {
     if (!stagedId) return;
@@ -353,12 +365,21 @@ const updateStaged = async () => {
                 value={row.title || ""}
                 onChange={(v) => setRow({ ...row, title: v })}
               />
-              <TextArea
+              {/* <TextArea
                 label="Abstract"
                 value={row.abstract || ""}
                 onChange={(v) => setRow({ ...row, abstract: v })}
                 rows={6}
-              />
+              /> */}
+              <div>
+  <span className="text-sm text-gray-700">Abstract</span>
+  <CKEditorField
+    value={row.abstract || ""}
+    onChange={(html) => setRow({ ...row, abstract: html })}
+    placeholder="Enter abstract here..."
+  />
+</div>
+
               <TextInput
                 label="Keywords"
                 value={row.keywords || ""}
@@ -448,7 +469,7 @@ export default function StagingDashboard() {
       if (jid) url.searchParams.set("jid", jid);
       const r = await fetch(url.toString());
       const j = await r.json();
-      setRows(j.records || j.staged || []);
+     setRows(j.records || j.staged || []);
     } catch (e) {
       console.error(e);
     } finally {
