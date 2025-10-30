@@ -15,10 +15,12 @@ export const dynamic = "force-dynamic";
 
 const safeJson = (v, fallback = []) => {
   if (v == null || v === "") return fallback;
-  try { return typeof v === "string" ? JSON.parse(v) : v; } catch { return fallback; }
+  try {
+    return typeof v === "string" ? JSON.parse(v) : v;
+  } catch {
+    return fallback;
+  }
 };
-
-
 
 function textOnly(html) {
   return he.decode(String(html || "").replace(/<[^>]*>/g, " "));
@@ -28,15 +30,19 @@ function labelForHref(href, anchorText = "") {
   const t = anchorText.trim();
   const h = href.toLowerCase();
   if (/crossref/i.test(t) || h.includes("doi.org")) return "CrossRef";
-  if (/google scholar/i.test(t) || h.includes("scholar.google")) return "Google Scholar";
-  if (/pubmed/i.test(t) || h.includes("pubmed.ncbi.nlm.nih.gov")) return "PubMed";
-  if (/pmc/i.test(t) || /ncbi.nlm.nih.gov\/pmc/.test(h) || /pmc.ncbi.nlm.nih.gov/.test(h)) return "PMC";
+  if (/google scholar/i.test(t) || h.includes("scholar.google"))
+    return "Google Scholar";
+  if (/pubmed/i.test(t) || h.includes("pubmed.ncbi.nlm.nih.gov"))
+    return "PubMed";
+  if (
+    /pmc/i.test(t) ||
+    /ncbi.nlm.nih.gov\/pmc/.test(h) ||
+    /pmc.ncbi.nlm.nih.gov/.test(h)
+  )
+    return "PMC";
   if (/arxiv/i.test(t) || h.includes("arxiv.org")) return "arXiv";
   return "Publisher Link";
 }
-
-
-
 
 /** Robustly extract arrays of anchors for each reference item
  * Returns: Array< Array<{href,label}> >
@@ -45,7 +51,8 @@ async function extractRefAnchorsPerItem(buffer) {
   const { value: html } = await mammoth.convertToHtml({ buffer });
 
   // 1) Find a tolerant "References" or "Bibliography" heading (<p> or <h1..h6>, optional colon)
-  const headingRx = /<(?:p|h[1-6])[^>]*>\s*(?:references|bibliography)\s*:?\s*<\/(?:p|h[1-6])>/i;
+  const headingRx =
+    /<(?:p|h[1-6])[^>]*>\s*(?:references|bibliography)\s*:?\s*<\/(?:p|h[1-6])>/i;
   const mHead = headingRx.exec(html);
   const startIdx = mHead ? mHead.index + mHead[0].length : 0;
   const after = html.slice(startIdx);
@@ -55,10 +62,14 @@ async function extractRefAnchorsPerItem(buffer) {
   let blocks = [];
   if (listMatch) {
     const listHtml = listMatch[0];
-    blocks = [...listHtml.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)].map(m => m[1]);
+    blocks = [...listHtml.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)].map(
+      (m) => m[1]
+    );
   } else {
     // 3) Fallback to numbered-paragraph grouping ([1]... / 1. ...)
-    const paras = [...after.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)].map(m => m[1]);
+    const paras = [...after.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)].map(
+      (m) => m[1]
+    );
     const items = [];
     let cur = "";
     const startsRef = (s) => /^\s*(?:\[\d+\]|\d+\.)\s*/.test(textOnly(s));
@@ -77,7 +88,7 @@ async function extractRefAnchorsPerItem(buffer) {
   if (!blocks.length) return null;
 
   // 4) Pull anchors per item and normalize labels
-  return blocks.map(htmlChunk => {
+  return blocks.map((htmlChunk) => {
     const anchors = [];
     const aRx = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
     const seen = new Set();
@@ -95,7 +106,11 @@ async function extractRefAnchorsPerItem(buffer) {
 
 /* ───────── generic utils ───────── */
 const safeInt = (v) =>
-  v === null || v === undefined || v === "" ? null : Number.isFinite(+v) ? +v : null;
+  v === null || v === undefined || v === ""
+    ? null
+    : Number.isFinite(+v)
+    ? +v
+    : null;
 const num = (v) => (v == null ? null : parseInt(v, 10));
 const normalizeUnicode = (s = "") =>
   s
@@ -105,10 +120,22 @@ const normalizeUnicode = (s = "") =>
     .replace(/[\u2215\u2044\uFF0F]/g, "/")
     .replace(/[\u2236\uFF1A]/g, ":");
 const normalizeDash = (s = "") => s.replace(/[–—]/g, "-");
-const splitLines = (t = "") => normalizeUnicode(t).replace(/\r/g, "").split("\n").map((s) => s.trim());
-const cleanAuthor = (s = "") => normalizeUnicode(s).replace(/\b\d+[*]?\b/g, "").replace(/\s+/g, " ").trim();
+const splitLines = (t = "") =>
+  normalizeUnicode(t)
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((s) => s.trim());
+const cleanAuthor = (s = "") =>
+  normalizeUnicode(s)
+    .replace(/\b\d+[*]?\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 const slugifyBaseName = (name) =>
-  name.toLowerCase().replace(/[^\w.-]+/g, "-").replace(/-+/g, "-").replace(/^[-.]+|[-.]+$/g, "");
+  name
+    .toLowerCase()
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "");
 
 /* detectors */
 const DOI_RX = /\b10\.\d{4,9}\/[^\s"'()\]\[<>]+/i;
@@ -116,7 +143,10 @@ const DOI_RX = /\b10\.\d{4,9}\/[^\s"'()\]\[<>]+/i;
 /* strip any already-embedded chips from plaintext */
 function stripOldChips(s = "") {
   return String(s)
-    .replace(/\s*\[(?:CrossRef|Google Scholar|PubMed|PMC|arXiv|DOI|Publisher Link|Generic URL)\]\s*/gi, "")
+    .replace(
+      /\s*\[(?:CrossRef|Google Scholar|PubMed|PMC|arXiv|DOI|Publisher Link|Generic URL)\]\s*/gi,
+      ""
+    )
     .trim();
 }
 function escapeHtml(s = "") {
@@ -132,7 +162,9 @@ function escapeHtml(s = "") {
 function makeRefCtx(refText) {
   const cleaned = stripOldChips(String(refText || ""));
   const doiHit = DOI_RX.exec(cleaned);
-  const doi = doiHit ? doiHit[0].replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "") : null;
+  const doi = doiHit
+    ? doiHit[0].replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "")
+    : null;
   const doi_url = doi ? `https://doi.org/${doi}` : null;
 
   const URLS_RX = /(https?:\/\/[^\s"'<>\]]+)/gi; // fresh each call
@@ -156,7 +188,9 @@ function makeRefCtx(refText) {
 function sanitizeRefs(refs = []) {
   const out = [];
   for (const raw of refs) {
-    const s = String(raw || "").replace(/\s+/g, " ").trim();
+    const s = String(raw || "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!s) continue;
     if (/^\d{1,4}$/.test(s)) continue;
     if (!/[A-Za-z]/.test(s)) continue;
@@ -178,7 +212,7 @@ function chipCk(label, href) {
 /* STRICT: emit chips only for things present in the reference text */
 function chipsFromAnchors(anchors = []) {
   if (!anchors.length) return "";
-  return anchors.map(a => chipCk(a.label || "Link", a.href)).join("");
+  return anchors.map((a) => chipCk(a.label || "Link", a.href)).join("");
 }
 
 // Build chips from *all* URLs we can see in the reference text (no allow-list)
@@ -213,8 +247,6 @@ function chipsFromTextNoAllow(refText = "") {
   }
   return chips.join("");
 }
-
-
 
 /* Split refs smartly from plaintext lines */
 function splitReferencesSmart(lines = []) {
@@ -264,14 +296,13 @@ function refsArrayToCkHtml(refs = [], _unused = null, anchorsPerItem = null) {
     // Prefer anchors extracted from DOCX; else use all URLs from plaintext
     let chipsHtml = "";
     if (anchorsPerItem && anchorsPerItem[idx] && anchorsPerItem[idx].length) {
-      chipsHtml = chipsFromAnchors(anchorsPerItem[idx]);   // uses your green chip style
+      chipsHtml = chipsFromAnchors(anchorsPerItem[idx]); // uses your green chip style
     } else {
       chipsHtml = chipsFromTextNoAllow(rRaw);
     }
 
     // One paragraph: [n] + reference text + chips at end
-    const line =
-`<p style="line-height:1.15;margin:.1pt 0 .0001pt 0;text-align:justify;">
+    const line = `<p style="line-height:1.15;margin:.1pt 0 .0001pt 0;text-align:justify;">
   <span style="font-family:&quot;Palatino Linotype&quot;,&quot;serif&quot;;font-size:9.0pt;">
     <span style="line-height:115%;" lang="EN-US" dir="ltr">
       <strong>[${n}]</strong> ${body}${chipsHtml ? " " + chipsHtml : ""}
@@ -289,9 +320,10 @@ function refsArrayToCkHtml(refs = [], _unused = null, anchorsPerItem = null) {
   });
 
   // Semantic <ol>, but we hide the default markers and provide our own [n]
-  return `<ol style="padding-left:0; margin-left:0; list-style:none;">\n${items.join("\n")}\n</ol>`;
+  return `<ol style="padding-left:0; margin-left:0; list-style:none;">\n${items.join(
+    "\n"
+  )}\n</ol>`;
 }
-
 
 /* ───────── filename/header helpers (unchanged except where noted) ───────── */
 function parseArticleIdFromFilename(name = "") {
@@ -300,13 +332,21 @@ function parseArticleIdFromFilename(name = "") {
   if (m) {
     const [, j, v, i, p] = m;
     const seq = String(parseInt(p, 10)).padStart(3, "0");
-    return { article_id: `${j.toUpperCase()}-V${+v}I${+i}P${seq}`, volume_number: +v, issue_number: +i };
+    return {
+      article_id: `${j.toUpperCase()}-V${+v}I${+i}P${seq}`,
+      volume_number: +v,
+      issue_number: +i,
+    };
   }
   m = base.match(/V(\d+)[-_]?I(\d+)[-_]?P(\d+)/i);
   if (m) {
     const [, v, i, p] = m;
     const seq = String(parseInt(p, 10)).padStart(3, "0");
-    return { article_id: `V${+v}I${+i}P${seq}`, volume_number: +v, issue_number: +i };
+    return {
+      article_id: `V${+v}I${+i}P${seq}`,
+      volume_number: +v,
+      issue_number: +i,
+    };
   }
   return null;
 }
@@ -329,18 +369,46 @@ async function readHeaderFooterTextFromDocx(buffer) {
   const parts = [];
   for (const name of Object.keys(zip.files)) {
     if (/^word\/(header|footer)\d*\.xml$/i.test(name)) {
-      try { parts.push(stripXmlTags(await zip.file(name).async("string"))); } catch {}
+      try {
+        parts.push(stripXmlTags(await zip.file(name).async("string")));
+      } catch {}
     }
   }
   return normalizeUnicode(parts.join("\n"));
 }
 
 /* ───────── parsers for vol/issue/pages/dates (unchanged) ───────── */
-const MONTHS = { jan:1,january:1,feb:2,february:2,mar:3,march:3,apr:4,april:4,may:5,jun:6,june:6,jul:7,july:7,aug:8,august:8,sep:9,sept:9,september:9,oct:10,october:10,nov:11,november:11,dec:12,december:12 };
+const MONTHS = {
+  jan: 1,
+  january: 1,
+  feb: 2,
+  february: 2,
+  mar: 3,
+  march: 3,
+  apr: 4,
+  april: 4,
+  may: 5,
+  jun: 6,
+  june: 6,
+  jul: 7,
+  july: 7,
+  aug: 8,
+  august: 8,
+  sep: 9,
+  sept: 9,
+  september: 9,
+  oct: 10,
+  october: 10,
+  nov: 11,
+  november: 11,
+  dec: 12,
+  december: 12,
+};
 
 function parseVolIssueAnywhere(text = "") {
   const t = normalizeDash(text);
-  let m = /(?:Volume|Vol\.?)\s*(\d+)\s*(?:,|\s)*\s*(?:Issue|No\.?)\s*(\d+)/i.exec(t);
+  let m =
+    /(?:Volume|Vol\.?)\s*(\d+)\s*(?:,|\s)*\s*(?:Issue|No\.?)\s*(\d+)/i.exec(t);
   if (m) return { volume_number: num(m[1]), issue_number: num(m[2]) };
   m = /\bV(?:ol\.?)?\s*(\d+)\b[^\n]{0,15}?\bI(?:ss\.?|sue)?\s*(\d+)\b/i.exec(t);
   if (m) return { volume_number: num(m[1]), issue_number: num(m[2]) };
@@ -354,7 +422,10 @@ const VOL_ISSUE_SCAN_LIMIT = 120;
 
 function getHeaderText(lines = []) {
   const iStop = lines.findIndex((l) => /^Original Article$/i.test(l));
-  const head = lines.slice(0, iStop > -1 ? Math.min(iStop, HEADER_MAX_LINES) : HEADER_MAX_LINES);
+  const head = lines.slice(
+    0,
+    iStop > -1 ? Math.min(iStop, HEADER_MAX_LINES) : HEADER_MAX_LINES
+  );
   return head.join("\n");
 }
 
@@ -362,7 +433,10 @@ function findFirstVolIssueIndex(lines = [], limit = VOL_ISSUE_SCAN_LIMIT) {
   const n = Math.min(lines.length, limit);
   for (let i = 0; i < n; i++) {
     const s = normalizeDash(lines[i] || "");
-    if (/(?:Volume|Vol\.?).{0,20}(?:Issue|No\.?)/i.test(s) || /\bV(?:ol\.?)?\s*\d+\b.{0,20}\bI(?:ss\.?|sue)?\s*\d+\b/i.test(s))
+    if (
+      /(?:Volume|Vol\.?).{0,20}(?:Issue|No\.?)/i.test(s) ||
+      /\bV(?:ol\.?)?\s*\d+\b.{0,20}\bI(?:ss\.?|sue)?\s*\d+\b/i.test(s)
+    )
       return i;
   }
   return -1;
@@ -383,7 +457,8 @@ function findPageRangesAround(lines = [], start, before = 2, after = 6) {
     for (const rx of rxs) {
       let m;
       while ((m = rx.exec(t))) {
-        const a = num(m[1]), b = num(m[2]);
+        const a = num(m[1]),
+          b = num(m[2]);
         if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
         if (a <= 0 || b <= 0 || a > b) continue;
         if (b - a > 300) continue;
@@ -406,7 +481,8 @@ function chooseHeaderPages(header = "") {
   for (const rx of rxs) {
     let m;
     while ((m = rx.exec(t))) {
-      const a = num(m[1]), b = num(m[2]);
+      const a = num(m[1]),
+        b = num(m[2]);
       if (a <= 0 || b <= 0 || a > b) continue;
       if (b - a > 300) continue;
       if (b >= 1800) continue;
@@ -416,7 +492,11 @@ function chooseHeaderPages(header = "") {
   if (!all.length) return {};
   const volPos = t.search(/(?:Volume|Vol\.?|Issue|No\.?)/i);
   if (volPos >= 0) {
-    all.sort((x, y) => Math.abs(x.index - volPos) - Math.abs(y.index - volPos) || x.from - y.from);
+    all.sort(
+      (x, y) =>
+        Math.abs(x.index - volPos) - Math.abs(y.index - volPos) ||
+        x.from - y.from
+    );
     return { pages_from: all[0].from, pages_to: all[0].to };
   }
   all.sort((x, y) => x.from - y.from || x.index - y.index);
@@ -431,14 +511,19 @@ function parsePagesBeforeReferences(lines = []) {
 
 function parseDates(line = "") {
   const out = {};
-  const rx = /(Received|Revised|Accepted|Published)\s*:\s*([0-3]?\d\s+\w+\s+\d{4})/gi;
+  const rx =
+    /(Received|Revised|Accepted|Published)\s*:\s*([0-3]?\d\s+\w+\s+\d{4})/gi;
   let m;
-  while ((m = rx.exec(line))) out[`${m[1].toLowerCase()}_date`] = new Date(m[2]).toISOString().slice(0, 10);
+  while ((m = rx.exec(line)))
+    out[`${m[1].toLowerCase()}_date`] = new Date(m[2])
+      .toISOString()
+      .slice(0, 10);
   return out;
 }
 
 function parseIssnAndDoiFromHeader(header = "") {
-  const rx = /ISSN[^\dA-Za-z]{0,10}([0-9]{4}-[0-9Xx]{4})[\s\S]*?(https?:\/\/(?:dx\.)?doi\.org\/\S+)?/i;
+  const rx =
+    /ISSN[^\dA-Za-z]{0,10}([0-9]{4}-[0-9Xx]{4})[\s\S]*?(https?:\/\/(?:dx\.)?doi\.org\/\S+)?/i;
   const m = rx.exec(header);
   const out = { issn: null, doi_url: null };
   if (m) {
@@ -451,7 +536,11 @@ function parseDoiUrlAnywhere(text = "") {
   const url = /(https?:\/\/(?:dx\.)?doi\.org\/\S+)/i.exec(text)?.[1];
   if (url) return url;
   const tok = /\bdoi\s*[:)]?\s*(10\.[^\s)]+)\b/i.exec(text)?.[1];
-  if (tok) return `https://doi.org/${tok.replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "")}`;
+  if (tok)
+    return `https://doi.org/${tok.replace(
+      /^https?:\/\/(?:dx\.)?doi\.org\//i,
+      ""
+    )}`;
   return null;
 }
 
@@ -464,94 +553,223 @@ async function resolveJournalId(conn, { url, form }) {
     null;
   if (jid !== null) return jid;
 
-  const short_name =
-    (form.get("short_name") ||
-      form.get("journal_short") ||
-      new URL(url).searchParams.get("short_name") ||
-      new URL(url).searchParams.get("journal_short") ||
-      "")
-      .toString()
-      .trim();
-  const journal_name = (form.get("journal_name") || new URL(url).searchParams.get("journal_name") || "")
+  const short_name = (
+    form.get("short_name") ||
+    form.get("journal_short") ||
+    new URL(url).searchParams.get("short_name") ||
+    new URL(url).searchParams.get("journal_short") ||
+    ""
+  )
     .toString()
     .trim();
-  const issn = (form.get("issn") || new URL(url).searchParams.get("issn") || "").toString().trim();
+  const journal_name = (
+    form.get("journal_name") ||
+    new URL(url).searchParams.get("journal_name") ||
+    ""
+  )
+    .toString()
+    .trim();
+  const issn = (form.get("issn") || new URL(url).searchParams.get("issn") || "")
+    .toString()
+    .trim();
 
   if (short_name) {
-    const [[jr]] = await conn.query("SELECT id FROM journals WHERE short_name=? LIMIT 1", [short_name]);
+    const [[jr]] = await conn.query(
+      "SELECT id FROM journals WHERE short_name=? LIMIT 1",
+      [short_name]
+    );
     if (jr) return jr.id;
   }
   if (journal_name) {
-    const [[jr]] = await conn.query("SELECT id FROM journals WHERE journal_name=? LIMIT 1", [journal_name]);
+    const [[jr]] = await conn.query(
+      "SELECT id FROM journals WHERE journal_name=? LIMIT 1",
+      [journal_name]
+    );
     if (jr) return jr.id;
   }
   if (issn) {
-    const [[jr]] = await conn.query("SELECT id FROM journals WHERE issn_online=? OR issn_print=? LIMIT 1", [
-      issn,
-      issn,
-    ]);
+    const [[jr]] = await conn.query(
+      "SELECT id FROM journals WHERE issn_online=? OR issn_print=? LIMIT 1",
+      [issn, issn]
+    );
     if (jr) return jr.id;
   }
   return null;
 }
 
-async function resolveVolumeIssueIds(conn, journal_id, { url, form }, parsed) {
-  const warn = [];
-  let volume_id = safeInt(form.get("volume_id")) ?? safeInt(new URL(url).searchParams.get("volume_id"));
-  let issue_id = safeInt(form.get("issue_id")) ?? safeInt(new URL(url).searchParams.get("issue_id"));
+// async function resolveVolumeIssueIds(conn, journal_id, { url, form }, parsed) {
+//   const warn = [];
+//   let volume_id =
+//     safeInt(form.get("volume_id")) ??
+//     safeInt(new URL(url).searchParams.get("volume_id"));
+//   let issue_id =
+//     safeInt(form.get("issue_id")) ??
+//     safeInt(new URL(url).searchParams.get("issue_id"));
 
-  // validate explicit ids
-  if (volume_id != null) {
-    const [[v]] = await conn.query("SELECT id FROM volumes WHERE id=? AND journal_id=? LIMIT 1", [
-      volume_id,
-      journal_id,
-    ]);
-    if (!v) {
-      warn.push(`volume_id ${volume_id} does not belong to journal ${journal_id}`);
-      volume_id = null;
+//   // validate explicit ids
+//   if (volume_id != null) {
+//     const [[v]] = await conn.query(
+//       "SELECT id FROM volumes WHERE id=? AND journal_id=? LIMIT 1",
+//       [volume_id, journal_id]
+//     );
+//     if (!v) {
+//       warn.push(
+//         `volume_id ${volume_id} does not belong to journal ${journal_id}`
+//       );
+//       volume_id = null;
+//     }
+//   }
+//   if (issue_id != null) {
+//     const [[i]] = await conn.query(
+//       "SELECT id FROM issues WHERE id=? AND journal_id=? LIMIT 1",
+//       [issue_id, journal_id]
+//     );
+//     if (!i) {
+//       warn.push(
+//         `issue_id ${issue_id} does not belong to journal ${journal_id}`
+//       );
+//       issue_id = null;
+//     }
+//   }
+//   if (volume_id && issue_id) {
+//     const [[vn]] = await conn.query(
+//       "SELECT volume_number FROM volumes WHERE id=?",
+//       [volume_id]
+//     );
+//     const [[inm]] = await conn.query(
+//       "SELECT issue_number FROM issues WHERE id=?",
+//       [issue_id]
+//     );
+//     return {
+//       volume_id,
+//       issue_id,
+//       vnum: vn?.volume_number ?? null,
+//       inum: inm?.issue_number ?? null,
+//       warnings: warn,
+//     };
+//   }
+
+//   const vnumInput =
+//     safeInt(form.get("volume_number")) ??
+//     safeInt(new URL(url).searchParams.get("volume_number"));
+//   const inumInput =
+//     safeInt(form.get("issue_number")) ??
+//     safeInt(new URL(url).searchParams.get("issue_number"));
+
+//   const vnum = vnumInput ?? parsed.volume_number ?? null;
+//   const inum = inumInput ?? parsed.issue_number ?? null;
+
+//   if (vnum != null && !volume_id) {
+//     const [[vol]] = await conn.query(
+//       "SELECT id FROM volumes WHERE journal_id=? AND volume_number=? LIMIT 1",
+//       [journal_id, vnum]
+//     );
+//     if (vol) volume_id = vol.id;
+//     else warn.push(`Volume ${vnum} not found for journal ${journal_id}.`);
+//   }
+//   if (inum != null && !issue_id) {
+//     const [[iss]] = await conn.query(
+//       "SELECT id FROM issues WHERE journal_id=? AND issue_number=? LIMIT 1",
+//       [journal_id, inum]
+//     );
+//     if (iss) issue_id = iss.id;
+//     else warn.push(`Issue ${inum} not found for journal ${journal_id}.`);
+//   }
+
+//   return {
+//     volume_id: volume_id ?? null,
+//     issue_id: issue_id ?? null,
+//     vnum,
+//     inum,
+//     warnings: warn,
+//   };
+// }
+export async function resolveVolumeIssueIds(conn, journal_id, formDataCtx, detected) {
+  let { volume_number, issue_number } = detected || {};
+  let vnum = volume_number ? String(volume_number).trim() : null;
+  let inum = issue_number ? String(issue_number).trim() : null;
+
+  let volume_id = null;
+  let issue_id = null;
+  const warnings = [];
+
+  /* ───────────────────────────────
+     1️⃣  Try existing VOLUME first
+  ─────────────────────────────── */
+  if (journal_id && vnum) {
+    const [[vol]] = await conn.query(
+      "SELECT id, is_active FROM volumes WHERE journal_id=? AND volume_number=? LIMIT 1",
+      [journal_id, vnum]
+    );
+
+    if (vol) {
+      volume_id = vol.id;
+
+      // if inactive, re-enable it
+      if (vol.is_active === 0) {
+        await conn.query(
+          "UPDATE volumes SET is_active=1, updated_at=NOW() WHERE id=?",
+          [volume_id]
+        );
+      }
+    } else {
+      // auto-create volume
+      const [ins] = await conn.query(
+        `INSERT INTO volumes
+         (journal_id, volume_number, volume_label, alias_name, year, is_active, created_at, updated_at)
+         VALUES (?,?,?,?,?,1,NOW(),NOW())`,
+        [
+          journal_id,
+          vnum,
+          `Volume ${vnum}`,
+          `vol.${vnum}`,
+          new Date().getFullYear(),
+        ]
+      );
+      volume_id = ins.insertId;
     }
   }
-  if (issue_id != null) {
-    const [[i]] = await conn.query("SELECT id FROM issues WHERE id=? AND journal_id=? LIMIT 1", [
-      issue_id,
-      journal_id,
-    ]);
-    if (!i) {
-      warn.push(`issue_id ${issue_id} does not belong to journal ${journal_id}`);
-      issue_id = null;
+
+  /* ───────────────────────────────
+     2️⃣  Try existing ISSUE next
+  ─────────────────────────────── */
+  if (journal_id && volume_id && inum) {
+    const [[iss]] = await conn.query(
+      "SELECT id, is_active FROM issues WHERE journal_id=? AND volume_id=? AND issue_number=? LIMIT 1",
+      [journal_id, volume_id, inum]
+    );
+
+    if (iss) {
+      issue_id = iss.id;
+
+      // if inactive, re-enable it
+      if (iss.is_active === 0) {
+        await conn.query(
+          "UPDATE issues SET is_active=1, updated_at=NOW() WHERE id=?",
+          [issue_id]
+        );
+      }
+    } else {
+      // auto-create issue
+      const [ins] = await conn.query(
+        `INSERT INTO issues
+         (journal_id, volume_id, issue_number, issue_label, alias_name, is_active, created_at, updated_at)
+         VALUES (?,?,?,?,?,1,NOW(),NOW())`,
+        [
+          journal_id,
+          volume_id,
+          inum,
+          `Issue ${inum}`,
+          `no.${inum}`,
+        ]
+      );
+      issue_id = ins.insertId;
     }
   }
-  if (volume_id && issue_id) {
-    const [[vn]] = await conn.query("SELECT volume_number FROM volumes WHERE id=?", [volume_id]);
-    const [[inm]] = await conn.query("SELECT issue_number FROM issues WHERE id=?", [issue_id]);
-    return { volume_id, issue_id, vnum: vn?.volume_number ?? null, inum: inm?.issue_number ?? null, warnings: warn };
-  }
 
-  const vnumInput = safeInt(form.get("volume_number")) ?? safeInt(new URL(url).searchParams.get("volume_number"));
-  const inumInput = safeInt(form.get("issue_number")) ?? safeInt(new URL(url).searchParams.get("issue_number"));
-
-  const vnum = vnumInput ?? parsed.volume_number ?? null;
-  const inum = inumInput ?? parsed.issue_number ?? null;
-
-  if (vnum != null && !volume_id) {
-    const [[vol]] = await conn.query("SELECT id FROM volumes WHERE journal_id=? AND volume_number=? LIMIT 1", [
-      journal_id,
-      vnum,
-    ]);
-    if (vol) volume_id = vol.id;
-    else warn.push(`Volume ${vnum} not found for journal ${journal_id}.`);
-  }
-  if (inum != null && !issue_id) {
-    const [[iss]] = await conn.query("SELECT id FROM issues WHERE journal_id=? AND issue_number=? LIMIT 1", [
-      journal_id,
-      inum,
-    ]);
-    if (iss) issue_id = iss.id;
-    else warn.push(`Issue ${inum} not found for journal ${journal_id}.`);
-  }
-
-  return { volume_id: volume_id ?? null, issue_id: issue_id ?? null, vnum, inum, warnings: warn };
+  return { volume_id, issue_id, vnum, inum, warnings };
 }
+
 
 /* ───────── route ───────── */
 // export async function POST(req) {
@@ -857,7 +1075,10 @@ export async function POST(req) {
     const form = await req.formData();
     const file = form.get("file");
     if (!file || typeof file === "string") {
-      return NextResponse.json({ success: false, message: "file is required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "file is required" },
+        { status: 400 }
+      );
     }
 
     const conn = await createDbConnection();
@@ -876,7 +1097,8 @@ export async function POST(req) {
 
       // save file
       const originalName = file.name || "upload.docx";
-      const base = slugifyBaseName(originalName.replace(/\.[^.]+$/, "")) || "doc";
+      const base =
+        slugifyBaseName(originalName.replace(/\.[^.]+$/, "")) || "doc";
       const ext = path.extname(originalName) || ".docx";
       const unique = crypto.randomBytes(6).toString("hex");
       const safeName = `${base}-${unique}${ext}`;
@@ -912,9 +1134,18 @@ export async function POST(req) {
       const idxOrig = lines.findIndex((l) => /^Original Article$/i.test(l));
       let title = "";
       if (idxOrig >= 0) {
-        for (let i = idxOrig + 1; i < Math.min(idxOrig + 6, lines.length); i++) {
+        for (
+          let i = idxOrig + 1;
+          i < Math.min(idxOrig + 6, lines.length);
+          i++
+        ) {
           const cand = lines[i];
-          if (!cand || /^Original Article$/i.test(cand) || /^ISSN\b/i.test(cand)) continue;
+          if (
+            !cand ||
+            /^Original Article$/i.test(cand) ||
+            /^ISSN\b/i.test(cand)
+          )
+            continue;
           if (cand.length >= 8) {
             title = cand;
             break;
@@ -934,75 +1165,70 @@ export async function POST(req) {
       }
 
       // authors
-    // ── AUTHORS extraction (handles "M. Shoikhedbrod*, I. Shoikhedbrod1")
-let authors = [];
+      // ── AUTHORS extraction (handles "M. Shoikhedbrod*, I. Shoikhedbrod1")
+      let authors = [];
 
-// 1️⃣ Try to find an explicit "Authors:" block in the doc
-const authorsMatch = fullText.match(
-  /(?:^|\n)\s*Authors?\s*[:\-]\s*([\s\S]+?)(?=\n\s*(Abstract|Keywords?|Received|Accepted|Published)\b)/i
-);
-if (authorsMatch && authorsMatch[1]) {
-  authors = authorsMatch[1]
-    .split(/,| and |\n/)
-    .map((name) =>
-      cleanAuthor(
-        name
-          .replace(/[*\d]+/g, "") // remove footnote markers like *,1
-      )
-    )
-    .filter(Boolean);
-}
+      // 1️⃣ Try to find an explicit "Authors:" block in the doc
+      const authorsMatch = fullText.match(
+        /(?:^|\n)\s*Authors?\s*[:\-]\s*([\s\S]+?)(?=\n\s*(Abstract|Keywords?|Received|Accepted|Published)\b)/i
+      );
+      if (authorsMatch && authorsMatch[1]) {
+        authors = authorsMatch[1]
+          .split(/,| and |\n/)
+          .map((name) =>
+            cleanAuthor(
+              name.replace(/[*\d]+/g, "") // remove footnote markers like *,1
+            )
+          )
+          .filter(Boolean);
+      }
 
-// 2️⃣ Fallback: lines right after "Original Article" header (your PDF style)
-if (!authors.length) {
-  const startIdx = idxOrig >= 0 ? idxOrig + 1 : 0;
-  for (
-    let i = startIdx;
-    i < Math.min(lines.length, startIdx + 8);
-    i++
-  ) {
-    const line = lines[i] || "";
+      // 2️⃣ Fallback: lines right after "Original Article" header (your PDF style)
+      if (!authors.length) {
+        const startIdx = idxOrig >= 0 ? idxOrig + 1 : 0;
+        for (let i = startIdx; i < Math.min(lines.length, startIdx + 8); i++) {
+          const line = lines[i] || "";
 
-    // stop if we've hit affiliation, abstract header, or dates
-    if (
-      /^(r&d|department|faculty|university|institute|abstract|keywords?|received|accepted|published|introduction)/i.test(
-        line
-      )
-    ) {
-      break;
-    }
+          // stop if we've hit affiliation, abstract header, or dates
+          if (
+            /^(r&d|department|faculty|university|institute|abstract|keywords?|received|accepted|published|introduction)/i.test(
+              line
+            )
+          ) {
+            break;
+          }
 
-    // look for "M. Shoikhedbrod*, I. Shoikhedbrod1" style
-    if (/[A-Z]\.\s*[A-Z][a-z]+/.test(line)) {
-      authors = line
-        .replace(/[*\d]+/g, "") // strip *, 1, 2 footnote refs
-        .split(/,| and /i)
-        .map((s) => cleanAuthor(s))
-        .filter(Boolean);
-      break;
-    }
-  }
-}
+          // look for "M. Shoikhedbrod*, I. Shoikhedbrod1" style
+          if (/[A-Z]\.\s*[A-Z][a-z]+/.test(line)) {
+            authors = line
+              .replace(/[*\d]+/g, "") // strip *, 1, 2 footnote refs
+              .split(/,| and /i)
+              .map((s) => cleanAuthor(s))
+              .filter(Boolean);
+            break;
+          }
+        }
+      }
 
-// 3️⃣ Fallback: text before "Received:"
-if (!authors.length) {
-  const beforeReceived = fullText.split(/Received:/i)[0] || "";
-  const m = beforeReceived.match(
-    /([A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?(?:\s*,\s*[A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)+)/
-  );
-  if (m && m[1]) {
-    authors = m[1]
-      .replace(/[*\d]+/g, "")
-      .split(/,| and /i)
-      .map((s) => cleanAuthor(s))
-      .filter(Boolean);
-  }
-}
+      // 3️⃣ Fallback: text before "Received:"
+      if (!authors.length) {
+        const beforeReceived = fullText.split(/Received:/i)[0] || "";
+        const m = beforeReceived.match(
+          /([A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?(?:\s*,\s*[A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)+)/
+        );
+        if (m && m[1]) {
+          authors = m[1]
+            .replace(/[*\d]+/g, "")
+            .split(/,| and /i)
+            .map((s) => cleanAuthor(s))
+            .filter(Boolean);
+        }
+      }
 
-// 4️⃣ Last resort
-if (!authors.length) {
-  authors = [];
-}
+      // 4️⃣ Last resort
+      if (!authors.length) {
+        authors = [];
+      }
 
       // dates / abstract / keywords
       const datesLine =
@@ -1019,13 +1245,13 @@ if (!authors.length) {
               .replace(/^Abstract\s*[-:]\s*/i, "")
           : "";
       const keywords =
-        iKeys >= 0
-          ? lines[iKeys].replace(/^Keywords\s*[-:]\s*/i, "")
-          : "";
+        iKeys >= 0 ? lines[iKeys].replace(/^Keywords\s*[-:]\s*/i, "") : "";
 
       // header text
       const headerTop = getHeaderText(lines);
-      const headerAll = headerFooter ? `${headerFooter}\n${headerTop}` : headerTop;
+      const headerAll = headerFooter
+        ? `${headerFooter}\n${headerTop}`
+        : headerTop;
 
       // vol/issue numbers
       let vnum = null,
@@ -1078,9 +1304,10 @@ if (!authors.length) {
         month_to = null,
         year = null;
       {
-        const m = /([A-Za-z]{3,9})\s*-\s*([A-Za-z]{3,9})\s+((?:19|20)\d{2})/i.exec(
-          headerAll
-        );
+        const m =
+          /([A-Za-z]{3,9})\s*-\s*([A-Za-z]{3,9})\s+((?:19|20)\d{2})/i.exec(
+            headerAll
+          );
         if (m) {
           const M = (s) => MONTHS[s.toLowerCase()];
           const m1 = M(m[1]),
@@ -1093,10 +1320,7 @@ if (!authors.length) {
         }
         if (year == null)
           year =
-            parseInt(
-              (/(?:19|20)\d{2}/.exec(headerAll)?.[0] || ""),
-              10
-            ) ||
+            parseInt(/(?:19|20)\d{2}/.exec(headerAll)?.[0] || "", 10) ||
             (published_date ? new Date(published_date).getFullYear() : null);
       }
 
@@ -1180,67 +1404,67 @@ if (!authors.length) {
       /* ───────────────────────────────
          CROSS-JOURNAL & DUPLICATE CHECKS
       ─────────────────────────────── */
-// FromName is already declared earlier
-// Step 0: fetch journal info
-const [[journalRow]] = await conn.query(
-  "SELECT journal_name, short_name FROM journals WHERE id=?",
-  [journal_id]
-);
+      // FromName is already declared earlier
+      // Step 0: fetch journal info
+      const [[journalRow]] = await conn.query(
+        "SELECT journal_name, short_name FROM journals WHERE id=?",
+        [journal_id]
+      );
 
-if (!journalRow) {
-  return NextResponse.json(
-    { success: false, message: `Journal not found for ID=${journal_id}` },
-    { status: 400 }
-  );
-}
+      if (!journalRow) {
+        return NextResponse.json(
+          { success: false, message: `Journal not found for ID=${journal_id}` },
+          { status: 400 }
+        );
+      }
 
-// Step 1: Extract article prefix (before first hyphen, or full if no hyphen)
-let prefix = "";
-if (suggested_article_id && suggested_article_id.includes("-")) {
-  prefix = suggested_article_id.split("-")[0].toUpperCase();
-} else if (suggested_article_id) {
-  prefix = suggested_article_id.toUpperCase();
-}
+      // Step 1: Extract article prefix (before first hyphen, or full if no hyphen)
+      let prefix = "";
+      if (suggested_article_id && suggested_article_id.includes("-")) {
+        prefix = suggested_article_id.split("-")[0].toUpperCase();
+      } else if (suggested_article_id) {
+        prefix = suggested_article_id.toUpperCase();
+      }
 
-// Step 2: Normalize journal code
-let baseAllowed = (journalRow.short_name || journalRow.journal_name).toUpperCase();
-if (baseAllowed.startsWith("DS-")) {
-  baseAllowed = baseAllowed.replace(/^DS-/, ""); // strip DS-
-}
+      // Step 2: Normalize journal code
+      let baseAllowed = (
+        journalRow.short_name || journalRow.journal_name
+      ).toUpperCase();
+      if (baseAllowed.startsWith("DS-")) {
+        baseAllowed = baseAllowed.replace(/^DS-/, ""); // strip DS-
+      }
 
-// Step 3: Compare
-if (prefix && baseAllowed && prefix !== baseAllowed) {
-  return NextResponse.json(
-    {
-      success: false,
-      message: `Upload blocked: This article (${prefix}) belongs to another journal. Only ${journalRow.short_name} articles are allowed for Journal ID ${journal_id}.`
-    },
-    { status: 400 }
-  );
-}
-
-
+      // Step 3: Compare
+      if (prefix && baseAllowed && prefix !== baseAllowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Upload blocked: This article (${prefix}) belongs to another journal. Only ${journalRow.short_name} articles are allowed for Journal ID ${journal_id}.`,
+          },
+          { status: 400 }
+        );
+      }
 
       // duplicate file check
-// ✅ Duplicate file check (only the tables you actually have)
-const [fileDup] = await conn.query(
-  `
+      // ✅ Duplicate file check (only the tables you actually have)
+      const [fileDup] = await conn.query(
+        `
    SELECT id, journal_id, 'staged' as source 
    FROM staged_articles 
    WHERE file_name=?
   `,
-  [originalName]
-);
+        [originalName]
+      );
 
-if (fileDup.length > 0) {
-  return NextResponse.json(
-    {
-      success: false,
-      message: `Upload blocked: File already exists in ${fileDup[0].source} (Journal ID ${fileDup[0].journal_id})`,
-    },
-    { status: 400 }
-  );
-}
+      if (fileDup.length > 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Upload blocked: File already exists in ${fileDup[0].source} (Journal ID ${fileDup[0].journal_id})`,
+          },
+          { status: 400 }
+        );
+      }
 
       /* ───────────────────────────────
          INSERT INTO staged_articles
@@ -1251,40 +1475,39 @@ if (fileDup.length > 0) {
       );
       const existing = new Set(colsRows.map((r) => r.COLUMN_NAME));
 
-const payload = {
-  journal_id,
-  title: title || null,
-  year: year ?? null,
-  month_from: month_from ?? null,
-  month_to: month_to ?? null,
-  pages_from: pages_from ?? null,
-  pages_to: pages_to ?? null,
-  abstract: abstract || null,
-  keywords: keywords || null,
+      const payload = {
+        journal_id,
+        title: title || null,
+        year: year ?? null,
+        month_from: month_from ?? null,
+        month_to: month_to ?? null,
+        pages_from: pages_from ?? null,
+        pages_to: pages_to ?? null,
+        abstract: abstract || null,
+        keywords: keywords || null,
 
-  // 👇 add authors directly into staged_articles
-  authors: authors.length ? JSON.stringify(authors) : null,
+        // 👇 add authors directly into staged_articles
+        authors: authors.length ? JSON.stringify(authors) : null,
 
-  received_date: received_date || null,
-  revised_date: revised_date || null,
-  accepted_date: accepted_date || null,
-  published_date: published_date || null,
-  file_name: safeName,
-  original_name: originalName,
-  mime_type,
-  size_bytes,
-  storage_path,
-  status: "extracted",
-  article_id: suggested_article_id,
-  volume_number: vnum ?? null,
-  issue_number: inum ?? null,
-  volume_id: volume_id ?? null,
-  issue_id: issue_id ?? null,
-  doi_url: doi_url || null,
-  issn: issn || null,
-  references: referencesHtml,
-};
-
+        received_date: received_date || null,
+        revised_date: revised_date || null,
+        accepted_date: accepted_date || null,
+        published_date: published_date || null,
+        file_name: safeName,
+        original_name: originalName,
+        mime_type,
+        size_bytes,
+        storage_path,
+        status: "extracted",
+        article_id: suggested_article_id,
+        volume_number: vnum ?? null,
+        issue_number: inum ?? null,
+        volume_id: volume_id ?? null,
+        issue_id: issue_id ?? null,
+        doi_url: doi_url || null,
+        issn: issn || null,
+        references: referencesHtml,
+      };
 
       const cols = Object.keys(payload).filter((k) => existing.has(k));
       const vals = cols.map((k) =>
@@ -1332,7 +1555,11 @@ const payload = {
   } catch (e) {
     console.error("Stage error:", e);
     return NextResponse.json(
-      { success: false, message: "Staging failed", error: String(e?.message || e) },
+      {
+        success: false,
+        message: "Staging failed",
+        error: String(e?.message || e),
+      },
       { status: 500 }
     );
   }
@@ -1346,7 +1573,10 @@ export async function GET(req) {
   const q = (searchParams.get("q") || "").trim();
 
   if (!jid)
-    return NextResponse.json({ success: false, message: "jid required" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, message: "jid required" },
+      { status: 400 }
+    );
 
   const conn = await createDbConnection();
 
@@ -1359,8 +1589,7 @@ export async function GET(req) {
     }
 
     const [rows] = await conn.query(
-      `
-      SELECT id, journal_id, file_name, storage_path, title, article_id, abstract,
+      `SELECT id, journal_id, file_name, storage_path, title, article_id, abstract,
              authors, keywords, \`references\` AS refs,
              volume_number, issue_number, year, pages_from, pages_to, status,
              received_date, revised_date, accepted_date, published_date,
@@ -1401,6 +1630,122 @@ export async function GET(req) {
       { status: 500 }
     );
   } finally {
-    try { await conn.end(); } catch {}
+    try {
+      await conn.end();
+    } catch {}
+  }
+}
+
+/* ----------------------- UPDATE / EDIT existing staged article ----------------------- */
+export async function PUT(req) {
+  try {
+    const body = await req.json();
+    const id = Number(body.id);
+    if (!id)
+      return NextResponse.json(
+        { success: false, message: "Missing id" },
+        { status: 400 }
+      );
+
+    const conn = await createDbConnection();
+
+    try {
+      // fetch existing
+      const [[row]] = await conn.query(
+        "SELECT * FROM staged_articles WHERE id=? LIMIT 1",
+        [id]
+      );
+      if (!row)
+        return NextResponse.json(
+          { success: false, message: "Not found" },
+          { status: 404 }
+        );
+
+      // allow edits even after approval (per your request)
+      // but you can restrict later if needed
+      const allowedKeys = [
+        "title",
+        "abstract",
+        "keywords",
+        "authors",
+        "doi_url",
+        "issn",
+        "volume_number",
+        "issue_number",
+        "pages_from",
+        "pages_to",
+      ];
+
+      const updates = [];
+      const values = [];
+
+      for (const key of allowedKeys) {
+        if (body[key] !== undefined) {
+          updates.push(`${key}=?`);
+          values.push(body[key]);
+        }
+      }
+
+      if (!updates.length) {
+        return NextResponse.json(
+          { success: false, message: "No fields to update" },
+          { status: 400 }
+        );
+      }
+
+      values.push(id);
+      await conn.query(
+        `UPDATE staged_articles SET ${updates.join(", ")}, updated_at=NOW() WHERE id=?`,
+        values
+      );
+
+      return NextResponse.json({ success: true, message: "Updated successfully" });
+    } finally {
+      await conn.end();
+    }
+  } catch (e) {
+    console.error("PUT /api/articles/stage error:", e);
+    return NextResponse.json(
+      { success: false, message: e.message || "Internal error" },
+      { status: 500 }
+    );
+  }
+}
+
+/* ----------------------- DELETE single staged article ----------------------- */
+export async function DELETE(req, { params }) {
+  const id = Number(params?.id || 0);
+  if (!id)
+    return NextResponse.json(
+      { success: false, message: "Invalid ID" },
+      { status: 400 }
+    );
+
+  const conn = await createDbConnection();
+
+  try {
+    // delete the record
+    const [res] = await conn.query("DELETE FROM staged_articles WHERE id=?", [
+      id,
+    ]);
+
+    if (res.affectedRows === 0) {
+      return NextResponse.json(
+        { success: false, message: "Not found or already deleted" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, message: "Deleted successfully" });
+  } catch (e) {
+    console.error("DELETE /api/articles/stage/[id] failed:", e);
+    return NextResponse.json(
+      { success: false, message: e.message || "Internal Server Error" },
+      { status: 500 }
+    );
+  } finally {
+    try {
+      await conn.end();
+    } catch {}
   }
 }

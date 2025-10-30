@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import CKEditorField from "@/components/Dashboard/Journals/Article/CKEditorField";
+import ActionMenu from "@/components/Dashboard/Stage/ActionMenu";
 
 /** Util */
 const cls = (...a) => a.filter(Boolean).join(" ");
@@ -72,7 +73,10 @@ function UploadBox({ onDone, jidFromUrl, journalName }) {
       fd.append("file", file);
       fd.append("journal_id", journalId);
 
-      const r = await fetch("/api/articles/stage", { method: "POST", body: fd });
+      const r = await fetch("/api/articles/stage", {
+        method: "POST",
+        body: fd,
+      });
       const j = await r.json();
 
       if (!r.ok || !j.success) {
@@ -127,7 +131,9 @@ function UploadBox({ onDone, jidFromUrl, journalName }) {
         {msg && (
           <span
             className={`text-sm ${
-              msg.startsWith("Upload blocked") ? "text-red-600" : "text-gray-600"
+              msg.startsWith("Upload blocked")
+                ? "text-red-600"
+                : "text-gray-600"
             }`}
           >
             {msg}
@@ -158,7 +164,11 @@ function AuthorsEditor({ value = [], onChange }) {
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
         />
-        <button type="button" onClick={add} className="rounded-md border px-3 text-sm">
+        <button
+          type="button"
+          onClick={add}
+          className="rounded-md border px-3 text-sm"
+        >
           Add
         </button>
       </div>
@@ -217,87 +227,91 @@ function ReviewModal({ open, onClose, stagedId, onApproved }) {
   const [authors, setAuthors] = useState([]);
   const [refs, setRefs] = useState([]);
 
-useEffect(() => {
-  if (!open || !stagedId) return;
-  (async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`/api/articles/stage/${stagedId}`);
-      const j = await r.json();
-      if (!j.success) throw new Error(j.message || "Failed to load");
+  useEffect(() => {
+    if (!open || !stagedId) return;
+    (async () => {
+      setLoading(true);
+      try {
+        const r = await fetch(`/api/articles/stage/${stagedId}`);
+        const j = await r.json();
+        if (!j.success) throw new Error(j.message || "Failed to load");
 
-       const record = j.staged || j.record || j.item || j.data || null;
-       if (!record) throw new Error("No record found");
-       setRow(record);
+        const record = j.staged || j.record || j.item || j.data || null;
+        if (!record) throw new Error("No record found");
+        setRow(record);
         setAuthors(
           Array.isArray(record.authors)
             ? record.authors
             : safeJson(record.authors, [])
         );
-       setRefs(typeof record.references === "string" ? record.references : record.refs || "");
+        setRefs(
+          typeof record.references === "string"
+            ? record.references
+            : record.refs || ""
+        );
 
-      // 🔍 Debug after join
-      console.log("🔎 refs (joined HTML):", j.references?.map((r) => r.raw_citation).join("") || "");
+        // 🔍 Debug after join
+        console.log(
+          "🔎 refs (joined HTML):",
+          j.references?.map((r) => r.raw_citation).join("") || ""
+        );
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [open, stagedId]);
+
+  const updateStaged = async () => {
+    if (!row) return;
+    setSaving(true);
+    try {
+      const r = await fetch(`/api/articles/stage/${stagedId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: row.title,
+          abstract: row.abstract,
+          keywords: row.keywords,
+          pages_from: row.pages_from,
+          pages_to: row.pages_to,
+          received_date: row.received_date,
+          revised_date: row.revised_date,
+          accepted_date: row.accepted_date,
+          published_date: row.published_date,
+          article_id: row.article_id,
+          authors, // array from AuthorsEditor
+          doi: row.doi,
+          volume_number: row.volume_number,
+          issue_number: row.issue_number,
+          year: row.year,
+          references: refs, // CKEditor HTML
+        }),
+      });
+      const j = await r.json();
+      if (!j.success) throw new Error(j.message || "Save failed");
     } catch (e) {
-      console.error(e);
+      alert(e.message || String(e));
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
-  })();
-}, [open, stagedId]);
+  };
 
-
-
-const updateStaged = async () => {
-  if (!row) return;
-  setSaving(true);
-  try {
-    const r = await fetch(`/api/articles/stage/${stagedId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: row.title,
-        abstract: row.abstract,
-        keywords: row.keywords,
-        pages_from: row.pages_from,
-        pages_to: row.pages_to,
-        received_date: row.received_date,
-        revised_date: row.revised_date,
-        accepted_date: row.accepted_date,
-        published_date: row.published_date,
-        article_id: row.article_id,
-        authors,              // array from AuthorsEditor
-        doi: row.doi,
-        volume_number: row.volume_number,
-        issue_number: row.issue_number,
-        year: row.year,
-        references: refs,     // CKEditor HTML
-      }),
-    });
-    const j = await r.json();
-    if (!j.success) throw new Error(j.message || "Save failed");
-  } catch (e) {
-    alert(e.message || String(e));
-  } finally {
-    setSaving(false);
-  }
-};
-
-
-const accept = async () => {
+ const accept = async () => {
   if (!stagedId) return;
   setPromoting(true);
   try {
     const r = await fetch(`/api/articles/stage/${stagedId}/status`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "accept" }),
+      body: JSON.stringify({ status: "approved" }), // ✅ changed line
     });
 
     const text = await r.text();
     const j = text ? JSON.parse(text) : {};
 
-    if (!r.ok || !j.success) throw new Error(j.message || "Accept failed");
+    if (!r.ok || !j.ok) throw new Error(j.message || "Accept failed");
     onApproved?.(j);
     onClose();
   } catch (e) {
@@ -331,7 +345,9 @@ const accept = async () => {
     <div
       className={cls(
         "fixed inset-0 z-50 bg-black/40 transition",
-        open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        open
+          ? "opacity-100 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
       )}
       onClick={onClose}
     >
@@ -351,7 +367,7 @@ const accept = async () => {
         ) : row ? (
           <div className="mt-4 grid gap-6">
             {/* === Article Details Section === */}
-         <section className="w-full max-w-[720px]">
+            <section className="w-full max-w-[720px]">
               <h3 className="text-base font-semibold text-gray-700 mb-2">
                 Article Details
               </h3>
@@ -372,13 +388,13 @@ const accept = async () => {
                 rows={6}
               /> */}
               <div>
-  <span className="text-sm text-gray-700">Abstract</span>
-  <CKEditorField
-    value={row.abstract || ""}
-    onChange={(html) => setRow({ ...row, abstract: html })}
-    placeholder="Enter abstract here..."
-  />
-</div>
+                <span className="text-sm text-gray-700">Abstract</span>
+                <CKEditorField
+                  value={row.abstract || ""}
+                  onChange={(html) => setRow({ ...row, abstract: html })}
+                  placeholder="Enter abstract here..."
+                />
+              </div>
 
               <TextInput
                 label="Keywords"
@@ -388,7 +404,7 @@ const accept = async () => {
             </section>
 
             {/* === Authors Section === */}
-             <section className="w-full max-w-[720px]">
+            <section className="w-full max-w-[720px]">
               <h3 className="text-base font-semibold text-gray-700 mb-2">
                 Authors
               </h3>
@@ -396,13 +412,13 @@ const accept = async () => {
             </section>
 
             {/* === References Section === */}
-              <section className="w-full max-w-[720px] ml-auto pr-2">
-                <CKEditorField
-                  value={refs || ""}
-                  onChange={(html) => setRefs(html)}   // full HTML
-                  placeholder="Enter references here…"
-                />
-              </section>
+            <section className="w-full max-w-[720px] ml-auto pr-2">
+              <CKEditorField
+                value={refs || ""}
+                onChange={(html) => setRefs(html)} // full HTML
+                placeholder="Enter references here…"
+              />
+            </section>
 
             {/* === Actions Section === */}
             <div className="flex gap-2 pt-4">
@@ -469,7 +485,7 @@ export default function StagingDashboard() {
       if (jid) url.searchParams.set("jid", jid);
       const r = await fetch(url.toString());
       const j = await r.json();
-     setRows(j.records || j.staged || []);
+      setRows(j.records || j.staged || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -477,11 +493,28 @@ export default function StagingDashboard() {
     }
   };
 
-  useEffect(() => { load(); }, [status, jid]);
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this staged article?")) return;
+    try {
+      const r = await fetch(`/api/articles/stage/${id}`, { method: "DELETE" });
+      const j = await r.json();
+      if (!r.ok || !j.success) throw new Error(j.message || "Delete failed");
+      alert("Deleted successfully");
+      load(); // refresh list
+    } catch (e) {
+      alert(e.message || String(e));
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [status, jid]);
 
   return (
     <div className="mx-auto max-w-7xl p-6">
-      <h1 className="mb-1 text-2xl font-semibold">Articles — Staging Dashboard</h1>
+      <h1 className="mb-1 text-2xl font-semibold">
+        Articles — Staging Dashboard
+      </h1>
       <div className="mb-4 text-xs text-gray-600">
         Journal: <span className="font-mono">{journalName || "-"}</span>
         {" · "}JID: <span className="font-mono">{jid || "—"}</span>
@@ -492,24 +525,28 @@ export default function StagingDashboard() {
 
         <div className="flex items-center justify-between">
           <div className="flex gap-2">
-            {["uploaded","extracted","reviewing","approved","rejected"].map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatus(s)}
-                className={cls(
-                  "rounded-full border px-3 py-1 text-sm",
-                  status === s && "bg-black text-white"
-                )}
-              >
-                {s}
-              </button>
-            ))}
+            {["uploaded", "extracted", "reviewing", "approved", "rejected"].map(
+              (s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatus(s)}
+                  className={cls(
+                    "rounded-full border px-3 py-1 text-sm",
+                    status === s && "bg-black text-white"
+                  )}
+                >
+                  {s}
+                </button>
+              )
+            )}
           </div>
-          <button onClick={load} className="text-sm underline">Refresh</button>
+          <button onClick={load} className="text-sm underline">
+            Refresh
+          </button>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border">
-          <table className="min-w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border relative">
+          <table className="min-w-full text-sm relative z-0">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-3 py-2 text-left">ID</th>
@@ -524,17 +561,31 @@ export default function StagingDashboard() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td className="px-3 py-3" colSpan={8}>Loading…</td></tr>
+                <tr>
+                  <td className="px-3 py-3" colSpan={8}>
+                    Loading…
+                  </td>
+                </tr>
               ) : rows.length === 0 ? (
-                <tr><td className="px-3 py-6 text-gray-600" colSpan={8}>No items.</td></tr>
+                <tr>
+                  <td className="px-3 py-6 text-gray-600" colSpan={8}>
+                    No items.
+                  </td>
+                </tr>
               ) : (
                 rows.map((r) => (
                   <tr key={r.id} className="border-t">
                     <td className="px-3 py-2">{r.id}</td>
-                    <td className="px-3 py-2 font-mono">{r.article_id || "-"}</td>
-                    <td className="px-3 py-2">{r.title?.slice(0, 80) || "-"}</td>
+                    <td className="px-3 py-2 font-mono">
+                      {r.article_id || "-"}
+                    </td>
+                    <td className="px-3 py-2">
+                      {r.title?.slice(0, 80) || "-"}
+                    </td>
                     <td className="px-3 py-2">{r.journal_id}</td>
-                    <td className="px-3 py-2">{r.pages_from ?? "-"}–{r.pages_to ?? "-"}</td>
+                    <td className="px-3 py-2">
+                      {r.pages_from ?? "-"}–{r.pages_to ?? "-"}
+                    </td>
                     <td className="px-3 py-2">
                       <div className="text-gray-700">
                         <div>Rec: {fmt(r.received_date)}</div>
@@ -543,13 +594,19 @@ export default function StagingDashboard() {
                       </div>
                     </td>
                     <td className="px-3 py-2">{r.status}</td>
-                    <td className="px-3 py-2">
-                      <button
-                        className="rounded-md border px-3 py-1 text-xs"
-                        onClick={() => setReviewId(r.id)}
-                      >
-                        Review
-                      </button>
+                    <td className="px-3 py-2 text-right">
+                      <div className="relative inline-block text-left action-menu z-50">
+                        <ActionMenu
+                          onEdit={() => setReviewId(r.id)}
+                          onDelete={() => handleDelete(r.id)}
+                          onApprove={
+                            r.status === "reviewing"
+                              ? () => handleApprove(r.id)
+                              : undefined
+                          }
+                          showApprove={r.status === "reviewing"}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -563,7 +620,10 @@ export default function StagingDashboard() {
         open={!!reviewId}
         stagedId={reviewId}
         onClose={() => setReviewId(null)}
-        onApproved={() => { setReviewId(null); load(); }}
+        onApproved={() => {
+          setReviewId(null);
+          load();
+        }}
       />
     </div>
   );

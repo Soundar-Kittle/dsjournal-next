@@ -47,17 +47,15 @@ function safeJson(str, fallback = []) {
   }
 }
 
-
-
 export async function PUT(req, context) {
-  const { id } = await context.params; // ✅ fixed
+  const { id } = await context.params;
   const body = await req.json();
   const conn = await createDbConnection();
 
   try {
     // 1️⃣ Fetch current record
     const [[existing]] = await conn.query(
-      "SELECT status FROM staged_articles WHERE id=? LIMIT 1",
+      "SELECT * FROM staged_articles WHERE id=? LIMIT 1",
       [id]
     );
 
@@ -65,7 +63,7 @@ export async function PUT(req, context) {
       return NextResponse.json({ ok: false, message: "Not found" }, { status: 404 });
     }
 
-    // 2️⃣ Optional lock rule
+    // 2️⃣ Status lock rule
     const lockedStatuses = ["published", "archived"];
     if (lockedStatuses.includes(existing.status)) {
       return NextResponse.json(
@@ -96,12 +94,9 @@ export async function PUT(req, context) {
 
     for (const [key, val] of Object.entries(normalized)) {
       if (val !== undefined && val !== null && val !== "") {
-        const column =
-          key === "references" ? "`references` = ?" : `${key} = ?`;
+        const column = key === "references" ? "`references` = ?" : `${key} = ?`;
         fields.push(column);
-        values.push(
-          typeof val === "object" ? JSON.stringify(val) : val
-        );
+        values.push(typeof val === "object" ? JSON.stringify(val) : val);
       }
     }
 
@@ -115,6 +110,23 @@ export async function PUT(req, context) {
     // 5️⃣ Execute
     const sql = `UPDATE staged_articles SET ${fields.join(", ")}, updated_at=NOW() WHERE id=?`;
     await conn.query(sql, [...values, id]);
+
+    // 6️⃣ Optional: if final approval, you can auto-copy into articles table here
+    if (body.status === "approved") {
+      await conn.query(
+        `
+        INSERT INTO articles (
+          journal_id, title, article_id, abstract, authors, keywords, references,
+          volume_number, issue_number, year, pages_from, pages_to, doi_url, pdf_path, created_at
+        )
+        SELECT 
+          journal_id, title, article_id, abstract, authors, keywords, references,
+          volume_number, issue_number, year, pages_from, pages_to, doi_url, NULL, NOW()
+        FROM staged_articles WHERE id=?;
+        `,
+        [id]
+      );
+    }
 
     return NextResponse.json({ ok: true, message: "Updated successfully" });
   } catch (e) {
