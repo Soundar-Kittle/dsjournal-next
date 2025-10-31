@@ -239,6 +239,69 @@ function normalizeAuthors(authors) {
   return [];
 }
 
+function normalizeDate(val) {
+  if (!val) return null;
+  // allow "2025-06-15" directly
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+
+const d = new Date(val);
+if (isNaN(d.getTime())) return null;
+
+// build YYYY-MM-DD manually in local time
+const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+return local.toISOString().split("T")[0];
+}
+
+// take whatever frontend gave and coerce into what DB column expects
+function normalizeValueForColumn(key, val) {
+  if (val === undefined || val === null || val === "") return undefined;
+
+  // dates → YYYY-MM-DD
+  if (
+    key === "received_date" ||
+    key === "revised_date" ||
+    key === "accepted_date" ||
+    key === "published_date"
+  ) {
+    const d = normalizeDate(val);
+    return d ?? undefined;
+  }
+
+  // authors: store JSON string (column type longtext)
+  if (key === "authors") {
+    if (Array.isArray(val)) {
+      return JSON.stringify(val); // ["A","B","C"]
+    }
+    // if it's already string in DB, keep string
+    if (typeof val === "string") return val;
+    return undefined;
+  }
+
+  // keywords: store as joined string "a; b; c"
+  if (key === "keywords") {
+    if (Array.isArray(val)) {
+      return val.join("; ");
+    }
+    if (typeof val === "string") return val;
+    return undefined;
+  }
+
+  // references is HTML. keep as-is string
+  if (key === "references") {
+    if (typeof val === "string") return val;
+    return undefined;
+  }
+
+  // everything else: accept primitives
+  if (typeof val === "object") {
+    // don't drop objects we actually want (we only expect objects for authors, which we already handled)
+    return JSON.stringify(val);
+  }
+
+  return val;
+}
+
+
 export async function GET(req, context) {
   const { id } = await context.params;
   const articleId = Number(id ?? 0);
@@ -294,62 +357,161 @@ export async function GET(req, context) {
   }
 }
 
+// export async function PUT(req, { params }) {
+//   const id = Number(params?.id || 0);
+//   if (!id)
+//     return NextResponse.json({ success: false, message: "Invalid ID" }, { status: 400 });
+
+//   const body = await req.json();
+//   const conn = await createDbConnection();
+
+//   try {
+//     const [[existing]] = await conn.query(
+//       "SELECT id FROM staged_articles WHERE id=? LIMIT 1",
+//       [id]
+//     );
+//     if (!existing)
+//       return NextResponse.json({ success: false, message: "Record not found" }, { status: 404 });
+
+//     const normalized = {
+//       title: body.title,
+//       abstract: body.abstract,
+//       authors: Array.isArray(body.authors) ? JSON.stringify(body.authors) : String(body.authors || ""),
+//       keywords: Array.isArray(body.keywords) ? JSON.stringify(body.keywords) : String(body.keywords || ""),
+//       references: body.references || "",
+//       volume_number: body.volume_number ?? body.volumeNumber ?? "",
+//       issue_number: body.issue_number ?? body.issueNumber ?? "",
+//       year: body.year || null,
+//       pages_from: body.pages_from ?? body.pagesFrom ?? null,
+//       pages_to: body.pages_to ?? body.pagesTo ?? null,
+//       doi_url: body.doi_url ?? body.doiUrl ?? "",
+//       status: body.status || "extracted",
+//     };
+
+//     // Build query dynamically (prepared)
+//     const fields = [];
+//     const values = [];
+//     for (const [key, val] of Object.entries(normalized)) {
+//       if (val !== undefined && val !== null) {
+//         fields.push(key === "references" ? "`references`=?" : `${key}=?`);
+//         values.push(val);
+//       }
+//     }
+
+//     if (!fields.length)
+//       return NextResponse.json({ success: false, message: "No fields to update" }, { status: 400 });
+
+//     const sql = `UPDATE staged_articles SET ${fields.join(", ")}, updated_at=NOW() WHERE id=?`;
+//     await conn.query(sql, [...values, id]);
+
+//     return NextResponse.json({ success: true, message: "Updated successfully" });
+//   } catch (e) {
+//     console.error("❌ PUT /api/articles/stage/[id] failed:", e);
+//     return NextResponse.json(
+//       { success: false, message: e.message || "Internal Server Error" },
+//       { status: 500 }
+//     );
+//   } finally {
+//     await conn.end();
+//   }
+// }
+
 export async function PUT(req, { params }) {
-  const id = Number(params?.id || 0);
-  if (!id)
-    return NextResponse.json({ success: false, message: "Invalid ID" }, { status: 400 });
-
-  const body = await req.json();
-  const conn = await createDbConnection();
-
   try {
-    const [[existing]] = await conn.query(
-      "SELECT id FROM staged_articles WHERE id=? LIMIT 1",
-      [id]
-    );
-    if (!existing)
-      return NextResponse.json({ success: false, message: "Record not found" }, { status: 404 });
-
-    const normalized = {
-      title: body.title,
-      abstract: body.abstract,
-      authors: Array.isArray(body.authors) ? JSON.stringify(body.authors) : String(body.authors || ""),
-      keywords: Array.isArray(body.keywords) ? JSON.stringify(body.keywords) : String(body.keywords || ""),
-      references: body.references || "",
-      volume_number: body.volume_number ?? body.volumeNumber ?? "",
-      issue_number: body.issue_number ?? body.issueNumber ?? "",
-      year: body.year || null,
-      pages_from: body.pages_from ?? body.pagesFrom ?? null,
-      pages_to: body.pages_to ?? body.pagesTo ?? null,
-      doi_url: body.doi_url ?? body.doiUrl ?? "",
-      status: body.status || "extracted",
-    };
-
-    // Build query dynamically (prepared)
-    const fields = [];
-    const values = [];
-    for (const [key, val] of Object.entries(normalized)) {
-      if (val !== undefined && val !== null) {
-        fields.push(key === "references" ? "`references`=?" : `${key}=?`);
-        values.push(val);
-      }
+    const id = Number(params?.id || 0);
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Invalid ID" },
+        { status: 400 }
+      );
     }
 
-    if (!fields.length)
-      return NextResponse.json({ success: false, message: "No fields to update" }, { status: 400 });
+    const body = await req.json();
+    const conn = await createDbConnection();
 
-    const sql = `UPDATE staged_articles SET ${fields.join(", ")}, updated_at=NOW() WHERE id=?`;
-    await conn.query(sql, [...values, id]);
+    try {
+      // console.log("▶ Date In:", val, "→ Date Saved:", normalizeDate(val));
+      // 1. make sure record exists
+      const [[existing]] = await conn.query(
+        "SELECT * FROM staged_articles WHERE id=? LIMIT 1",
+        [id]
+      );
+      if (!existing) {
+        return NextResponse.json(
+          { success: false, message: "Record not found" },
+          { status: 404 }
+        );
+      }
 
-    return NextResponse.json({ success: true, message: "Updated successfully" });
+      // 2. columns we allow updating from review modal
+      const allowedKeys = [
+        "title",
+        "abstract",
+        "keywords",
+        "authors",
+        "doi_url",
+        "issn",
+        "volume_number",
+        "issue_number",
+        "pages_from",
+        "pages_to",
+        "year",
+        "references",
+        "received_date",
+        "revised_date",
+        "accepted_date",
+        "published_date",
+      ];
+
+      const setParts = [];
+      const setVals = [];
+
+      for (const key of allowedKeys) {
+        const rawVal = body[key];
+        const finalVal = normalizeValueForColumn(key, rawVal);
+
+        // only include if caller actually sent something valid
+        if (finalVal !== undefined) {
+          // escape reserved column name `references`
+          const colSql = key === "references" ? "`references`" : key;
+          setParts.push(`${colSql} = ?`);
+          setVals.push(finalVal);
+        }
+      }
+
+      if (!setParts.length) {
+        return NextResponse.json(
+          { success: false, message: "No valid fields to update" },
+          { status: 400 }
+        );
+      }
+
+      // 3. run UPDATE
+      setVals.push(id);
+      const sql = `
+        UPDATE staged_articles
+        SET ${setParts.join(", ")}, updated_at = NOW()
+        WHERE id = ?
+      `;
+      await conn.query(sql, setVals);
+
+      return NextResponse.json({
+        success: true,
+        message: "Updated successfully",
+        updated_fields: setParts.map((p) => p.split("=")[0].trim()),
+      });
+    } finally {
+      await conn.end();
+    }
   } catch (e) {
-    console.error("❌ PUT /api/articles/stage/[id] failed:", e);
+    console.error("PUT /api/articles/stage/[id] error:", e);
     return NextResponse.json(
-      { success: false, message: e.message || "Internal Server Error" },
+      {
+        success: false,
+        message: e?.sqlMessage || e?.message || "Internal error",
+      },
       { status: 500 }
     );
-  } finally {
-    await conn.end();
   }
 }
 export async function DELETE(req, { params }) {

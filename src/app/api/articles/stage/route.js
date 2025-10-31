@@ -1637,6 +1637,81 @@ export async function GET(req) {
 }
 
 /* ----------------------- UPDATE / EDIT existing staged article ----------------------- */
+// export async function PUT(req) {
+//   try {
+//     const body = await req.json();
+//     const id = Number(body.id);
+//     if (!id)
+//       return NextResponse.json(
+//         { success: false, message: "Missing id" },
+//         { status: 400 }
+//       );
+
+//     const conn = await createDbConnection();
+
+//     try {
+//       // fetch existing
+//       const [[row]] = await conn.query(
+//         "SELECT * FROM staged_articles WHERE id=? LIMIT 1",
+//         [id]
+//       );
+//       if (!row)
+//         return NextResponse.json(
+//           { success: false, message: "Not found" },
+//           { status: 404 }
+//         );
+
+//       // allow edits even after approval (per your request)
+//       // but you can restrict later if needed
+//       const allowedKeys = [
+//         "title",
+//         "abstract",
+//         "keywords",
+//         "authors",
+//         "doi_url",
+//         "issn",
+//         "volume_number",
+//         "issue_number",
+//         "pages_from",
+//         "pages_to",
+//       ];
+
+//       const updates = [];
+//       const values = [];
+
+//       for (const key of allowedKeys) {
+//         if (body[key] !== undefined) {
+//           updates.push(`${key}=?`);
+//           values.push(body[key]);
+//         }
+//       }
+
+//       if (!updates.length) {
+//         return NextResponse.json(
+//           { success: false, message: "No fields to update" },
+//           { status: 400 }
+//         );
+//       }
+
+//       values.push(id);
+//       await conn.query(
+//         `UPDATE staged_articles SET ${updates.join(", ")}, updated_at=NOW() WHERE id=?`,
+//         values
+//       );
+
+//       return NextResponse.json({ success: true, message: "Updated successfully" });
+//     } finally {
+//       await conn.end();
+//     }
+//   } catch (e) {
+//     console.error("PUT /api/articles/stage error:", e);
+//     return NextResponse.json(
+//       { success: false, message: e.message || "Internal error" },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function PUT(req) {
   try {
     const body = await req.json();
@@ -1650,7 +1725,6 @@ export async function PUT(req) {
     const conn = await createDbConnection();
 
     try {
-      // fetch existing
       const [[row]] = await conn.query(
         "SELECT * FROM staged_articles WHERE id=? LIMIT 1",
         [id]
@@ -1661,8 +1735,6 @@ export async function PUT(req) {
           { status: 404 }
         );
 
-      // allow edits even after approval (per your request)
-      // but you can restrict later if needed
       const allowedKeys = [
         "title",
         "abstract",
@@ -1674,24 +1746,50 @@ export async function PUT(req) {
         "issue_number",
         "pages_from",
         "pages_to",
+        "received_date",
+        "revised_date",
+        "accepted_date",
+        "published_date",
       ];
 
       const updates = [];
       const values = [];
 
       for (const key of allowedKeys) {
-        if (body[key] !== undefined) {
-          updates.push(`${key}=?`);
-          values.push(body[key]);
+        let val = body[key];
+        if (val === undefined || val === null || val === "") continue;
+
+        // 🧠 Normalize ISO timestamp → YYYY-MM-DD
+        if (
+          [
+            "received_date",
+            "revised_date",
+            "accepted_date",
+            "published_date",
+          ].includes(key)
+        ) {
+          try {
+            const date = new Date(val);
+            if (!isNaN(date.getTime())) {
+              val = date.toISOString().split("T")[0]; // ✅ MySQL-compatible
+            } else {
+              console.warn(`Invalid date for ${key}:`, val);
+              continue;
+            }
+          } catch {
+            continue;
+          }
         }
+
+        updates.push(`${key} = ?`);
+        values.push(val);
       }
 
-      if (!updates.length) {
+      if (!updates.length)
         return NextResponse.json(
-          { success: false, message: "No fields to update" },
+          { success: false, message: "No valid fields to update" },
           { status: 400 }
         );
-      }
 
       values.push(id);
       await conn.query(
@@ -1699,7 +1797,11 @@ export async function PUT(req) {
         values
       );
 
-      return NextResponse.json({ success: true, message: "Updated successfully" });
+      return NextResponse.json({
+        success: true,
+        message: "Updated successfully",
+        updated_fields: updates.map((u) => u.split("=")[0].trim()),
+      });
     } finally {
       await conn.end();
     }
@@ -1711,7 +1813,6 @@ export async function PUT(req) {
     );
   }
 }
-
 /* ----------------------- DELETE single staged article ----------------------- */
 export async function DELETE(req, { params }) {
   const id = Number(params?.id || 0);
