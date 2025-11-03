@@ -2101,13 +2101,13 @@ export default function Page() {
             <>
               {/* Header */}
               <div className="relative mb-4 border-b pb-2">
-                <button
-                  onClick={() => setViewArticle(null)}
-                  className="absolute -top-3 -right-3 bg-white border rounded-full shadow-md text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition p-1"
-                  aria-label="Close"
-                >
-                  ✕
-                </button>
+<button
+  onClick={() => setViewArticle(null)}
+  className="absolute top-2 right-2 bg-white/90 backdrop-blur border border-gray-200 rounded-full w-8 h-8 flex items-center justify-center shadow hover:bg-white hover:scale-105 transition"
+  aria-label="Close"
+>
+  ✕
+</button>
 
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-[13px] font-semibold text-blue-700 uppercase tracking-wide">
@@ -2134,11 +2134,11 @@ export default function Page() {
                     <>
                       | <strong>DOI:</strong>{" "}
                       <a
-                        href={`https://doi.org/${viewArticle.doi}`}
+                        href={`${viewArticle.doi}${viewArticle.article_id}`}
                         className="text-blue-600 underline"
                         target="_blank"
                       >
-                        https://doi.org/{viewArticle.doi}
+                        {viewArticle.doi}{viewArticle.article_id}
                       </a>
                     </>
                   )}
@@ -2185,36 +2185,77 @@ export default function Page() {
 {viewArticle.authors && (
   <div className="mb-4">
     <h4 className="font-semibold text-gray-800 mb-1">Citation</h4>
-    <p className="text-gray-700 leading-relaxed">
-      {Array.isArray(viewArticle.authors)
-        ? viewArticle.authors.join(", ")
-        : viewArticle.authors}
-      . “
-      <span
-        dangerouslySetInnerHTML={{
-          __html: viewArticle.title || "",
-        }}
-      />
-      ”. <em>{getJournalName(viewArticle.journal_id)}</em>, vol.{" "}
-      {getVolumeName(viewArticle.volume)}, no.{" "}
-      {getIssueName(viewArticle.issue)}, {viewArticle.year}.
-      {viewArticle.doi && (
-        <>
-          {" "}
-          DOI:{" "}
-          <a
-            href={`https://doi.org/${viewArticle.doi}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
-          >
-            https://doi.org/{viewArticle.doi}
-          </a>
-        </>
-      )}
-    </p>
+
+    {(() => {
+      // 🔧 normalize keys from API
+      const title =
+        viewArticle?.article_title ?? viewArticle?.title ?? "";
+
+      const volume =
+        viewArticle?.volume_number ?? viewArticle?.volume ?? null;
+
+      const issue =
+        viewArticle?.issue_number ?? viewArticle?.issue ?? null;
+
+      const pageFrom =
+        viewArticle?.page_from ?? viewArticle?.pages_from ?? null;
+
+      const pageTo =
+        viewArticle?.page_to ?? viewArticle?.pages_to ?? null;
+
+      const year = viewArticle?.year ?? null;
+
+      // 👤 authors can be LONGTEXT JSON or plain text
+      let authorsText = "";
+      const rawAuthors = viewArticle?.authors;
+      if (Array.isArray(rawAuthors)) {
+        authorsText = rawAuthors.join(", ");
+      } else if (typeof rawAuthors === "string") {
+        try {
+          const parsed = JSON.parse(rawAuthors);
+          authorsText = Array.isArray(parsed)
+            ? parsed.join(", ")
+            : rawAuthors;
+        } catch {
+          authorsText = rawAuthors;
+        }
+      }
+
+
+      return (
+        <p className="text-gray-700 leading-relaxed">
+          {/* Authors */}
+          {authorsText && <span>{authorsText}</span>}
+          {authorsText ? ", " : ""}
+
+          {/* Title */}
+          “
+          <span
+            dangerouslySetInnerHTML={{
+              __html: title,
+            }}
+          />
+          ”,&nbsp;
+
+          {/* Journal */}
+          <em>{getJournalName(viewArticle.journal_id)}</em>
+
+          {/* Volume / Issue */}
+          {volume ? <> , vol. {volume}</> : null}
+          {issue ? <> , no. {issue}</> : null}
+
+          {/* Pages */}
+          {pageFrom && pageTo ? <> , pp. {pageFrom}–{pageTo}</> : null}
+
+          {/* Year */}
+          {year ? <> , {year}.</> : "."}
+
+        </p>
+      );
+    })()}
   </div>
 )}
+
 
               {/* Abstract */}
               {viewArticle.abstract && (
