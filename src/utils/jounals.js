@@ -11,13 +11,19 @@ function slugFromShortName(s) {
 
 export async function getJournalBySlug(slug) {
   if (!slug) return null;
-  const normalized = `DS-${slug.toUpperCase()}`;
+
+  const normalizedSlug = slug.trim().toUpperCase();
+  const withPrefix = `DS-${normalizedSlug}`; // e.g. DS-DST
 
   const connection = await createDbConnection();
   try {
     const [rows] = await connection.execute(
-      `SELECT * FROM journals WHERE short_name = ? LIMIT 1`,
-      [normalized]
+      `
+      SELECT * FROM journals
+      WHERE short_name = ? OR short_name = ?
+      LIMIT 1
+      `,
+      [normalizedSlug, withPrefix] // ✅ check both DSM and DS-DSM
     );
 
     return rows.length > 0 ? rows[0] : null;
@@ -51,12 +57,23 @@ export async function getJournals(q) {
 
     const [rows] = await connection.execute(sql, params);
 
+    // ✅ Normalize slug: remove DS- prefix if present, lowercase always
+    const normalizeSlug = (shortName, journalName, id) => {
+      const base = shortName?.trim() || journalName?.trim() || `journal-${id}`;
+
+      if (/^DS-/i.test(base)) {
+        // remove prefix DS-
+        return base.replace(/^DS-/i, "").toLowerCase(); // DS-DST → dst, DS-M → m
+      }
+
+      // otherwise keep same, just lowercase
+      return base.toLowerCase();
+    };
+
     return rows.map((r) => ({
       id: Number(r.id),
       name: String(r.journal_name ?? ""),
-      slug: r.slug
-        ? String(r.slug).toLowerCase()
-        : slugFromShortName(r.short_name) ?? String(r.id),
+      slug: normalizeSlug(r.short_name, r.journal_name, r.id),
       cover_image: r.cover_image,
       issn_print: r.issn_print,
       issn_online: r.issn_online,
@@ -65,6 +82,48 @@ export async function getJournals(q) {
     await connection.end();
   }
 }
+
+
+
+// export async function getJournals(q) {
+//   const connection = await createDbConnection();
+//   try {
+//     let sql = `
+//       SELECT * FROM journals
+//       WHERE is_active = 1
+//     `;
+//     const params = [];
+
+//     if (q) {
+//       sql += `
+//         AND (
+//           journal_name LIKE ? 
+//           OR issn_print LIKE ? 
+//           OR issn_online LIKE ?
+//         )
+//       `;
+//       const like = `%${q}%`;
+//       params.push(like, like, like);
+//     }
+
+//     sql += ` ORDER BY sort_index ASC`;
+
+//     const [rows] = await connection.execute(sql, params);
+
+//     return rows.map((r) => ({
+//       id: Number(r.id),
+//       name: String(r.journal_name ?? ""),
+//       slug: r.slug
+//         ? String(r.slug).toLowerCase()
+//         : slugFromShortName(r.short_name) ?? String(r.id),
+//       cover_image: r.cover_image,
+//       issn_print: r.issn_print,
+//       issn_online: r.issn_online,
+//     }));
+//   } finally {
+//     await connection.end();
+//   }
+// }
 
 export async function getMonthGroupsBySlug(slug) {
   if (!slug) return { grouped: [], currentIssue: null };

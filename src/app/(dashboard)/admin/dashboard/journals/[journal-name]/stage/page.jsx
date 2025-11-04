@@ -4,10 +4,19 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import CKEditorField from "@/components/Dashboard/Journals/Article/CKEditorField";
+import ActionMenu from "@/components/Dashboard/Stage/ActionMenu";
 
 /** Util */
 const cls = (...a) => a.filter(Boolean).join(" ");
 const fmt = (d) => (d ? new Date(d).toLocaleDateString() : "");
+
+function safeJson(str, fallback = []) {
+  try {
+    return JSON.parse(str || "[]");
+  } catch {
+    return fallback;
+  }
+}
 
 /* ---------- Inputs ---------- */
 function TextInput({ label, value, onChange, placeholder, type = "text" }) {
@@ -64,7 +73,10 @@ function UploadBox({ onDone, jidFromUrl, journalName }) {
       fd.append("file", file);
       fd.append("journal_id", journalId);
 
-      const r = await fetch("/api/articles/stage", { method: "POST", body: fd });
+      const r = await fetch("/api/articles/stage", {
+        method: "POST",
+        body: fd,
+      });
       const j = await r.json();
 
       if (!r.ok || !j.success) {
@@ -119,7 +131,9 @@ function UploadBox({ onDone, jidFromUrl, journalName }) {
         {msg && (
           <span
             className={`text-sm ${
-              msg.startsWith("Upload blocked") ? "text-red-600" : "text-gray-600"
+              msg.startsWith("Upload blocked")
+                ? "text-red-600"
+                : "text-gray-600"
             }`}
           >
             {msg}
@@ -150,7 +164,11 @@ function AuthorsEditor({ value = [], onChange }) {
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
         />
-        <button type="button" onClick={add} className="rounded-md border px-3 text-sm">
+        <button
+          type="button"
+          onClick={add}
+          className="rounded-md border px-3 text-sm"
+        >
           Add
         </button>
       </div>
@@ -209,8 +227,44 @@ function ReviewModal({ open, onClose, stagedId, onApproved }) {
   const [authors, setAuthors] = useState([]);
   const [refs, setRefs] = useState([]);
 
+  // Always show correct local date in <input type="date">
+function toLocalDateString(dateStr) {
+  if (!dateStr) return "";
+  // if it's already YYYY-MM-DD, keep it
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+ const day = String(local.getDate()).padStart(2, "0");
+  const month = String(local.getMonth() + 1).padStart(2, "0");
+  const year = local.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+// ---- Date Helpers ----
+function normalizeDate(dateStr) {
+  if (!dateStr) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr; // already fine
+  const d = new Date(dateStr);
+  if (isNaN(d)) return "";
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().split("T")[0];
+}
+
+function formatDDMMYYYY(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d)) return "";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
 useEffect(() => {
   if (!open || !stagedId) return;
+
   (async () => {
     setLoading(true);
     try {
@@ -218,73 +272,101 @@ useEffect(() => {
       const j = await r.json();
       if (!j.success) throw new Error(j.message || "Failed to load");
 
-     setRow(j.staged);
+      const record = j.staged || j.record || j.item || j.data || null;
+      if (!record) throw new Error("No record found");
 
-      setAuthors((j.authors || []).map((a) => a.full_name || a));
+      console.log("object", record);
 
-      // 🔍 Debug refs
-      console.log("🔎 API references raw:", j.references);
+      setRow({
+        ...record,
+        received_date: normalizeDate(record.received_date),
+        revised_date: normalizeDate(record.revised_date),
+        accepted_date: normalizeDate(record.accepted_date),
+        published_date: normalizeDate(record.published_date),
+      });
 
-    setRefs(typeof j.references === "string" ? j.references : "");
-      // 🔍 Debug after join
-      console.log("🔎 refs (joined HTML):", j.references?.map((r) => r.raw_citation).join("") || "");
+      setAuthors(
+        Array.isArray(record.authors)
+          ? record.authors
+          : safeJson(record.authors, [])
+      );
+      setRefs(
+        typeof record.references === "string"
+          ? record.references
+          : record.refs || ""
+      );
     } catch (e) {
-      console.error(e);
+      console.error("Load failed:", e);
     } finally {
       setLoading(false);
     }
   })();
 }, [open, stagedId]);
 
-
-
-const updateStaged = async () => {
-  if (!row) return;
-  setSaving(true);
-  try {
-    const r = await fetch(`/api/articles/stage/${stagedId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: row.title,
-        abstract: row.abstract,
-        keywords: row.keywords,
-        pages_from: row.pages_from,
-        pages_to: row.pages_to,
-        received_date: row.received_date,
-        revised_date: row.revised_date,
-        accepted_date: row.accepted_date,
-        published_date: row.published_date,
-        article_id: row.article_id,
-        authors,              // array from AuthorsEditor
-        doi: row.doi,
-        volume_number: row.volume_number,
-        issue_number: row.issue_number,
-        year: row.year,
-        references: refs,     // CKEditor HTML
-      }),
-    });
-    const j = await r.json();
-    if (!j.success) throw new Error(j.message || "Save failed");
-  } catch (e) {
-    alert(e.message || String(e));
-  } finally {
-    setSaving(false);
-  }
-};
-
-
-  const accept = async () => {
-    if (!stagedId) return;
-    setPromoting(true);
+  const updateStaged = async () => {
+    if (!row) return;
+    setSaving(true);
     try {
-      const r = await fetch(`/api/articles/stage/${stagedId}/status`, {
-        method: "POST",
+      const r = await fetch(`/api/articles/stage/${stagedId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "accept" }),
+        body: JSON.stringify({
+          title: row.title,
+          abstract: row.abstract,
+          keywords: row.keywords,
+          pages_from: row.pages_from,
+          pages_to: row.pages_to,
+          received_date: row.received_date,
+          revised_date: row.revised_date,
+          accepted_date: row.accepted_date,
+          published_date: row.published_date,
+          article_id: row.article_id,
+          authors, // array from AuthorsEditor
+          doi: row.doi,
+          volume_number: row.volume_number,
+          issue_number: row.issue_number,
+          year: row.year,
+          references: refs, // CKEditor HTML
+        }),
       });
       const j = await r.json();
-      if (!j.success) throw new Error(j.message || "Accept failed");
+      if (!j.success) throw new Error(j.message || "Save failed");
+    } catch (e) {
+      alert(e.message || String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+const accept = async () => {
+  if (!stagedId) return;
+
+  // ask for PDF
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".pdf";
+  input.click(); // 👈 opens file picker when Approve is clicked
+
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return alert("Please select a PDF file to approve.");
+
+    // upload PDF via FormData
+    setPromoting(true);
+    try {
+      const fd = new FormData();
+      fd.append("status", "approved");
+      fd.append("file", file);
+
+      const r = await fetch(`/api/articles/stage/${stagedId}/status`, {
+        method: "PUT",
+        body: fd,
+      });
+
+      const j = await r.json();
+      if (!r.ok || !j.ok) throw new Error(j.message || "Approval failed");
+
+      alert("✅ Approved & PDF uploaded");
       onApproved?.(j);
       onClose();
     } catch (e) {
@@ -293,7 +375,7 @@ const updateStaged = async () => {
       setPromoting(false);
     }
   };
-
+};
   const reject = async () => {
     if (!stagedId) return;
     setPromoting(true);
@@ -318,7 +400,9 @@ const updateStaged = async () => {
     <div
       className={cls(
         "fixed inset-0 z-50 bg-black/40 transition",
-        open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        open
+          ? "opacity-100 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
       )}
       onClick={onClose}
     >
@@ -338,7 +422,7 @@ const updateStaged = async () => {
         ) : row ? (
           <div className="mt-4 grid gap-6">
             {/* === Article Details Section === */}
-         <section className="w-full max-w-[720px]">
+            <section className="w-full max-w-[720px]">
               <h3 className="text-base font-semibold text-gray-700 mb-2">
                 Article Details
               </h3>
@@ -352,12 +436,21 @@ const updateStaged = async () => {
                 value={row.title || ""}
                 onChange={(v) => setRow({ ...row, title: v })}
               />
-              <TextArea
+              {/* <TextArea
                 label="Abstract"
                 value={row.abstract || ""}
                 onChange={(v) => setRow({ ...row, abstract: v })}
                 rows={6}
-              />
+              /> */}
+              <div>
+                <span className="text-sm text-gray-700">Abstract</span>
+                <CKEditorField
+                  value={row.abstract || ""}
+                  onChange={(html) => setRow({ ...row, abstract: html })}
+                  placeholder="Enter abstract here..."
+                />
+              </div>
+
               <TextInput
                 label="Keywords"
                 value={row.keywords || ""}
@@ -366,7 +459,7 @@ const updateStaged = async () => {
             </section>
 
             {/* === Authors Section === */}
-             <section className="w-full max-w-[720px]">
+            <section className="w-full max-w-[720px]">
               <h3 className="text-base font-semibold text-gray-700 mb-2">
                 Authors
               </h3>
@@ -374,13 +467,62 @@ const updateStaged = async () => {
             </section>
 
             {/* === References Section === */}
-              <section className="w-full max-w-[720px] ml-auto pr-2">
-<CKEditorField
-  value={refs || ""}
-  onChange={(html) => setRefs(html)}   // full HTML
-  placeholder="Enter references here…"
+            <section className="w-full max-w-[720px] ml-auto pr-2">
+              <CKEditorField
+                value={refs || ""}
+                onChange={(html) => setRefs(html)} // full HTML
+                placeholder="Enter references here…"
+              />
+            </section>
+
+<section className="w-full max-w-[720px]">
+  <h3 className="text-base font-semibold text-gray-700 mb-2">Dates</h3>
+  
+  <div className="grid grid-cols-2 gap-3">
+    {[
+      ["Received Date", "received_date"],
+      ["Revised Date", "revised_date"],
+      ["Accepted Date", "accepted_date"],
+      ["Published Date", "published_date"],
+    ].map(([label, key]) => (
+      <div key={key} className="flex flex-col relative">
+        <label className="text-sm text-gray-700 mb-1">{label}</label>
+
+        <div className="relative">
+          {/* Hidden native input (real date picker) */}
+        <input
+  type="date"
+  id={`${key}-picker`}
+  className="absolute inset-0 opacity-0 cursor-pointer z-10"
+  value={normalizeDate(row[key])}
+  onChange={(e) => setRow({ ...row, [key]: e.target.value })}
 />
-              </section>
+
+<input
+  type="text"
+  readOnly
+  className="w-full rounded-md border px-3 py-2 text-sm bg-white cursor-pointer"
+  value={formatDDMMYYYY(row[key])}
+  placeholder="dd/mm/yyyy"
+  onClick={() =>
+    document.getElementById(`${key}-picker`)?.showPicker?.()
+  }
+/>
+
+          {/* Calendar icon clickable */}
+          <span
+            className="absolute right-3 top-2.5 text-gray-500 cursor-pointer z-20"
+            onClick={() =>
+              document.getElementById(`${key}-picker`)?.showPicker?.()
+            }
+          >
+            📅
+          </span>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
 
             {/* === Actions Section === */}
             <div className="flex gap-2 pt-4">
@@ -455,11 +597,28 @@ export default function StagingDashboard() {
     }
   };
 
-  useEffect(() => { load(); }, [status, jid]);
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this staged article?")) return;
+    try {
+      const r = await fetch(`/api/articles/stage/${id}`, { method: "DELETE" });
+      const j = await r.json();
+      if (!r.ok || !j.success) throw new Error(j.message || "Delete failed");
+      alert("Deleted successfully");
+      load(); // refresh list
+    } catch (e) {
+      alert(e.message || String(e));
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [status, jid]);
 
   return (
     <div className="mx-auto max-w-7xl p-6">
-      <h1 className="mb-1 text-2xl font-semibold">Articles — Staging Dashboard</h1>
+      <h1 className="mb-1 text-2xl font-semibold">
+        Articles — Staging Dashboard
+      </h1>
       <div className="mb-4 text-xs text-gray-600">
         Journal: <span className="font-mono">{journalName || "-"}</span>
         {" · "}JID: <span className="font-mono">{jid || "—"}</span>
@@ -470,24 +629,28 @@ export default function StagingDashboard() {
 
         <div className="flex items-center justify-between">
           <div className="flex gap-2">
-            {["uploaded","extracted","reviewing","approved","rejected"].map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatus(s)}
-                className={cls(
-                  "rounded-full border px-3 py-1 text-sm",
-                  status === s && "bg-black text-white"
-                )}
-              >
-                {s}
-              </button>
-            ))}
+            {["uploaded", "extracted", "reviewing", "approved", "rejected"].map(
+              (s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatus(s)}
+                  className={cls(
+                    "rounded-full border px-3 py-1 text-sm",
+                    status === s && "bg-black text-white"
+                  )}
+                >
+                  {s}
+                </button>
+              )
+            )}
           </div>
-          <button onClick={load} className="text-sm underline">Refresh</button>
+          <button onClick={load} className="text-sm underline">
+            Refresh
+          </button>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border">
-          <table className="min-w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border relative">
+          <table className="min-w-full text-sm relative z-0">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-3 py-2 text-left">ID</th>
@@ -502,17 +665,31 @@ export default function StagingDashboard() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td className="px-3 py-3" colSpan={8}>Loading…</td></tr>
+                <tr>
+                  <td className="px-3 py-3" colSpan={8}>
+                    Loading…
+                  </td>
+                </tr>
               ) : rows.length === 0 ? (
-                <tr><td className="px-3 py-6 text-gray-600" colSpan={8}>No items.</td></tr>
+                <tr>
+                  <td className="px-3 py-6 text-gray-600" colSpan={8}>
+                    No items.
+                  </td>
+                </tr>
               ) : (
                 rows.map((r) => (
                   <tr key={r.id} className="border-t">
                     <td className="px-3 py-2">{r.id}</td>
-                    <td className="px-3 py-2 font-mono">{r.article_id || "-"}</td>
-                    <td className="px-3 py-2">{r.title?.slice(0, 80) || "-"}</td>
+                    <td className="px-3 py-2 font-mono">
+                      {r.article_id || "-"}
+                    </td>
+                    <td className="px-3 py-2">
+                      {r.title?.slice(0, 80) || "-"}
+                    </td>
                     <td className="px-3 py-2">{r.journal_id}</td>
-                    <td className="px-3 py-2">{r.pages_from ?? "-"}–{r.pages_to ?? "-"}</td>
+                    <td className="px-3 py-2">
+                      {r.pages_from ?? "-"}–{r.pages_to ?? "-"}
+                    </td>
                     <td className="px-3 py-2">
                       <div className="text-gray-700">
                         <div>Rec: {fmt(r.received_date)}</div>
@@ -521,13 +698,19 @@ export default function StagingDashboard() {
                       </div>
                     </td>
                     <td className="px-3 py-2">{r.status}</td>
-                    <td className="px-3 py-2">
-                      <button
-                        className="rounded-md border px-3 py-1 text-xs"
-                        onClick={() => setReviewId(r.id)}
-                      >
-                        Review
-                      </button>
+                    <td className="px-3 py-2 text-right">
+                      <div className="relative inline-block text-left action-menu z-50">
+                        <ActionMenu
+                          onEdit={() => setReviewId(r.id)}
+                          onDelete={() => handleDelete(r.id)}
+                          onApprove={
+                            r.status === "reviewing"
+                              ? () => handleApprove(r.id)
+                              : undefined
+                          }
+                          showApprove={r.status === "reviewing"}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -541,7 +724,10 @@ export default function StagingDashboard() {
         open={!!reviewId}
         stagedId={reviewId}
         onClose={() => setReviewId(null)}
-        onApproved={() => { setReviewId(null); load(); }}
+        onApproved={() => {
+          setReviewId(null);
+          load();
+        }}
       />
     </div>
   );

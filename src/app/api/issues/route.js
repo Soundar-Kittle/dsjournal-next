@@ -104,17 +104,24 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const journal_id = searchParams.get("journal_id");
   const volume_id = searchParams.get("volume_id");
+  const include_id = searchParams.get("include_id"); // 👈 new param
 
   if (!journal_id) {
-    return NextResponse.json({ success: false, message: "journal_id is required" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, message: "journal_id is required" },
+      { status: 400 }
+    );
   }
 
   const connection = await createDbConnection();
+
   try {
-    let query = `SELECT id, journal_id, volume_id, issue_number, issue_label, alias_name 
-                 FROM issues 
-                 WHERE journal_id = ?`;
-    let params = [journal_id];
+    let query = `
+      SELECT id, journal_id, volume_id, issue_number, issue_label, alias_name
+      FROM issues
+      WHERE journal_id = ?
+    `;
+    const params = [journal_id];
 
     if (volume_id) {
       query += ` AND volume_id = ?`;
@@ -122,10 +129,26 @@ export async function GET(req) {
     }
 
     const [rows] = await connection.query(query, params);
-    return NextResponse.json({ success: true, issues: rows });
+    let issues = [...rows];
+
+    // ✅ If include_id is passed, fetch and append that issue if missing
+    if (include_id && !issues.some(i => i.id == include_id)) {
+      const [extra] = await connection.query(
+        `SELECT id, journal_id, volume_id, issue_number, issue_label, alias_name
+         FROM issues
+         WHERE id = ?`,
+        [include_id]
+      );
+      if (extra.length) issues.push(extra[0]);
+    }
+
+    return NextResponse.json({ success: true, issues });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ success: false, message: "Error fetching issues" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Error fetching issues" },
+      { status: 500 }
+    );
   } finally {
     await connection.end();
   }
