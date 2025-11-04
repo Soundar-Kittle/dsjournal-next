@@ -62,7 +62,7 @@ export function Select({
         </SelectTrigger>
 
         <SelectContent className={contentClassName}>
-          {allowClear && value && (
+          {allowClear && value !== 0 && (
             <SelectItem value="__clear__" icon={X} hasIconSlot>
               {clearLabel}
             </SelectItem>

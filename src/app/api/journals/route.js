@@ -253,8 +253,6 @@ export async function PATCH(req) {
     const body = Object.fromEntries(formData.entries());
     const cleanedData = cleanData(body);
 
-    console.log("cleanedData =====>>...>>>", cleanedData);
-
     const uploadedFiles = await handleFileUploads(formData);
     const id = intOrNull(cleanedData.id);
     if (!id)
