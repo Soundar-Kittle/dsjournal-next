@@ -581,6 +581,7 @@ export default async function Page({ params }) {
 
   return (
     <div>
+      {/* ----------- Aim and Scope ----------- */}
       {/* ----------- Journal Info ----------- */}
       <div className="sm:px-5 mb-12">
         <div className="rounded border shadow-lg bg-white p-3 sm:p-6 md:p-8 flex flex-col md:flex-row gap-6">
