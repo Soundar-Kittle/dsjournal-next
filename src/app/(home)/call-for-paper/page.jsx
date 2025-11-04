@@ -7,7 +7,8 @@ import Link from "next/link";
 export default async function page() {
   const data = await getCallForPaper();
 
-  const date = moment(data.manual_date).format("Do MMMM YYYY");
+  const date =
+    moment(data?.manual_date).format("Do MMMM YYYY") || "20 November 2025";
 
   return (
     <main className="bg-white">

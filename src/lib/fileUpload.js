@@ -6,7 +6,7 @@ import crypto from "crypto";
 export async function handleFileUploads(formData) {
   try {
     const folder = formData.get("folder") || "default";
-    const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
+    const uploadDir = path.join(process.cwd(),  "uploads", folder);
 
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });

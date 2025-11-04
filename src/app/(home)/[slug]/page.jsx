@@ -479,7 +479,8 @@ import { getJournalPageByTitle } from "@/utils/journalPage";
 
 /* ---------------- SEO METADATA ---------------- */
 export async function generateMetadata({ params }) {
-  const slug = params.slug?.toLowerCase();
+  const param = await params;
+  const slug = param.slug?.toLowerCase();
   const baseUrl = process.env.BASE_URL;
   const journal = await getJournalBySlug(slug);
 
@@ -543,7 +544,8 @@ export async function generateMetadata({ params }) {
 
 /* ---------------- PAGE COMPONENT ---------------- */
 export default async function Page({ params }) {
-  const slug = params.slug?.toLowerCase();
+  const param = await params;
+  const slug = param.slug?.toLowerCase();
   const journal = await getJournalBySlug(slug);
 
   if (!journal) {

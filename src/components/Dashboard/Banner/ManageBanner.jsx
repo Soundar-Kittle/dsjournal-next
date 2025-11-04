@@ -18,18 +18,24 @@ const ManageBanner = () => {
       columns: [
         columnHelper.accessor("image", {
           header: "Photo",
-          cell: (info) => (
-            <div className="h-12 w-12 rounded-md overflow-hidden relative">
-              <Image
-                src={info.getValue() || "/logo.png"}
-                alt="banner"
-                fill
-                style={{ objectFit: "cover" }}
-                sizes="100px"
-                priority
-              />
-            </div>
-          ),
+          cell: (info) => {
+            const imageSrc = info.getValue()?.startsWith("/")
+              ? info.getValue().slice(1)
+              : info.getValue();
+
+            return (
+              <div className="h-12 w-12 rounded-md overflow-hidden relative">
+                <Image
+                  src={`/${imageSrc}` || "/logo.png"}
+                  alt="banner"
+                  fill
+                  style={{ objectFit: "cover" }}
+                  sizes="100px"
+                  priority
+                />
+              </div>
+            );
+          },
           className: "table-name",
         }),
         columnHelper.accessor("title", {
