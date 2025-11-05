@@ -263,57 +263,137 @@ export async function PATCH(req) {
 
 
 // ---------- READ ----------
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const id = searchParams.get("jid") || searchParams.get("id");
+//   const short = searchParams.get("short");
+//   const slug = searchParams.get("slug"); // cleaned slug like "lll"
+
+//   let conn;
+//   try {
+//     conn = await createDbConnection();
+//     let result;
+
+//     if (id) {
+//       [result] = await conn.query(
+//         "SELECT * FROM journals WHERE id = ? LIMIT 1",
+//         [id]
+//       );
+//     } else if (short) {
+//       [result] = await conn.query(
+//         "SELECT * FROM journals WHERE LOWER(TRIM(short_name)) = LOWER(TRIM(?)) LIMIT 1",
+//         [short]
+//       );
+//     } else if (slug) {
+//       // match DS- prefix variants OR explicit slug/alias columns if you have them
+//       const [rows] = await conn.query(
+//         `SELECT * FROM journals
+//          WHERE
+//            REPLACE(LOWER(TRIM(short_name)), 'ds-', '') = LOWER(TRIM(?))
+//            OR REPLACE(LOWER(TRIM(short_name)), 'ds', '') = LOWER(TRIM(?))
+//            OR LOWER(TRIM(short_name)) = LOWER(TRIM(?))          -- allow exact short_name
+//            OR LOWER(TRIM(short_name))       = LOWER(TRIM(?))          -- if you have a slug column
+//            OR LOWER(TRIM(short_name))      = LOWER(TRIM(?))          -- if you have an alias column
+//          LIMIT 1`,
+//         [slug, slug, slug, slug, slug]
+//       );
+//       result = rows;
+//     } else {
+//       [result] = await conn.query(
+//         "SELECT * FROM journals ORDER BY sort_index ASC, id ASC"
+//       );
+//     }
+
+//     await conn.end();
+//     const rows = Array.isArray(result) ? result : result ? [result] : [];
+//     return NextResponse.json({ success: true, journals: rows });
+//   } catch (err) {
+//     if (conn)
+//       try {
+//         await conn.end();
+//       } catch {}
+//     return NextResponse.json(
+//       { success: false, error: err.message },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
+
   const id = searchParams.get("jid") || searchParams.get("id");
   const short = searchParams.get("short");
-  const slug = searchParams.get("slug"); // cleaned slug like "lll"
+  const slug = searchParams.get("slug"); // e.g. "dst", "lll"
+  const all = searchParams.get("all") === "true";
 
   let conn;
   try {
     conn = await createDbConnection();
-    let result;
+    let rows = [];
 
+    // 🟢 1️⃣ Fetch by ID
     if (id) {
-      [result] = await conn.query(
+      const [r] = await conn.query(
         "SELECT * FROM journals WHERE id = ? LIMIT 1",
         [id]
       );
-    } else if (short) {
-      [result] = await conn.query(
+      rows = r;
+    }
+
+    // 🟢 2️⃣ Fetch by Short Name (exact, case-insensitive)
+    else if (short) {
+      const [r] = await conn.query(
         "SELECT * FROM journals WHERE LOWER(TRIM(short_name)) = LOWER(TRIM(?)) LIMIT 1",
         [short]
       );
-    } else if (slug) {
-      // match DS- prefix variants OR explicit slug/alias columns if you have them
-      const [rows] = await conn.query(
-        `SELECT * FROM journals
-         WHERE
-           REPLACE(LOWER(TRIM(short_name)), 'ds-', '') = LOWER(TRIM(?))
-           OR REPLACE(LOWER(TRIM(short_name)), 'ds', '') = LOWER(TRIM(?))
-           OR LOWER(TRIM(short_name)) = LOWER(TRIM(?))          -- allow exact short_name
-           OR LOWER(TRIM(short_name))       = LOWER(TRIM(?))          -- if you have a slug column
-           OR LOWER(TRIM(short_name))      = LOWER(TRIM(?))          -- if you have an alias column
-         LIMIT 1`,
-        [slug, slug, slug, slug, slug]
+      rows = r;
+    }
+
+    // 🟢 3️⃣ Fetch by Slug (handles DS-, ds-, and clean slugs like “dst”)
+    else if (slug) {
+      const [r] = await conn.query(
+        `
+        SELECT *
+        FROM journals
+        WHERE 
+          LOWER(REPLACE(short_name, 'DS-', '')) = LOWER(?)
+          OR LOWER(REPLACE(short_name, 'ds-', '')) = LOWER(?)
+          OR LOWER(short_name) = LOWER(?)
+        LIMIT 1
+        `,
+        [slug, slug, slug]
       );
-      result = rows;
-    } else {
-      [result] = await conn.query(
-        "SELECT * FROM journals ORDER BY sort_index ASC, id ASC"
-      );
+      rows = r;
+    }
+
+    // 🟢 4️⃣ Fetch all journals (sorted)
+    else {
+      const [r] = await conn.query(`
+        SELECT id, journal_name, short_name, issn_online, issn_print, cover_image
+        FROM journals
+        WHERE is_active = 1
+        ORDER BY sort_index ASC, id ASC
+      `);
+      rows = r;
     }
 
     await conn.end();
-    const rows = Array.isArray(result) ? result : result ? [result] : [];
-    return NextResponse.json({ success: true, journals: rows });
+
+    // 🟩 Normalize output (always array)
+    const journals = Array.isArray(rows) ? rows : rows ? [rows] : [];
+
+    return NextResponse.json({
+      success: true,
+      count: journals.length,
+      journals,
+    });
   } catch (err) {
-    if (conn)
-      try {
-        await conn.end();
-      } catch {}
+    if (conn) try { await conn.end(); } catch {}
+
+    console.error("❌ Journals API Error:", err);
     return NextResponse.json(
-      { success: false, error: err.message },
+      { success: false, message: err.message },
       { status: 500 }
     );
   }
