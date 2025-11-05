@@ -20,55 +20,79 @@ export default async function Page({ params }) {
             {section.title}
           </h3>
 
-          <div className="mt-4 space-y-4">
-            {section.members.map((m) => (
-              <div key={m.id} className="font-medium">
-                <p className="font-bold">{m.name},</p>
+<div className="mt-6 space-y-6">
+  {section.members.map((m) => (
+    <div
+      key={m.id}
+      className="font-sans text-gray-700 leading-relaxed border-b border-gray-100 pb-3 last:border-none"
+    >
+      {/* ---- Name ---- */}
+      <p className="font-bold text-[17px] md:text-[18px] text-[#212529]-900 mb-1 font-[Poppins,sans-serif]">
+        {m.name},
+      </p>
 
-                {m.has_address ? (
-                  <div className="text-xs whitespace-pre-line">
-                    {m.address
-                      ?.replace(/<\/?strong>/gi, "")
-                      ?.replace(/<\/?b>/gi, "")
-                      ?.replace(/<br\s*\/?>/gi, "\n")
-                      ?.replace(/<\/?p>/gi, "\n")
-                      ?.replace(/<\/?[^>]+(>|$)/g, "")
-                      .trim()}
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-xs">
-                      {m.department && `${m.department},`}
-                    </p>
-                    <p className="text-xs">
-                      {m.university && `${m.university},`}
-                    </p>
-                    <p className="text-xs">
-                      {m.city && `${m.city}, `}
-                      {m.state && `${m.state}, `}
-                      {m.country && `${m.country},`}
-                    </p>
-                  </>
-                )}
+      {/* ---- Address Lines or Constructed Info ---- */}
+      {m.has_address && m.address_lines ? (
+        <div
+          className="font-bold text-[12px] text-[#6c757d]-600 whitespace-pre-line font-[sans-serif]"
+          dangerouslySetInnerHTML={{
+            __html: m.address_lines
+              .replace(/<\/?strong>/gi, "")
+              .replace(/<\/?b>/gi, "")
+              .replace(/<\/?p>/gi, "<br>")
+              .replace(/<br\s*\/?>/gi, "<br>")
+              .trim(),
+          }}
+        />
+      ) : (
+        <>
+          {m.department && (
+            <p className="font-bold text-[12px] text-[#6c757d]-600">
+              {m.department},
+            </p>
+          )}
+          {m.university && (
+            <p className="font-bold text-[13px] text-[#6c757d]-600">
+              {m.university},
+            </p>
+          )}
+          <p className="font-bold text-[13px] text-[#6c757d]-600">
+            {[m.city, m.state, m.country]
+              .filter(Boolean)
+              .join(", ")}
+            .
+          </p>
+        </>
+      )}
 
-                {m.email && (
-                  <p className="text-xs">
-                    <Link href={`mailto:${m.email}`}>{m.email}</Link>
-                  </p>
-                )}
-                {m.profile_link && (
-                  <Link
-                    href={m.profile_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue hover:text-light-blue font-bold text-xs"
-                  >
-                    Profile Link
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
+      {/* ---- Email ---- */}
+      {m.email && (
+        <p className="font-bold text-[13px] text-[#6c757d]-700 mt-1">
+          <a
+            href={`mailto:${m.email}`}
+            className="hover:text-blue-700 transition-colors duration-150"
+          >
+            {m.email}
+          </a>
+        </p>
+      )}
+
+      {/* ---- Profile Link ---- */}
+      {m.profile_link && (
+        <a
+          href={m.profile_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[13px] text-blue-600 hover:text-blue-500 font-bold mt-1 inline-block"
+        >
+          Profile Link
+        </a>
+      )}
+    </div>
+  ))}
+</div>
+
+
         </div>
       ))}
     </main>
