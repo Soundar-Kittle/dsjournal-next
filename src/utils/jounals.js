@@ -83,8 +83,6 @@ export async function getJournals(q) {
   }
 }
 
-
-
 // export async function getJournals(q) {
 //   const connection = await createDbConnection();
 //   try {
@@ -198,6 +196,34 @@ export async function getMonthGroupsBySlug(slug) {
           items: items.sort((a, b) => b.issue - a.issue),
         })),
     };
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getJournalAnalytics() {
+  const connection = await createDbConnection();
+  try {
+    const [rows] = await connection.execute(`
+      SELECT 
+        j.short_name,
+        j.journal_name,
+        COUNT(a.id) AS total_papers,
+        SUM(a.article_status = 'published') AS published_papers,
+        MAX(a.published_at) AS last_published
+      FROM journals j
+      LEFT JOIN articles a ON j.id = a.journal_id
+      GROUP BY j.id
+      ORDER BY j.sort_index ASC
+    `);
+
+    return rows.map(r => ({
+      short_name: r.short_name,
+      journal_name: r.journal_name,
+      total_papers: Number(r.total_papers),
+      published_papers: Number(r.published_papers),
+      last_published: r.last_published,
+    }));
   } finally {
     await connection.end();
   }
