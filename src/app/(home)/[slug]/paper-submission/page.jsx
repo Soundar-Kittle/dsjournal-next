@@ -154,11 +154,11 @@
 
 import Image from "next/image";
 import { getJournalBySlug } from "@/utils/jounals"; // your DB helper
+import { getJournalPageByTitle } from "@/utils/journalPage";
 
 export default async function PaperSubmissionPage({ params }) {
-  const { slug } = params;
-  const journal = await getJournalBySlug(slug); // fetch journal record from DB
-
+ const { slug } = params;
+  const journal = await getJournalBySlug(slug);
   if (!journal) {
     return (
       <div className="p-10 text-center text-gray-500">
@@ -168,135 +168,78 @@ export default async function PaperSubmissionPage({ params }) {
     );
   }
 
-  // ✅ use the stored submission email or fallback
+// 🧠 Fetch from DB (journal_pages)
+const pageData = await getJournalPageByTitle(journal?.id, "paper_submission");
   const submissionEmail = journal.paper_submission_id || "No E-mail Id found";
+
   return (
-    <div>
-      <h2 className="text-2xl font-semibold mb-4">Paper Submission</h2>
+    <div className="py-6">
+      <h2 className="text-2xl font-semibold mb-6">Paper Submission</h2>
 
-      {/* --- Submission Mail Section --- */}
-      <div className="my-4 p-4 md:p-6 bg-white rounded-lg shadow-md flex flex-col md:flex-row items-center md:items-start gap-6 border border-gray-200">
-        {/* Image */}
-        <div className="w-full md:w-1/3 flex justify-center">
-          <Image
-            src="/images/submission-support-img.png"
-            alt="Paper Submission"
-            width={220}
-            height={160}
-            className="object-contain w-auto h-auto"
-          />
-        </div>
 
-        {/* Mail Info */}
-        <div className="w-full md:w-2/3 text-center md:text-left space-y-3">
-          <p className="text-base md:text-lg font-medium">
-            Please send your paper as an attachment to:
-          </p>
-          <a
-            href={`mailto:${submissionEmail}`}
-            className="text-blue-600 font-semibold hover:underline"
-          >
-            {submissionEmail}
-          </a>
-          <p className="text-sm text-gray-600">
-            Note: Add{" "}
-            <a
-              href={`mailto:${submissionEmail}`}
-              className="text-blue-600 hover:underline"
-            >
-              {submissionEmail}
-            </a>{" "}
-            to your address book or contacts to ensure our emails reach your
-            inbox.
-          </p>
-        </div>
+    {/* --- Submission Mail Section --- */}
+    <div className="flex flex-col md:flex-row items-center md:items-center gap-6 p-6 bg-white border border-gray-200 rounded-lg shadow-sm md:min-h-[180px]">
+      {/* Image */}
+      <div className="flex justify-center md:justify-start w-full md:w-[220px] shrink-0">
+        <Image
+          src="/images/submission-support-img.png"
+          alt="Paper Submission"
+          width={200}
+          height={150}
+          className="object-contain"
+        />
       </div>
 
-      {/* --- Guidelines Section --- */}
-      <div className="space-y-4 leading-relaxed">
-        <SectionTitle>Preparation Guidelines for Paper Submission</SectionTitle>
-
-        <p className="indent-10">
-          Submissions by anyone other than one of the authors will not be
-          accepted. The submitting author takes responsibility for the paper
-          during submission and peer review.
+      {/* Mail Info */}
+      <div className="flex flex-col justify-center items-center text-center md:!items-center space-y-3 w-full">
+        {/* Line 1 */}
+        <p className="text-base md:text-lg font-medium text-gray-800 text-center">
+          Please send your paper as attached file to mail id:
         </p>
 
-        <ul className="list-disc ml-8 space-y-1">
-          <li>
-            Manuscripts submitted to this journal will be deemed as not
-            previously published or under consideration elsewhere.
-          </li>
-          <li>
-            Submit your paper in Microsoft Word (.doc or .docx) format. If
-            prepared in LaTeX, send as a PDF.
-          </li>
-          <li>Submitting the paper in multiple journals is prohibited.</li>
-          <li>Once accepted, papers cannot be withdrawn at any cost.</li>
-          <li>Follow publication ethics and avoid plagiarism.</li>
-          <li>Use the official DS Journals Paper Template.</li>
-        </ul>
+        {/* Line 2 - Email */}
+        <a
+          href={`mailto:${submissionEmail}`}
+          className="text-blue-600 font-semibold hover:underline text-lg"
+        >
+          {submissionEmail}
+        </a>
 
-        <SectionTitle>Terms of Submission</SectionTitle>
-        <Paragraph>
-          Papers must not be under consideration by any other journal. The
-          submitting author is responsible for ensuring coauthor approval and
-          institutional consent.
-        </Paragraph>
-
-        <SectionTitle>Peer Review</SectionTitle>
-        <Paragraph>
-          All manuscripts are subject to peer review and must meet academic
-          excellence standards. Reviewer identities remain anonymous.
-        </Paragraph>
-
-        <SectionTitle>Units of Measurement</SectionTitle>
-        <Paragraph>
-          Use SI (System International) units for all measurements.
-        </Paragraph>
-
-        <SectionTitle>Title and Authorship Information</SectionTitle>
-        <Paragraph>
-          Include paper title, author names, institutional addresses, emails,
-          and abstract (max 200 words).
-        </Paragraph>
-
-        <SectionTitle>Introduction</SectionTitle>
-        <Paragraph>Keep the introduction concise, without subheadings.</Paragraph>
-
-        <SectionTitle>Materials and Methods</SectionTitle>
-        <Paragraph>
-          Provide enough detail for reproducibility. Use subsections if needed.
-        </Paragraph>
-
-        <SectionTitle>Results and Discussion</SectionTitle>
-        <Paragraph>
-          May be combined or presented under separate subheadings.
-        </Paragraph>
-
-        <SectionTitle>Conclusions</SectionTitle>
-        <Paragraph>
-          Clearly state the main conclusions, highlighting importance and
-          relevance.
-        </Paragraph>
-
-        <SectionTitle>Acknowledgments</SectionTitle>
-        <Paragraph>
-          Include grants, institutional support, or contributions.
-        </Paragraph>
-
-        <SectionTitle>References</SectionTitle>
-        <Paragraph>
-          Ensure all references are accurate and cited within the text.
-        </Paragraph>
+        {/* Line 3 - Note */}
+        <p className="text-sm text-gray-600 leading-relaxed text-center max-w-2xl">
+          <span className="font-medium">Note:</span> Kindly add our email address{" "}
+          <a
+            href={`mailto:${submissionEmail}`}
+            className="text-blue-600 hover:underline"
+          >
+            {submissionEmail}
+          </a>{" "}
+          to your Address Book or Contacts to continue receiving our emails in your
+          inbox!
+        </p>
       </div>
+    </div>
+
+ 
+      {/* --- Guidelines Section --- */}
+    <div className="space-y-5 leading-relaxed mt-8">
+       {/* --- Conditional content or fallback --- */}
+    {pageData?.content && pageData.is_active === 1 ? (
+      <div
+        className="prose max-w-none mt-8"
+        dangerouslySetInnerHTML={{ __html: pageData.content }}
+      />
+    ) : (
+     <p className="text-gray-500 mt-8 text-center">No Data Found</p>
+    )}
+    </div>
     </div>
   );
 }
 
 /* --- Utility Components --- */
 function SectionTitle({ children }) {
-  return <h6 className="font-semibold text-lg mt-4">{children}</h6>;
+  return <h6 className="font-semibold text-lg mt-5 text-gray-800">{children}</h6>;
 }
 
 function Paragraph({ children }) {

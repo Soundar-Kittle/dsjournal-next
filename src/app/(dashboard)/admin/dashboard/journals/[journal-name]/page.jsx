@@ -37,6 +37,7 @@ export default async function JournalPage({ params }) {
     { slug: "aim_and_scope", label: "Aim & Scope", emoji: "🎯" },
     { slug: "topics", label: "Topics", emoji: "🏷️" },
     { slug: "apc", label: "APC", emoji: "💰" },
+    { slug: "paper-submission", label: "Paper Submission", emoji: "📄" },
 
   ];
 

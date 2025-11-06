@@ -335,16 +335,22 @@ export async function GET(req) {
     // 🟢 1️⃣ Fetch by ID
     if (id) {
       const [r] = await conn.query(
-        "SELECT * FROM journals WHERE id = ? LIMIT 1",
+        `SELECT *, 
+          (SELECT COUNT(*) FROM articles a WHERE a.journal_id = j.id) AS article_count 
+         FROM journals j WHERE j.id = ? LIMIT 1`,
         [id]
       );
       rows = r;
     }
 
-    // 🟢 2️⃣ Fetch by Short Name (exact, case-insensitive)
+    // 🟢 2️⃣ Fetch by Short Name (case-insensitive)
     else if (short) {
       const [r] = await conn.query(
-        "SELECT * FROM journals WHERE LOWER(TRIM(short_name)) = LOWER(TRIM(?)) LIMIT 1",
+        `SELECT *, 
+          (SELECT COUNT(*) FROM articles a WHERE a.journal_id = j.id) AS article_count 
+         FROM journals j
+         WHERE LOWER(TRIM(j.short_name)) = LOWER(TRIM(?)) 
+         LIMIT 1`,
         [short]
       );
       rows = r;
@@ -354,12 +360,13 @@ export async function GET(req) {
     else if (slug) {
       const [r] = await conn.query(
         `
-        SELECT *
-        FROM journals
+        SELECT *,
+          (SELECT COUNT(*) FROM articles a WHERE a.journal_id = j.id) AS article_count
+        FROM journals j
         WHERE 
-          LOWER(REPLACE(short_name, 'DS-', '')) = LOWER(?)
-          OR LOWER(REPLACE(short_name, 'ds-', '')) = LOWER(?)
-          OR LOWER(short_name) = LOWER(?)
+          LOWER(REPLACE(j.short_name, 'DS-', '')) = LOWER(?)
+          OR LOWER(REPLACE(j.short_name, 'ds-', '')) = LOWER(?)
+          OR LOWER(j.short_name) = LOWER(?)
         LIMIT 1
         `,
         [slug, slug, slug]
@@ -370,17 +377,26 @@ export async function GET(req) {
     // 🟢 4️⃣ Fetch all journals (sorted)
     else {
       const [r] = await conn.query(`
-        SELECT id, journal_name, short_name, issn_online, issn_print, cover_image
-        FROM journals
-        WHERE is_active = 1
-        ORDER BY sort_index ASC, id ASC
+        SELECT 
+          j.id,
+          j.journal_name,
+          j.short_name,
+          j.issn_online,
+          j.issn_print,
+          j.cover_image,
+          j.is_active,
+          (
+            SELECT COUNT(*) FROM articles a WHERE a.journal_id = j.id
+          ) AS article_count
+        FROM journals j
+        ORDER BY j.sort_index ASC, j.id ASC
       `);
       rows = r;
     }
 
     await conn.end();
 
-    // 🟩 Normalize output (always array)
+    // 🟩 Normalize output
     const journals = Array.isArray(rows) ? rows : rows ? [rows] : [];
 
     return NextResponse.json({
@@ -398,6 +414,7 @@ export async function GET(req) {
     );
   }
 }
+
 
 export async function DELETE(req) {
   const { searchParams } = new URL(req.url);
