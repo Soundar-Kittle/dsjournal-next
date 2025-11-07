@@ -325,7 +325,7 @@ menuItems.forEach((item) => {
     </div>
   )}
 </nav>
-
+  
           {effectiveCollapsed && openDropdown !== null && (
             <div
               ref={flyoutRef}
