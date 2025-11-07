@@ -34,10 +34,12 @@ export default async function JournalPage({ params }) {
     { slug: "article", label: "Add +", emoji: "👉" },
     { slug: "citation", label: "Citation", emoji: "🤖" },
     { slug: "stage", label: "Stage", emoji: "🏋️" },
-    { slug: "aim_and_scope", label: "Aim & Scope", emoji: "🎯" },
+    { slug: "aim-and-scope", label: "Aim & Scope", emoji: "🎯" },
     { slug: "topics", label: "Topics", emoji: "🏷️" },
     { slug: "apc", label: "APC", emoji: "💰" },
     { slug: "paper-submission", label: "Paper Submission", emoji: "📄" },
+    { slug: "mode-of-payment", label: "Mode of Payment", emoji: "🏛️" },
+    
 
   ];
 
