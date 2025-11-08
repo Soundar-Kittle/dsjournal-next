@@ -1,74 +1,226 @@
-import { createDbConnection } from "@/lib/db";
-import { NextResponse } from "next/server";
-import { randomInt } from "crypto";
-import { sendEmail } from "@/lib/email";
-// import { getJournalSettings } from "@/lib/settings"; // fetch journal-wise settings
+// import { createDbConnection } from "@/lib/db";
+// import { NextResponse } from "next/server";
+// import { randomInt } from "crypto";
+// import { sendEmail } from "@/lib/email";
 
 // export async function GET(req) {
 //   const { searchParams } = new URL(req.url);
+//   const all = searchParams.get("all") === "true";
 //   const page = parseInt(searchParams.get("page")) || 1;
 //   const limit = parseInt(searchParams.get("limit")) || 10;
 //   const offset = (page - 1) * limit;
 
 //   const conn = await createDbConnection();
-//   const [rows] = await conn.query(
-//     `SELECT *
-//     FROM editorial_members
-//     ORDER BY name ASC
-//     LIMIT ? OFFSET ?`,
-//     [limit, offset]
-//   );
 
-//   const [[{ total }]] = await conn.query(
-//     "SELECT COUNT(*) as total FROM editorial_members"
-//   );
+//   let rows;
+//   let total;
+
+//   if (all) {
+//     // Fetch everything (no pagination)
+//     [rows] = await conn.query(
+//       `SELECT * 
+//        FROM editorial_members
+//        ORDER BY name ASC`
+//     );
+//     [[{ total }]] = await conn.query(
+//       "SELECT COUNT(*) as total FROM editorial_members"
+//     );
+//   } else {
+//     // Fetch with pagination
+//     [rows] = await conn.query(
+//       `SELECT *
+//        FROM editorial_members
+//        ORDER BY name ASC
+//        LIMIT ? OFFSET ?`,
+//       [limit, offset]
+//     );
+//     [[{ total }]] = await conn.query(
+//       "SELECT COUNT(*) as total FROM editorial_members"
+//     );
+//   }
+
 //   await conn.end();
 
 //   return NextResponse.json({ success: true, members: rows, total });
 // }
 
+// export async function POST(req) {
+//   const body = await req.json();
+//   const {
+//     name,
+//     designation,
+//     department,
+//     university,
+//     country,
+//     state,
+//     city,
+//     address_lines, // HTML string
+//     has_address = 0, // 👈 add with default
+//     email,
+//     profile_link,
+//     is_active,
+//     journal_id,
+//   } = body;
+
+//   const conn = await createDbConnection();
+
+//   const otp = randomInt(100000, 999999); // Generate OTP
+
+//   await conn.query(
+//     `INSERT INTO editorial_members
+//        (name, designation, department, university, country, state, city,
+//         address_lines, has_address, email, profile_link, status, otp, is_verified)
+//      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+//     [
+//       name,
+//       designation,
+//       department,
+//       university,
+//       country,
+//       state,
+//       city,
+//       address_lines || "", // store HTML string
+//       has_address ? 1 : 0, // 0/1 flag
+//       email,
+//       profile_link,
+//       is_active,
+//       otp,
+//       0,
+//     ]
+//   );
+
+//   await conn.end();
+
+//   return NextResponse.json({
+//     success: true,
+//     message: "Member added, OTP sent.",
+//   });
+// }
+
+// export async function PATCH(req) {
+//   const body = await req.json();
+//   const {
+//     id,
+//     name,
+//     designation,
+//     department,
+//     university,
+//     country,
+//     state,
+//     city,
+//     address_lines,
+//     has_address = 0,
+//     email,
+//     profile_link,
+//     is_active,
+//     is_verified = null,
+//   } = body;
+
+//   const conn = await createDbConnection();
+
+//   const fields = [
+//     name,
+//     designation,
+//     department,
+//     university,
+//     country,
+//     state,
+//     city,
+//     address_lines || "",
+//     has_address ? 1 : 0, // 🆕
+//     email,
+//     profile_link,
+//     is_active,
+//   ];
+//   let query = `UPDATE editorial_members SET
+//       name = ?, designation = ?, department = ?, university = ?,
+//       country = ?, state = ?, city = ?, address_lines = ?,
+//      has_address = ?,                -- 🆕
+//      email = ?, profile_link = ?, status = ?`;
+
+//   if (is_verified !== null) {
+//     query += ", is_verified = ?";
+//     fields.push(is_verified);
+//   }
+
+//   query += " WHERE id = ?";
+//   fields.push(id);
+
+//   await conn.query(query, fields);
+//   await conn.end();
+
+//   return NextResponse.json({ success: true, message: "Member updated" });
+// }
+
+// /* ---------------- DELETE (unchanged) ---------------- */
+// export async function DELETE(req) {
+//   const { searchParams } = new URL(req.url);
+//   const id = searchParams.get("id");
+
+//   const conn = await createDbConnection();
+//   await conn.query("DELETE FROM editorial_members WHERE id = ?", [id]);
+//   await conn.end();
+
+//   return NextResponse.json({ success: true, message: "Member deleted" });
+// }
+
+import { createDbConnection } from "@/lib/db";
+import { NextResponse } from "next/server";
+
+/* ----------------------- GET ----------------------- */
 export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const all = searchParams.get("all") === "true";
-  const page = parseInt(searchParams.get("page")) || 1;
-  const limit = parseInt(searchParams.get("limit")) || 10;
-  const offset = (page - 1) * limit;
-
   const conn = await createDbConnection();
+  const { searchParams } = new URL(req.url);
 
-  let rows;
-  let total;
+  const search = searchParams.get("search")?.trim() || "";
+  const page = Math.max(parseInt(searchParams.get("page")) || 1, 1);
+  const limitParam = searchParams.get("limit");
+  const limit = limitParam === "All" ? null : parseInt(limitParam) || 10;
+  const offset = (page - 1) * (limit || 0);
 
-  if (all) {
-    // Fetch everything (no pagination)
-    [rows] = await conn.query(
-      `SELECT * 
-       FROM editorial_members
-       ORDER BY name ASC`
-    );
-    [[{ total }]] = await conn.query(
-      "SELECT COUNT(*) as total FROM editorial_members"
-    );
-  } else {
-    // Fetch with pagination
-    [rows] = await conn.query(
-      `SELECT *
-       FROM editorial_members
-       ORDER BY name ASC
-       LIMIT ? OFFSET ?`,
-      [limit, offset]
-    );
-    [[{ total }]] = await conn.query(
-      "SELECT COUNT(*) as total FROM editorial_members"
-    );
+  try {
+    // 🧩 Base query
+    let baseSql = `SELECT * FROM editorial_members`;
+    let countSql = `SELECT COUNT(*) AS total FROM editorial_members`;
+    const whereClause = [];
+    const params = [];
+
+    // 🔍 Add WHERE for search
+    if (search) {
+      whereClause.push(
+        `(name LIKE ? OR email LIKE ? OR university LIKE ?)`
+      );
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    if (whereClause.length > 0) {
+      baseSql += ` WHERE ${whereClause.join(" AND ")}`;
+      countSql += ` WHERE ${whereClause.join(" AND ")}`;
+    }
+
+    baseSql += ` ORDER BY id DESC`;
+
+    if (limit) {
+      baseSql += ` LIMIT ? OFFSET ?`;
+      params.push(limit, offset);
+    }
+
+    // 🧠 Execute both queries
+    const [rows] = await conn.query(baseSql, params);
+    const [[{ total }]] = await conn.query(countSql, params.slice(0, 3));
+
+    return NextResponse.json({ members: rows, total });
+  } catch (err) {
+    console.error("❌ GET /editorial-members failed:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  } finally {
+    await conn.end(); // ✅ Proper cleanup
   }
-
-  await conn.end();
-
-  return NextResponse.json({ success: true, members: rows, total });
 }
 
+/* ----------------------- POST ----------------------- */
 export async function POST(req) {
+ const conn = await createDbConnection();
   const body = await req.json();
   const {
     name,
@@ -78,69 +230,43 @@ export async function POST(req) {
     country,
     state,
     city,
-    address_lines, // HTML string
-    has_address = 0, // 👈 add with default
+    address_lines,
+    has_address = 0,
     email,
     profile_link,
-    is_active,
-    journal_id,
+    is_active = 1,
   } = body;
 
-  const conn = await createDbConnection();
+  try {
+    await conn.query(
+      `INSERT INTO editorial_members 
+      (name, designation, department, university, country, state, city, 
+      address_lines, has_address, email, profile_link, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        name,
+        designation,
+        department,
+        university,
+        country,
+        state,
+        city,
+        address_lines || "",
+        has_address ? 1 : 0,
+        email,
+        profile_link,
+        is_active ? 1 : 0,
+      ]
+    );
 
-  const otp = randomInt(100000, 999999); // Generate OTP
-
-  // const [settingsRows] = await conn.query("SELECT email FROM journal_settings WHERE journal_id = ?", [journal_id]);
-  // const systemEmail = settingsRows.length > 0 ? settingsRows[0].email : null;
-
-  //   const [settingsRows] = await conn.query(
-  //   `SELECT email FROM journal_mail_accounts
-  //    WHERE journal_id = ? AND purpose = 'editor' AND is_active = 1
-  //    LIMIT 1`,
-  //   [journal_id]
-  // );
-  // const systemEmail = settingsRows.length > 0 ? settingsRows[0].email : null;
-
-  await conn.query(
-    `INSERT INTO editorial_members
-       (name, designation, department, university, country, state, city,
-        address_lines, has_address, email, profile_link, status, otp, is_verified)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      name,
-      designation,
-      department,
-      university,
-      country,
-      state,
-      city,
-      address_lines || "", // store HTML string
-      has_address ? 1 : 0, // 0/1 flag
-      email,
-      profile_link,
-      is_active,
-      otp,
-      0,
-    ]
-  );
-
-  // if (systemEmail) {
-  //   await sendEmail({
-  //     to: email,
-  //     subject: "Editorial Board Email Verification",
-  //     text: `Your OTP code is ${otp}`,
-  //     from: systemEmail,
-  //   });
-  // }
-
-  await conn.end();
-
-  return NextResponse.json({
-    success: true,
-    message: "Member added, OTP sent.",
-  });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("❌ POST /editorial-members failed:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
 
+/* ----------------------- PATCH ----------------------- */
 export async function PATCH(req) {
   const body = await req.json();
   const {
@@ -171,16 +297,26 @@ export async function PATCH(req) {
     state,
     city,
     address_lines || "",
-    has_address ? 1 : 0, // 🆕
+    has_address ? 1 : 0,
     email,
     profile_link,
-    is_active,
+    is_active, // ✅ will map to status
   ];
-  let query = `UPDATE editorial_members SET
-      name = ?, designation = ?, department = ?, university = ?,
-      country = ?, state = ?, city = ?, address_lines = ?,
-     has_address = ?,                -- 🆕
-     email = ?, profile_link = ?, status = ?`;
+
+  let query = `
+    UPDATE editorial_members SET
+      name = ?, 
+      designation = ?, 
+      department = ?, 
+      university = ?,
+      country = ?, 
+      state = ?, 
+      city = ?, 
+      address_lines = ?,
+      has_address = ?, 
+      email = ?, 
+      profile_link = ?, 
+      status = ?`; // ✅ changed here
 
   if (is_verified !== null) {
     query += ", is_verified = ?";
@@ -196,14 +332,21 @@ export async function PATCH(req) {
   return NextResponse.json({ success: true, message: "Member updated" });
 }
 
-/* ---------------- DELETE (unchanged) ---------------- */
+/* ----------------------- DELETE ----------------------- */
 export async function DELETE(req) {
+ const conn = await createDbConnection();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
-  const conn = await createDbConnection();
-  await conn.query("DELETE FROM editorial_members WHERE id = ?", [id]);
-  await conn.end();
+  if (!id) {
+    return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+  }
 
-  return NextResponse.json({ success: true, message: "Member deleted" });
+  try {
+    await conn.query("DELETE FROM editorial_members WHERE id = ?", [id]);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("❌ DELETE /editorial-members failed:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }

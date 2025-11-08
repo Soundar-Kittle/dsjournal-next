@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono, Poppins, Roboto } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import CookieConsentWrapper from "@/components/Cookie/CookieConsentWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} ${roboto.variable} antialiased`}
       >
         <Providers>{children}</Providers>
+        <CookieConsentWrapper/>
       </body>
     </html>
   );

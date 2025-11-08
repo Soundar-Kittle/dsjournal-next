@@ -127,7 +127,10 @@ export const Sidebar = ({
   const searchTerm = search.trim().toLowerCase();
 
   const { sections, filteredFlat } = useMemo(() => {
-    const match = (v) => v.toLowerCase().includes(searchTerm);
+   const match = (v) => {
+  if (!v || typeof v !== "string") return false;
+  return v.toLowerCase().includes(searchTerm);
+};
     const grouped = [];
 
     const ensure = (title) => {
@@ -139,31 +142,34 @@ export const Sidebar = ({
       return g;
     };
 
-    menuItems.forEach((item) => {
-      const secTitle = item.section ?? "General";
-      const section = ensure(secTitle);
+menuItems.forEach((item) => {
+  const secTitle = item?.section ?? "General";
+  const section = ensure(secTitle);
 
-      if (!searchTerm || match(secTitle)) {
-        section.items.push(item);
-        return;
-      }
+  const title = item?.title || "";
+  const path = item?.path || "";
+  
+  if (!searchTerm || match(secTitle)) {
+    section.items.push(item);
+    return;
+  }
 
-      if (item.subItems) {
-        const parentHit = match(item.title) || match(item.path);
-        if (parentHit) {
-          section.items.push(item);
-          return;
-        }
+  if (item?.subItems?.length) {
+    const parentHit = match(title) || match(path);
+    if (parentHit) {
+      section.items.push(item);
+      return;
+    }
 
-        const subs = item.subItems.filter(
-          (s) => match(s.title) || match(s.path)
-        );
-        if (subs.length) section.items.push({ ...item, subItems: subs });
-        return;
-      }
+    const subs = item.subItems.filter(
+      (s) => match(s.title) || match(s.path)
+    );
+    if (subs.length) section.items.push({ ...item, subItems: subs });
+    return;
+  }
 
-      if (match(item.title) || match(item.path)) section.items.push(item);
-    });
+  if (match(title) || match(path)) section.items.push(item);
+});
 
     const nonEmpty = grouped.filter((s) => s.items.length);
     return {
@@ -287,33 +293,39 @@ export const Sidebar = ({
             </div>
           )}
 
-          <nav className="flex-grow overflow-y-auto pt-2 px-2">
-            {sections.map((section, idx) => {
-              const start = sections
-                .slice(0, idx)
-                .reduce((s, sec) => s + sec.items.length, 0);
-              return (
-                <MenuSection
-                  key={section.title}
-                  title={section.title}
-                  items={section.items}
-                  collapsed={effectiveCollapsed}
-                  openIdx={openDropdown}
-                  pathname={pathname}
-                  searchTerm={searchTerm}
-                  toggleDropdown={toggleDropdown}
-                  keyToggleDropdown={keyToggleDropdown}
-                  keyNavigate={keyNavigate}
-                  setRef={(el, i) => (menuRefs.current[i] = el)}
-                  startIndex={start}
-                  showBadge={showBadge}
-                  showHotkeys={showHotkeys}
-                  itemPad={itemPad}
-                />
-              );
-            })}
-          </nav>
-
+    <nav className="flex-grow overflow-y-auto pt-2 px-2">
+  {sections.length > 0 ? (
+    sections.map((section, idx) => {
+      const start = sections
+        .slice(0, idx)
+        .reduce((s, sec) => s + sec.items.length, 0);
+      return (
+        <MenuSection
+          key={section.title}
+          title={section.title}
+          items={section.items}
+          collapsed={effectiveCollapsed}
+          openIdx={openDropdown}
+          pathname={pathname}
+          searchTerm={searchTerm}
+          toggleDropdown={toggleDropdown}
+          keyToggleDropdown={keyToggleDropdown}
+          keyNavigate={keyNavigate}
+          setRef={(el, i) => (menuRefs.current[i] = el)}
+          startIndex={start}
+          showBadge={showBadge}
+          showHotkeys={showHotkeys}
+          itemPad={itemPad}
+        />
+      );
+    })
+  ) : (
+    <div className="text-center text-gray-500 py-6 text-sm italic">
+      Unknown items
+    </div>
+  )}
+</nav>
+  
           {effectiveCollapsed && openDropdown !== null && (
             <div
               ref={flyoutRef}

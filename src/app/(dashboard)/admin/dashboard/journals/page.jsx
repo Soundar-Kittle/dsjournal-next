@@ -182,10 +182,23 @@ export default function Page() {
   }, []);
 
   // ------- CRUD actions -------
-  const handleEdit = (journal) => {
-    setEditData(journal);
-    setOpen(true);
+  const handleEdit = async (journal) => {
+    try {
+      const res = await fetch(`/api/journals?id=${journal.id}`, { cache: "no-store" });
+      const data = await res.json();
+
+      if (data.success && data.journals?.length > 0) {
+        setEditData(data.journals[0]); // ✅ full record from DB
+        setOpen(true);
+      } else {
+        toast.error("Failed to load journal details");
+      }
+    } catch (err) {
+      console.error("Edit fetch error:", err);
+      toast.error("Error fetching journal details");
+    }
   };
+
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this journal?")) return;
@@ -240,7 +253,7 @@ export default function Page() {
           <DialogContent className="md:min-w-3xl lg:min-w-5xl xl:min-w-6xl max-h-[90vh] overflow-auto">
             <DialogHeader>
               <DialogTitle className="bg-primary/10 text-primary p-4 text-center rounded-lg">
-                {editData ? "Edit Journal" : "Add New Journal"}
+                {editData ? `${editData.short_name} Edit Journal ` : "Add New Journal"}{console.log(editData)}
               </DialogTitle>
             </DialogHeader>
             <Addform
@@ -291,9 +304,10 @@ export default function Page() {
             setJournals={setJournals}
             search={search}
             setSavingOrder={setSavingOrder}
-            onEdit={handleEdit}
+            onEdit={handleEdit} // ✅ updated
             onDelete={handleDelete}
           />
+
         </>
       )}
     </div>

@@ -15,7 +15,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
-import {  SquarePen, Trash } from "lucide-react";
+import { SquarePen, Trash } from "lucide-react";
 import { Switch } from "@/components/ui";
 
 function SortableCard({ id, children }) {
@@ -48,9 +48,9 @@ export default function JournalsGrid({
   journals = [],
   setJournals,
   search = "",
-  setSavingOrder = () => {},
-  onEdit = () => {},
-  onDelete = () => {},
+  setSavingOrder = () => { },
+  onEdit = () => { },
+  onDelete = () => { },
 }) {
   const items = (visible || []).map((j) => String(j.id));
 
@@ -132,7 +132,6 @@ export default function JournalsGrid({
             const imageSrc = journal?.cover_image?.startsWith("/")
               ? journal.cover_image.slice(1)
               : journal?.cover_image;
-
             return (
               <SortableCard key={journal.id} id={String(journal.id)}>
                 <div className="relative rounded border shadow p-2 bg-white">
@@ -167,28 +166,28 @@ export default function JournalsGrid({
                           }}
                           title="Edit"
                         >
-                          <SquarePen  />
+                          <SquarePen />
                         </Button>
                         <Button
-                          size="icon"
-                          variant="destructive"
                           className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(journal.id);
-                          }}
-                          title="Delete"
+                          variant="outline"
+                          onClick={() => onDelete(journal.id)}
+                          disabled={journal.article_count > 0} // 🔒 disable delete if articles exist
+                          title={
+                            journal.article_count > 0
+                              ? `Cannot delete — ${journal.article_count} article(s) linked`
+                              : "Delete journal"
+                          }
                         >
-                          <Trash />
+                          <Trash/>  
                         </Button>
                       </div>
                     </div>
                   </div>
                   <div className="mt-3 text-center">
                     <Link
-                      href={`/admin/dashboard/journals/${
-                        journal?.short_name || journal.id
-                      }`}
+                      href={`/admin/dashboard/journals/${journal?.short_name || journal.id
+                        }`}
                     >
                       <p className="text-sm font-semibold hover:underline">
                         {journal?.journal_name}

@@ -3,10 +3,8 @@ import EditorialMembersForm from '@/components/Dashboard/EditorialBoard/Create/E
 
 const page = () => {
   return (
-    <div>Memebers page
-
-   
-    <EditorialMembersForm/>
+    <div>
+      <EditorialMembersForm/>
     </div>
   )
 }
