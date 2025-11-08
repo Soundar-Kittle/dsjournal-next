@@ -1688,20 +1688,37 @@ const [monthForm, setMonthForm] = useState({
     }
   };
 
+  // const handleMonthSubmit = async () => {
+  //   const { journal_id, issue_id, from_month } = monthForm;
+  //   if (!journal_id || !issue_id || !from_month) return toast.error("Journal, issue, and from month are required");
+  //   try {
+  //     const res = await axios.post("/api/month-groups", monthForm);
+  //     toast.success(res.data.message);
+  //     setMonthForm({ journal_id: "", issue_id: "", from_month: "", to_month: "" });
+  //     if (summaryJournalId && String(summaryJournalId) === String(journal_id)) {
+  //       await loadJournalSummary(summaryJournalId);
+  //     }
+  //   } catch {
+  //     toast.error("Failed to add month");
+  //   }
+  // };
+
   const handleMonthSubmit = async () => {
-    const { journal_id, issue_id, from_month } = monthForm;
-    if (!journal_id || !issue_id || !from_month) return toast.error("Journal, issue, and from month are required");
-    try {
-      const res = await axios.post("/api/month-groups", monthForm);
-      toast.success(res.data.message);
-      setMonthForm({ journal_id: "", issue_id: "", from_month: "", to_month: "" });
-      if (summaryJournalId && String(summaryJournalId) === String(journal_id)) {
-        await loadJournalSummary(summaryJournalId);
-      }
-    } catch {
-      toast.error("Failed to add month");
+const { journal_id, volume_id, issue_id, from_month } = monthForm;
+if (!journal_id || !volume_id || !issue_id || !from_month)
+    return toast.error("Journal, issue, and from month are required");
+  try {
+    const res = await axios.post("/api/month-groups", monthForm);
+    toast.success(res.data.message);
+    setMonthForm({ journal_id: "", issue_id: "", from_month: "", to_month: "" });
+    if (summaryJournalId && String(summaryJournalId) === String(journal_id)) {
+      await loadJournalSummary(summaryJournalId);
     }
-  };
+  } catch {
+    toast.error("Failed to add month");
+  }
+};
+
 
   const handleSave = async () => {
     try {

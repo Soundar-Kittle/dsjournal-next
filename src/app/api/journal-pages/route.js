@@ -1,16 +1,43 @@
 import { createDbConnection } from "@/lib/db";
 import { cleanData } from "@/lib/utils";
 
+export async function getRenderedJournalPage(journal_id, page_title) {
+  const conn =  await createDbConnection();
+  try {
+    const [[page]] = await conn.query(
+      "SELECT * FROM journal_pages WHERE journal_id = ? AND page_title = ? LIMIT 1",
+      [journal_id, page_title]
+    );
+    if (!page) return null;
+
+    const [vars] = await conn.query(
+      "SELECT var_key, var_value FROM journal_dynamic_values WHERE journal_id = ?",
+      [journal_id]
+    );
+    const map = Object.fromEntries(vars.map((v) => [v.var_key, v.var_value]));
+
+    // Replace placeholders like {{var_key}} with live values
+    let rendered = page.content;
+    Object.entries(map).forEach(([key, val]) => {
+      const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+      rendered = rendered.replace(regex, val);
+    });
+
+    return { ...page, rendered_content: rendered };
+  } finally {
+    conn.release();
+  }
+}
+
 /* ---------------------- POST: Create Journal Page ---------------------- */
 export async function POST(req) {
   const connection = await createDbConnection();
+
   try {
     await connection.beginTransaction();
 
     const body = await req.json();
     const cleaned = cleanData(body);
-
-    console.log(body);
 
     if (!cleaned.journal_id || !cleaned.page_title) {
       return Response.json(
@@ -19,6 +46,24 @@ export async function POST(req) {
       );
     }
 
+    // 🔍 1️⃣ Check if a record already exists for same journal_id + page_title
+    const [existing] = await connection.query(
+      `SELECT id FROM journal_pages WHERE journal_id = ? AND page_title = ? LIMIT 1`,
+      [cleaned.journal_id, cleaned.page_title]
+    );
+
+    if (existing.length > 0) {
+      await connection.rollback();
+      return Response.json(
+        {
+          success: false,
+          message: `A page with title "${cleaned.page_title}" already exists for this journal.`,
+        },
+        { status: 409 } // Conflict
+      );
+    }
+
+    // ✅ 2️⃣ Proceed to insert if unique
     const [result] = await connection.query(
       `INSERT INTO journal_pages (journal_id, page_title, content, is_active)
        VALUES (?, ?, ?, ?)`,
@@ -33,6 +78,7 @@ export async function POST(req) {
     await connection.commit();
     return Response.json(
       {
+        success: true,
         message: "Journal page created successfully",
         id: result.insertId,
       },
@@ -41,8 +87,20 @@ export async function POST(req) {
   } catch (error) {
     await connection.rollback();
     console.error("❌ Add Journal Page Error:", error);
+
+    // 🎯 Graceful duplicate handling (fallback)
+    if (error.code === "ER_DUP_ENTRY") {
+      return Response.json(
+        {
+          success: false,
+          message: "Duplicate entry — this journal already has that page title.",
+        },
+        { status: 409 }
+      );
+    }
+
     return Response.json(
-      { message: "Failed to add journal page", error: error.message },
+      { success: false, message: "Failed to add journal page", error: error.message },
       { status: 500 }
     );
   } finally {
