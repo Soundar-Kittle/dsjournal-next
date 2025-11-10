@@ -54,32 +54,73 @@
 // }
 
 
-import { getCallForPaper } from "@/utils/callForPaper";
-import pool from "@/lib/db";
+// import { getCallForPaper } from "@/utils/callForPaper";
+// import pool from "@/lib/db";
 
-export async function getRenderedJournalPage(journalId, pageTitle) {
+// export async function getRenderedJournalPage(journalId, pageTitle) {
+//   const conn = await createDbConnection();
+//   try {
+//     const [[page]] = await conn.query(
+//       `SELECT * FROM journal_pages WHERE journal_id = ? AND page_title = ? LIMIT 1`,
+//       [journalId, pageTitle]
+//     );
+
+//     if (!page) return null;
+
+//     // 🧩 Get the dynamic Call for Paper date
+//     const cfp = await getCallForPaper(journalId);
+//     let rendered = page.content || "";
+
+//     // Replace placeholder
+//     if (cfp?.display_date) {
+//       rendered = rendered.replace(
+//         /{{\s*call_for_paper_date\s*}}/g,
+//         cfp.display_date
+//       );
+//     }
+
+//     return { ...page, rendered_content: rendered };
+//   } finally {
+//     conn.end();
+//   }
+// }
+
+
+import { createDbConnection } from "@/lib/db";
+
+export async function getCallForPaper(journalId) {
   const conn = await createDbConnection();
   try {
-    const [[page]] = await conn.query(
-      `SELECT * FROM journal_pages WHERE journal_id = ? AND page_title = ? LIMIT 1`,
-      [journalId, pageTitle]
+    const [rows] = await conn.query(
+      `
+      SELECT 
+        id, journal_id, month_group_id, date_mode,
+        manual_date, start_date, end_date, is_active
+      FROM call_for_papers
+      WHERE journal_id = ? AND is_active = 1
+      ORDER BY manual_date >= CURDATE() ASC, manual_date ASC
+      LIMIT 1
+      `,
+      [journalId]
     );
 
-    if (!page) return null;
+    if (!rows.length) return null;
 
-    // 🧩 Get the dynamic Call for Paper date
-    const cfp = await getCallForPaper(journalId);
-    let rendered = page.content || "";
+    const record = rows[0];
+    const rawDate =
+      record.date_mode === "manual"
+        ? record.manual_date
+        : record.end_date || record.start_date;
 
-    // Replace placeholder
-    if (cfp?.display_date) {
-      rendered = rendered.replace(
-        /{{\s*call_for_paper_date\s*}}/g,
-        cfp.display_date
-      );
-    }
+    const display_date = rawDate
+      ? new Date(rawDate).toLocaleDateString("en-IN", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : "—";
 
-    return { ...page, rendered_content: rendered };
+    return { ...record, display_date };
   } finally {
     conn.end();
   }

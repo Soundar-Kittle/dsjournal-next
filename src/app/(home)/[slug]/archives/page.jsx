@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getMonthGroupsBySlug } from "@/utils/jounals";
+import { getMonthGroupsBySlug } from "@/utils/journals";
 import ContentAccordian from "@/components/ui/ContentAccordian";
 
 const Page = async ({ params }) => {

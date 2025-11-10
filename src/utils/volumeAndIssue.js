@@ -52,7 +52,7 @@
 // }
 
 import { createDbConnection } from "@/lib/db";
-import { getJournalBySlug } from "@/utils/jounals";
+import { getJournalBySlug } from "@/utils/journals";
 
 export async function getArticlesBySlugVolumeIssue(slug, volumeNum, issueNum) {
   if (!slug || !volumeNum || !issueNum) return [];

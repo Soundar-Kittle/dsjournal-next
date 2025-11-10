@@ -474,7 +474,7 @@
 // }
 
 import { getEditorialBoardBySlug } from "@/utils/editorialBoard";
-import { getJournalBySlug } from "@/utils/jounals";
+import { getJournalBySlug } from "@/utils/journals";
 import { getJournalPageByTitle } from "@/utils/journalPage";
 
 /* ---------------- SEO METADATA ---------------- */

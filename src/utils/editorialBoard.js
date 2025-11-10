@@ -1,5 +1,5 @@
 import { createDbConnection } from "@/lib/db";
-import { getJournalBySlug } from "./jounals";
+import { getJournalBySlug } from "./journals";
 
 export async function getEditorialBoardBySlug(slug) {
   if (!slug) return [];

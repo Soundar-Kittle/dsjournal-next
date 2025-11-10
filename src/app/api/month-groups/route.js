@@ -253,10 +253,13 @@ export async function GET(req) {
   const journal_id = searchParams.get("journal_id");
   const volume_id = searchParams.get("volume_id");
   const issue_id = searchParams.get("issue_id");
-   const connection = await createDbConnection();
+  const connection = await createDbConnection();
 
-   if (!journal_id) {
-    return NextResponse.json({ success: false, message: "journal_id is required" });
+  if (!journal_id) {
+    return NextResponse.json({
+      success: false,
+      message: "journal_id is required",
+    });
   }
 
   try {
@@ -274,10 +277,15 @@ export async function GET(req) {
         i.issue_number,
         i.issue_label
       FROM month_groups mg
-      LEFT JOIN volumes v ON mg.volume_id = v.id
-      LEFT JOIN issues i ON mg.issue_id = i.id
+      LEFT JOIN volumes v ON v.id = mg.volume_id
+      LEFT JOIN issues i ON i.id = mg.issue_id
       WHERE mg.journal_id = ?
+        AND mg.from_month IS NOT NULL
+        AND mg.from_month != ''
+        AND mg.to_month IS NOT NULL
+        AND mg.to_month != ''
     `;
+
     const params = [journal_id];
 
     if (volume_id) {
@@ -290,33 +298,63 @@ export async function GET(req) {
       params.push(issue_id);
     }
 
+    // ✅ Single ORDER BY after all conditions
     query += `
       ORDER BY 
         v.year DESC,
-        v.volume_number ASC,
+        v.volume_number DESC,
         i.issue_number ASC,
-        mg.from_month ASC
+        FIELD(mg.from_month,
+          'January','February','March',
+          'April','May','June',
+          'July','August','September',
+          'October','November','December'
+        )
     `;
 
-    const [rows] = await db.query(query, params);
+    const [rows] = await connection.query(query, params);
     return NextResponse.json({ success: true, months: rows });
   } catch (err) {
     console.error("❌ month-groups GET error:", err);
     return NextResponse.json(
-      { success: false, message: "Failed to fetch month groups" },
+      { success: false, message: err.message || "Failed to fetch month groups" },
       { status: 500 }
     );
+  } finally {
+    await connection.end();
   }
 }
 
+
 // ✅ POST
 export async function POST(req) {
+  const connection = await createDbConnection();
   try {
     const body = await req.json();
-    const [result] = await db.query(
+
+    // month map
+    const monthNames = [
+      "", "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    // auto-convert if numeric
+    const fromMonthName =
+      typeof body.from_month === "number" || /^\d+$/.test(body.from_month)
+        ? monthNames[Number(body.from_month)]
+        : body.from_month;
+
+    const toMonthName =
+      body.to_month
+        ? (typeof body.to_month === "number" || /^\d+$/.test(body.to_month)
+            ? monthNames[Number(body.to_month)]
+            : body.to_month)
+        : null;
+
+    const [result] = await connection.query(
       `INSERT INTO month_groups (journal_id, volume_id, issue_id, from_month, to_month)
        VALUES (?, ?, ?, ?, ?)`,
-      [body.journal_id, body.volume_id, body.issue_id, body.from_month, body.to_month]
+      [body.journal_id, body.volume_id, body.issue_id, fromMonthName, toMonthName]
     );
 
     return NextResponse.json({
@@ -330,59 +368,60 @@ export async function POST(req) {
   }
 }
 
+
 // ✅ POST create month group
-export async function POST(req) {
-  const connection = await createDbConnection();
-  try {
-    const body = await req.json();
-    const { journal_id, volume_id, issue_id, from_month, to_month } = body;
+// export async function POST(req) {
+//   const connection = await createDbConnection();
+//   try {
+//     const body = await req.json();
+//     const { journal_id, volume_id, issue_id, from_month, to_month } = body;
 
-    if (!journal_id || !volume_id || !issue_id || !from_month) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "journal_id, volume_id, issue_id, and from_month are required",
-        },
-        { status: 400 }
-      );
-    }
+//     if (!journal_id || !volume_id || !issue_id || !from_month) {
+//       return NextResponse.json(
+//         {
+//           success: false,
+//           message:
+//             "journal_id, volume_id, issue_id, and from_month are required",
+//         },
+//         { status: 400 }
+//       );
+//     }
 
-    // Prevent duplicates
-    const [existing] = await connection.query(
-      `SELECT id FROM month_groups 
-       WHERE journal_id = ? AND volume_id = ? AND issue_id = ? AND from_month = ?`,
-      [journal_id, volume_id, issue_id, from_month]
-    );
+//     // Prevent duplicates
+//     const [existing] = await connection.query(
+//       `SELECT id FROM month_groups 
+//        WHERE journal_id = ? AND volume_id = ? AND issue_id = ? AND from_month = ?`,
+//       [journal_id, volume_id, issue_id, from_month]
+//     );
 
-    if (existing.length > 0) {
-      return NextResponse.json(
-        { success: false, message: "Month group already exists for this issue" },
-        { status: 409 }
-      );
-    }
+//     if (existing.length > 0) {
+//       return NextResponse.json(
+//         { success: false, message: "Month group already exists for this issue" },
+//         { status: 409 }
+//       );
+//     }
 
-    const [result] = await connection.query(
-      `INSERT INTO month_groups (journal_id, volume_id, issue_id, from_month, to_month, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-      [journal_id, volume_id, issue_id, from_month, to_month || null]
-    );
+//     const [result] = await connection.query(
+//       `INSERT INTO month_groups (journal_id, volume_id, issue_id, from_month, to_month, created_at, updated_at)
+//        VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+//       [journal_id, volume_id, issue_id, from_month, to_month || null]
+//     );
 
-    return NextResponse.json({
-      success: true,
-      message: "Month group created successfully",
-      insertedId: result.insertId,
-    });
-  } catch (error) {
-    console.error("Month group creation error:", error);
-    return NextResponse.json(
-      { success: false, message: "Failed to create month group" },
-      { status: 500 }
-    );
-  } finally {
-    await connection.end();
-  }
-}
+//     return NextResponse.json({
+//       success: true,
+//       message: "Month group created successfully",
+//       insertedId: result.insertId,
+//     });
+//   } catch (error) {
+//     console.error("Month group creation error:", error);
+//     return NextResponse.json(
+//       { success: false, message: "Failed to create month group" },
+//       { status: 500 }
+//     );
+//   } finally {
+//     await connection.end();
+//   }
+// }
 
 // ✅ PUT update month group
 export async function PUT(req) {

@@ -1,4 +1,4 @@
-import { getMonthGroupsBySlug } from "@/utils/jounals";
+import { getMonthGroupsBySlug } from "@/utils/journals";
 import { getArticlesBySlugVolumeIssue } from "@/utils/volumeAndIssue";
 import Link from "next/link";
 import { BsDiamondHalf } from "react-icons/bs";

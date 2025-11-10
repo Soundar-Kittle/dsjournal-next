@@ -1,4 +1,4 @@
-import { getJournalBySlug } from "@/utils/jounals";
+import { getJournalBySlug } from "@/utils/journals";
 import { getJournalPageByTitle } from "@/utils/journalPage";
 
 const page = async ({ params }) => {

@@ -153,7 +153,7 @@
 // }
 
 import Image from "next/image";
-import { getJournalBySlug } from "@/utils/jounals"; // your DB helper
+import { getJournalBySlug } from "@/utils/journals"; // your DB helper
 import { getJournalPageByTitle } from "@/utils/journalPage";
 
 export default async function PaperSubmissionPage({ params }) {

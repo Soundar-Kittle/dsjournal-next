@@ -413,6 +413,8 @@ function getCurrentPeriod(monthGroups = []) {
   ];
 
   const currentMonthName = monthNames[monthIndex];
+
+
   let current = null;
 
   // Find if currentMonth lies between from_month and to_month
@@ -442,7 +444,6 @@ function getCurrentPeriod(monthGroups = []) {
     });
     current = upcoming || monthGroups[0]; // fallback
   }
-
   return current;
 }
 
@@ -467,6 +468,7 @@ const AddCallForPaper = ({ type = "add", editData = {}, onClose }) => {
     handleSubmit,
     reset,
     watch,
+    setValue, // ✅ needed for programmatic select
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: defaults,
@@ -476,6 +478,8 @@ const AddCallForPaper = ({ type = "add", editData = {}, onClose }) => {
   const dateMode = watch("date_mode");
   const isCommon = watch("is_common");
   const selectedJournal = watch("journal_id");
+    const [monthGroups, setMonthGroups] = useState([]);
+    const [selectedMonthGroup, setSelectedMonthGroup] = useState("");
 
   // --------------- Journals Fetch ---------------
   const { data: journalsData } = useJournals();
@@ -491,59 +495,19 @@ const AddCallForPaper = ({ type = "add", editData = {}, onClose }) => {
     enabled: !!selectedJournal,
   });
 
-const [monthGroupOptions, setMonthGroupOptions] = useState([]);
-
-// useEffect(() => {
-//   const groups = monthGroupData?.months || monthGroupData?.groups || [];
-
-//   if (groups.length) {
-//     const opts = groups.map((g) => {
-//       const from = g.from_month || "—";
-//       const to = g.to_month || "—";
-
-//       const vol =
-//         g.volume_number
-//           ? `${g.volume_label ? `${g.volume_label}` : ""}`
-//           : "Vol ?";
-//       const issue =
-//         g.issue_number
-//           ? `${g.issue_label ? ` ${g.issue_label}` : ""}`
-//           : "Issue ?";
-
-//       return {
-//         value: g.id,
-//         label: `${from} – ${to} (${vol} – ${issue})`,
-//       };
-//     });
-
-//     // optional: remove duplicates if any
-//     const uniqueOpts = Array.from(new Map(opts.map((o) => [o.label, o])).values());
-//     setMonthGroupOptions(uniqueOpts);
-//   } else {
-//     setMonthGroupOptions([]);
-//   }
-// }, [monthGroupData]);
 
 useEffect(() => {
-  if (monthGroupData?.groups?.length) {
-    const groups = monthGroupData.groups.map((g) => ({
-      value: g.id,
-      label: `${g.from_month} – ${g.to_month} (Volume ${g.volume_number || "?"} – Issue ${g.issue_number || "?"})`,
-      ...g,
-    }));
-    setMonthGroupOptions(groups);
+  const loadActiveAndUpcoming = async () => {
+    const res = await fetch(`/api/month-groups/active?journal_id=${selectedJournal}`);
+    const data = await res.json();
+    if (data.success) setMonthGroups(data.month_groups);
+  };
+  if (selectedJournal) loadActiveAndUpcoming();
+}, [selectedJournal]);
 
-    // ✅ auto-select current or next upcoming
-    const current = getCurrentPeriod(groups);
-    if (current) {
-      setSelectedMonthGroup(current.value);
-    }
-  } else {
-    setMonthGroupOptions([]);
-  }
+useEffect(() => {
+  console.log("📦 monthGroupData:", monthGroupData);
 }, [monthGroupData]);
-
-
   // --------------- Mutation ----------------
   const mutation = useApiMutation({
     endpoint: type === "add" ? callForPaper.add.url : callForPaper.update.url,
@@ -560,6 +524,7 @@ useEffect(() => {
     onError: (err) => toast.error(err?.message || "Something went wrong"),
   });
 
+  
 
 
   // --------------- Submit ------------------
@@ -637,7 +602,7 @@ useEffect(() => {
         {/* --- Issue / Month Group --- */}
         {!isCommon && selectedJournal && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Controller
+            {/* <Controller
               name="month_group_id"
               control={control}
               render={({ field }) => (
@@ -648,8 +613,32 @@ useEffect(() => {
                   options={monthGroupOptions}
                   onValueChange={field.onChange}
                 />
+
+
               )}
-            />
+            /> */}
+            <Controller
+  name="month_group_id"
+  control={control}
+  render={({ field }) => (
+    <select
+      className="border p-2 w-full"
+      value={field.value || ""}
+      onChange={(e) => {
+        field.onChange(e.target.value);
+        setSelectedMonthGroup(e.target.value);
+      }}
+    >
+      <option value="">Select issue period</option>
+      {monthGroups.map((m) => (
+        <option key={m.id} value={m.id}>
+          {m.from_month} – {m.to_month} (Vol {m.volume_number}, Issue {m.issue_number}) – {m.status}
+        </option>
+      ))}
+    </select>
+  )}
+/>
+
           </div>
         )}
 
