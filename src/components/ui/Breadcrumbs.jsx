@@ -74,6 +74,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Breadcrumbs({ parents = [] }) {
   const pathname = usePathname();
@@ -118,7 +119,7 @@ export default function Breadcrumbs({ parents = [] }) {
           const isLast = idx === crumbs.length - 1;
           return (
             <li key={crumb.menu_link} className="flex items-center">
-              {idx > 0 && <span className="px-1">/</span>}
+              {idx > 0 && <span className="px-1 text-light-blue"><ChevronRight/></span>}
               {isLast ? (
                 <span className="capitalize">{crumb.menu_label}</span>
               ) : (
