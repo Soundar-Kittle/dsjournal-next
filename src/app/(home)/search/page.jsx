@@ -14,13 +14,14 @@ export default function SearchPage() {
   const [journals, setJournals] = useState([]);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchType, setSearchType] = useState("article"); // default to article
 
   // ✅ Fetch all journals
   useEffect(() => {
     async function fetchJournals() {
       try {
-     const res = await fetch("/api/journals?all=true");
-const data = await res.json();
+        const res = await fetch("/api/journals?all=true");
+        const data = await res.json();
 
         setJournals(data.journals || []);
       } catch (err) {
@@ -76,6 +77,26 @@ const data = await res.json();
         {/* =================== 🔍 BASIC SEARCH =================== */}
         <form onSubmit={handleSearch} className="space-y-4 mb-6">
           {/* Main Search Input */}
+          
+          {/* =================== 🔘 SEARCH TYPE FILTER =================== */}
+<div className="flex flex-wrap items-center justify-start gap-6 mt-4 text-sm sm:text-base">
+  {["website", "article", "author", "journal"].map((type) => (
+    <label
+      key={type}
+      className="inline-flex items-center gap-2 cursor-pointer select-none"
+    >
+      <input
+        type="radio"
+        name="searchType"
+        value={type}
+        checked={searchType === type}
+        onChange={(e) => setSearchType(e.target.value)}
+        className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+      />
+      <span className="capitalize">{type}</span>
+    </label>
+  ))}
+</div>
           <div className="flex items-center w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm">
             <input
               type="text"
@@ -92,6 +113,7 @@ const data = await res.json();
               Search
             </button>
           </div>
+
 
           {/* Advanced Search Toggle */}
           <div className="text-right">
@@ -115,50 +137,51 @@ const data = await res.json();
           </div>
 
           {/* Advanced Search Section */}
-{showAdvanced && (
-  <div className="border border-gray-200 bg-gray-50 rounded-lg p-5 shadow-sm space-y-4 animate-fade-in">
-    {/* Journal Filter */}
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        Journal
-      </label>
-<div className="border border-gray-200 rounded-lg bg-white p-4 max-h-64 overflow-y-auto shadow-sm">
-  {journals.length === 0 ? (
-    <p className="text-gray-500 text-sm">Loading journals…</p>
-  ) : (
-    <ul className="space-y-2">
-      {journals.map((j) => (
-        <li key={j.id} className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id={`journal-${j.id}`}
-            value={j.id}
-            checked={selectedJournal.includes(String(j.id))}
-            onChange={(e) => {
-              const { checked, value } = e.target;
-              setSelectedJournal((prev) =>
-                checked ? [...prev, value] : prev.filter((v) => v !== value)
-              );
-            }}
-            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-          />
-          <label
-            htmlFor={`journal-${j.id}`}
-            className="text-sm text-gray-700 cursor-pointer select-none"
-          >
-            {j.short_name
-              ? `${j.journal_name}`
-              : j.journal_name}
-          </label>
-        </li>
-      ))}
-    </ul>
-  )}
-</div>
-
-    </div>
-  </div>
-)}
+          {showAdvanced && (
+            <div className="border border-gray-200 bg-gray-50 rounded-lg p-5 shadow-sm space-y-4 animate-fade-in">
+              {/* Journal Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Journal
+                </label>
+                <div className="border border-gray-200 rounded-lg bg-white p-4 max-h-64 overflow-y-auto shadow-sm">
+                  {journals.length === 0 ? (
+                    <p className="text-gray-500 text-sm">Loading journals…</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {journals.map((j) => (
+                        <li key={j.id} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id={`journal-${j.id}`}
+                            value={j.id}
+                            checked={selectedJournal.includes(String(j.id))}
+                            onChange={(e) => {
+                              const { checked, value } = e.target;
+                              setSelectedJournal((prev) =>
+                                checked
+                                  ? [...prev, value]
+                                  : prev.filter((v) => v !== value)
+                              );
+                            }}
+                            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                          />
+                          <label
+                            htmlFor={`journal-${j.id}`}
+                            className="text-sm text-gray-700 cursor-pointer select-none"
+                          >
+                            {j.short_name
+                              ? `${j.journal_name}`
+                              : j.journal_name}
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </form>
 
         {/* =================== 🔁 RESULTS =================== */}
