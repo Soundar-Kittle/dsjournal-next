@@ -5,9 +5,14 @@ import { FileText, Globe, User, Book, Search, SlidersHorizontal, X } from "lucid
 import Link from "next/link";
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import { useSearchParams,useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+
 
 
 export default function SearchPage() {
+    const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
   const [q, setQ] = useState("");
   const [selectedJournal, setSelectedJournal] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -15,8 +20,14 @@ export default function SearchPage() {
   const [journals, setJournals] = useState([]);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const [searchType, setSearchType] = useState(["article"]); // ✅ default checked: "article"
-
+  
+  useEffect(() => {
+   const param = searchParams.get("q") || "";
+   setQ(param);
+ }, [searchParams]);
+ 
   const typeIcons = {
     article: <FileText size={16} className="text-primary" />,
     author: <User size={16} className="text-primary" />,
@@ -54,25 +65,33 @@ export default function SearchPage() {
   }, []);
 
   // ✅ Handle Search
-  async function handleSearch(e) {
-    e.preventDefault();
-    if (!q.trim() && !selectedJournal) return;
+async function handleSearch(e) {
+  e.preventDefault();
+  if (!q.trim() && !selectedJournal) return;
 
-    setLoading(true);
-    try {
-      const url = new URL(`/api/search`, window.location.origin);
-      if (q) url.searchParams.append("q", q);
-      if (selectedJournal) url.searchParams.append("journal", selectedJournal);
+  // ✅ Update URL query param in the browser
+  const params = new URLSearchParams();
+  if (q.trim()) params.set("q", q.trim());
+  if (selectedJournal) params.set("journal", selectedJournal);
 
-      const res = await fetch(url);
-      const data = await res.json();
-      setResults(data.results || []);
-    } catch (err) {
-      console.error("Search failed:", err);
-    } finally {
-      setLoading(false);
-    }
+  router.push(`/search?${params.toString()}`); // ✅ refreshes URL but not full page
+
+  setLoading(true);
+  try {
+    const url = new URL(`/api/search`, window.location.origin);
+    if (q) url.searchParams.append("q", q);
+    if (selectedJournal) url.searchParams.append("journal", selectedJournal);
+
+    const res = await fetch(url);
+    const data = await res.json();
+    setResults(data.results || []);
+  } catch (err) {
+    console.error("Search failed:", err);
+  } finally {
+    setLoading(false);
   }
+}
+
 
   return (
     <main>
@@ -114,7 +133,7 @@ export default function SearchPage() {
               {showAdvanced ? (
                 <>
                   <X size={16} />
-                  Close Advanced Search
+                  Advanced Search
                 </>
               ) : (
                 <>
@@ -126,57 +145,106 @@ export default function SearchPage() {
           </div>
 
           {/* Advanced Search Section */}
-          {/* {showAdvanced && (
-            <div className="border border-gray-200 bg-gray-50 rounded-lg p-5 shadow-sm space-y-4 animate-fade-in">
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Journal
-                </label>
-                <div className="border border-gray-200 rounded-lg bg-white p-4 max-h-64 overflow-y-auto shadow-sm">
-                  {journals.length === 0 ? (
-                    <p className="text-gray-500 text-sm">Loading journals…</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {journals.map((j) => (
-                        <li key={j.id} className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            id={`journal-${j.id}`}
-                            value={j.id}
-                            checked={selectedJournal.includes(String(j.id))}
-                            onChange={(e) => {
-                              const { checked, value } = e.target;
-                              setSelectedJournal((prev) =>
-                                checked
-                                  ? [...prev, value]
-                                  : prev.filter((v) => v !== value)
-                              );
-                            }}
-                            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                          />
-                          <label
-                            htmlFor={`journal-${j.id}`}
-                            className="text-sm text-gray-700 cursor-pointer select-none"
-                          >
-                            {j.short_name
-                              ? `${j.journal_name}`
-                              : j.journal_name}
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            </div>
-          )} */}
+          <AnimatePresence>
+  {showAdvanced && (
+    <motion.div
+      key="advanced-search"
+      initial={{ opacity: 0, y: -20 }}   // fly-in from top
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}      // fly-out to top
+      transition={{
+        duration: 0.3,
+        ease: "easeInOut",
+      }}
+      className="border border-gray-200 bg-gray-50 rounded-lg p-5 shadow-sm space-y-6"
+    >
+      {/* ✅ Search Type Checkboxes */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Search Type
+        </label>
+        <div className="flex flex-wrap gap-6">
+          {["article", "author", "journal", "website"].map((type) => (
+            <label
+              key={type}
+              className="inline-flex items-center gap-2 cursor-pointer select-none"
+            >
+              <input
+                type="checkbox"
+                value={type}
+                checked={searchType.includes(type)}
+                onChange={(e) => {
+                  const { checked, value } = e.target;
+                  setSearchType((prev) =>
+                    checked
+                      ? [...prev, value]
+                      : prev.filter((t) => t !== value)
+                  );
+                }}
+                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+              />
+              <span className="flex items-center gap-1 capitalize">
+                {typeIcons[type]} {type}
+              </span>
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          You can select multiple types (e.g. Article + Author)
+        </p>
+      </div>
 
-          {/* Advanced Search Section */}
-          {showAdvanced && (
+      {/* ✅ Journal Filter — only show when NOT searching website */}
+      {(searchType.includes("article") ||
+        searchType.includes("author") ||
+        searchType.includes("journal")) && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Journal
+          </label>
+          <div className="border border-gray-200 rounded-lg bg-white p-4 max-h-64 overflow-y-auto shadow-sm">
+            {journals.length === 0 ? (
+              <p className="text-gray-500 text-sm">Loading journals…</p>
+            ) : (
+              <ul className="space-y-2">
+                {journals.map((j) => (
+                  <li key={j.id} className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id={`journal-${j.id}`}
+                      value={j.id}
+                      checked={selectedJournal.includes(String(j.id))}
+                      onChange={(e) => {
+                        const { checked, value } = e.target;
+                        setSelectedJournal((prev) =>
+                          checked
+                            ? [...prev, value]
+                            : prev.filter((v) => v !== value)
+                        );
+                      }}
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                    />
+                    <label
+                      htmlFor={`journal-${j.id}`}
+                      className="text-sm text-gray-700 cursor-pointer select-none"
+                    >
+                      {j.short_name || j.journal_name}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  )}
+</AnimatePresence>
+
+          {/* {showAdvanced && (
             <div className="border border-gray-200 bg-gray-50 rounded-lg p-5 shadow-sm space-y-6 animate-fade-in">
 
-              {/* ✅ Search Type Checkboxes */}
+              ✅ Search Type Checkboxes
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Search Type
@@ -212,7 +280,7 @@ export default function SearchPage() {
                 </p>
               </div>
 
-              {/* ✅ Journal Filter — only show when NOT searching website */}
+               ✅ Journal Filter — only show when NOT searching website 
               {(searchType.includes("article") ||
                 searchType.includes("author") ||
                 searchType.includes("journal")) && (
@@ -256,7 +324,7 @@ export default function SearchPage() {
                   </div>
                 )}
             </div>
-          )}
+          )} */}
         </form>
 
         {/* =================== 🔁 RESULTS =================== */}
