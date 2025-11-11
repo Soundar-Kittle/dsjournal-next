@@ -1,5 +1,20 @@
 import { createDbConnection } from "@/lib/db";
-import { cleanData } from "@/lib/utils";
+
+
+function cleanData(body) {
+  // optional simple cleaner if you used it earlier
+  return {
+    is_common: body.is_common ? 1 : 0,
+    journal_id: body.journal_id || null,
+    month_group_id: body.month_group_id || null,
+    date_mode: body.date_mode,
+    manual_date: body.manual_date || null,
+    start_date: body.start_date || null,
+    end_date: body.end_date || null,
+    permit_dates: body.permit_dates || null,
+    is_active: body.is_active ? 1 : 0,
+  };
+}
 
 /* -------------------------- CREATE (POST) -------------------------- */
 export async function POST(req) {
@@ -10,34 +25,34 @@ export async function POST(req) {
     const body = await req.json();
     const cleanedData = cleanData(body);
 
-    console.log(req.body);
-
     const [result] = await connection.query(
       `INSERT INTO call_for_papers 
-        (is_common, journal_id, date_mode, manual_date, start_date, end_date, permit_dates, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        (is_common, journal_id, month_group_id, date_mode, manual_date, start_date, end_date, permit_dates, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        cleanedData.is_common == "1" ? 1 : 0,
-        cleanedData.is_common == "1" ? null : cleanedData.journal_id || null,
+        cleanedData.is_common,
+        cleanedData.is_common ? null : cleanedData.journal_id,
+        cleanedData.is_common ? null : cleanedData.month_group_id, // ✅ added this
         cleanedData.date_mode,
-        cleanedData.manual_date || null,
-        cleanedData.start_date || null,
-        cleanedData.end_date || null,
-        cleanedData.permit_dates || null,
-        cleanedData.is_active == "0" ? 0 : 1,
+        cleanedData.manual_date,
+        cleanedData.start_date,
+        cleanedData.end_date,
+        cleanedData.permit_dates,
+        cleanedData.is_active,
       ]
     );
 
     await connection.commit();
+
     return Response.json(
-      { message: "Call for Paper added successfully", id: result.insertId },
+      { success: true, message: "Call for Paper added successfully", id: result.insertId },
       { status: 201 }
     );
   } catch (error) {
     await connection.rollback();
     console.error("❌ Add Call for Paper Error:", error);
     return Response.json(
-      { error: "Failed to add Call for Paper", details: error.message },
+      { success: false, message: "Failed to add Call for Paper", details: error.message },
       { status: 500 }
     );
   } finally {
@@ -178,6 +193,7 @@ export async function PATCH(req) {
        SET 
          is_common = ?, 
          journal_id = ?, 
+         month_group_id = ?,     -- ✅ added here
          date_mode = ?, 
          manual_date = ?, 
          start_date = ?, 
@@ -186,35 +202,37 @@ export async function PATCH(req) {
          is_active = ?
        WHERE id = ?`,
       [
-        cleanedData.is_common == "1" ? 1 : 0,
-        cleanedData.is_common == "1" ? null : cleanedData.journal_id || null,
+        cleanedData.is_common,
+        cleanedData.is_common ? null : cleanedData.journal_id,
+        cleanedData.is_common ? null : cleanedData.month_group_id, // ✅ handled null if common
         cleanedData.date_mode,
-        cleanedData.manual_date || null,
-        cleanedData.start_date || null,
-        cleanedData.end_date || null,
-        cleanedData.permit_dates || null,
-        cleanedData.is_active == "0" ? 0 : 1,
+        cleanedData.manual_date,
+        cleanedData.start_date,
+        cleanedData.end_date,
+        cleanedData.permit_dates,
+        cleanedData.is_active,
         cleanedData.id,
       ]
     );
 
     await connection.commit();
+
     return Response.json(
-      { message: "Call for Paper updated successfully" },
+      { success: true, message: "Call for Paper updated successfully" },
       { status: 200 }
     );
+
   } catch (error) {
     await connection.rollback();
     console.error("❌ Update Call for Paper Error:", error);
     return Response.json(
-      { error: "Failed to update Call for Paper" },
+      { success: false, error: "Failed to update Call for Paper", details: error.message },
       { status: 500 }
     );
   } finally {
     await connection.end();
   }
 }
-
 /* -------------------------- DELETE -------------------------- */
 export async function DELETE(req) {
   const { id } = await req.json();

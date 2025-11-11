@@ -1688,20 +1688,22 @@ const [monthForm, setMonthForm] = useState({
     }
   };
 
-  const handleMonthSubmit = async () => {
-    const { journal_id, issue_id, from_month } = monthForm;
-    if (!journal_id || !issue_id || !from_month) return toast.error("Journal, issue, and from month are required");
-    try {
-      const res = await axios.post("/api/month-groups", monthForm);
-      toast.success(res.data.message);
-      setMonthForm({ journal_id: "", issue_id: "", from_month: "", to_month: "" });
-      if (summaryJournalId && String(summaryJournalId) === String(journal_id)) {
-        await loadJournalSummary(summaryJournalId);
-      }
-    } catch {
-      toast.error("Failed to add month");
+const handleMonthSubmit = async () => {
+const { journal_id, volume_id, issue_id, from_month } = monthForm;
+if (!journal_id || !volume_id || !issue_id || !from_month)
+    return toast.error("Journal, issue, and from month are required");
+  try {
+    const res = await axios.post("/api/month-groups", monthForm);
+    toast.success(res.data.message);
+    setMonthForm({ journal_id: "", issue_id: "", from_month: "", to_month: "" });
+    if (summaryJournalId && String(summaryJournalId) === String(journal_id)) {
+      await loadJournalSummary(summaryJournalId);
     }
-  };
+  } catch {
+    toast.error("Failed to add month");
+  }
+};
+
 
   const handleSave = async () => {
     try {
@@ -2011,31 +2013,31 @@ const [monthForm, setMonthForm] = useState({
       </select>
 
       {/* From/To months */}
-      <select
-        className="border p-2 w-full"
-        value={monthForm.from_month}
-        onChange={(e) => setMonthForm({ ...monthForm, from_month: e.target.value })}
-      >
-        <option value="">Select From Month</option>
-        {monthOptions.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+<select
+  className="border p-2 w-full"
+  value={monthForm.from_month}
+  onChange={(e) => setMonthForm({ ...monthForm, from_month: e.target.value })}
+>
+  <option value="">Select From Month</option>
+  {monthOptions.map((m, i) => (
+    <option key={i + 1} value={i + 1}>
+      {m}
+    </option>
+  ))}
+</select>
 
-      <select
-        className="border p-2 w-full"
-        value={monthForm.to_month}
-        onChange={(e) => setMonthForm({ ...monthForm, to_month: e.target.value })}
-      >
-        <option value="">Select To Month (optional)</option>
-        {monthOptions.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+<select
+  className="border p-2 w-full"
+  value={monthForm.to_month}
+  onChange={(e) => setMonthForm({ ...monthForm, to_month: e.target.value })}
+>
+  <option value="">Select To Month (optional)</option>
+  {monthOptions.map((m, i) => (
+    <option key={i + 1} value={i + 1}>
+      {m}
+    </option>
+  ))}
+</select>
 
       <Button onClick={handleMonthSubmit}>Add Month</Button>
     </CardContent>

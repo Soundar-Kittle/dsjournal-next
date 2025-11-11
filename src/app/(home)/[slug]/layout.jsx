@@ -105,7 +105,7 @@
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import SideMenu from "@/components/Home/SideMenu";
-import { getJournalBySlug } from "@/utils/jounals";
+import { getJournalBySlug } from "@/utils/journals";
 
 export default async function JournalDetailLayout({ params, children }) {
   const param = await params;

@@ -5,7 +5,7 @@ import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import JournalCard from "@/components/Home/Journals/JournalCard";
-import { getJournals } from "@/utils/jounals";
+import { getJournals } from "@/utils/journals";
 import { Search } from "lucide-react";
 
 // SEO Metadata

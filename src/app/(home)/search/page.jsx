@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, SlidersHorizontal, FileText, X } from "lucide-react";
+import { FileText, Globe, User, Book, Search, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+
 
 export default function SearchPage() {
   const [q, setQ] = useState("");
@@ -14,13 +15,21 @@ export default function SearchPage() {
   const [journals, setJournals] = useState([]);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchType, setSearchType] = useState(["article"]); // ✅ default checked: "article"
+
+  const typeIcons = {
+    article: <FileText size={16} className="text-primary" />,
+    author: <User size={16} className="text-primary" />,
+    journal: <Book size={16} className="text-primary" />,
+    website: <Globe size={16} className="text-primary" />,
+  };
 
   // ✅ Fetch all journals
   useEffect(() => {
     async function fetchJournals() {
       try {
-     const res = await fetch("/api/journals?all=true");
-const data = await res.json();
+        const res = await fetch("/api/journals?all=true");
+        const data = await res.json();
 
         setJournals(data.journals || []);
       } catch (err) {
@@ -76,6 +85,7 @@ const data = await res.json();
         {/* =================== 🔍 BASIC SEARCH =================== */}
         <form onSubmit={handleSearch} className="space-y-4 mb-6">
           {/* Main Search Input */}
+
           <div className="flex items-center w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm">
             <input
               type="text"
@@ -92,6 +102,7 @@ const data = await res.json();
               Search
             </button>
           </div>
+
 
           {/* Advanced Search Toggle */}
           <div className="text-right">
@@ -115,57 +126,143 @@ const data = await res.json();
           </div>
 
           {/* Advanced Search Section */}
-{showAdvanced && (
-  <div className="border border-gray-200 bg-gray-50 rounded-lg p-5 shadow-sm space-y-4 animate-fade-in">
-    {/* Journal Filter */}
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        Journal
-      </label>
-<div className="border border-gray-200 rounded-lg bg-white p-4 max-h-64 overflow-y-auto shadow-sm">
-  {journals.length === 0 ? (
-    <p className="text-gray-500 text-sm">Loading journals…</p>
-  ) : (
-    <ul className="space-y-2">
-      {journals.map((j) => (
-        <li key={j.id} className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id={`journal-${j.id}`}
-            value={j.id}
-            checked={selectedJournal.includes(String(j.id))}
-            onChange={(e) => {
-              const { checked, value } = e.target;
-              setSelectedJournal((prev) =>
-                checked ? [...prev, value] : prev.filter((v) => v !== value)
-              );
-            }}
-            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-          />
-          <label
-            htmlFor={`journal-${j.id}`}
-            className="text-sm text-gray-700 cursor-pointer select-none"
-          >
-            {j.short_name
-              ? `${j.journal_name}`
-              : j.journal_name}
-          </label>
-        </li>
-      ))}
-    </ul>
-  )}
-</div>
+          {/* {showAdvanced && (
+            <div className="border border-gray-200 bg-gray-50 rounded-lg p-5 shadow-sm space-y-4 animate-fade-in">
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Journal
+                </label>
+                <div className="border border-gray-200 rounded-lg bg-white p-4 max-h-64 overflow-y-auto shadow-sm">
+                  {journals.length === 0 ? (
+                    <p className="text-gray-500 text-sm">Loading journals…</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {journals.map((j) => (
+                        <li key={j.id} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id={`journal-${j.id}`}
+                            value={j.id}
+                            checked={selectedJournal.includes(String(j.id))}
+                            onChange={(e) => {
+                              const { checked, value } = e.target;
+                              setSelectedJournal((prev) =>
+                                checked
+                                  ? [...prev, value]
+                                  : prev.filter((v) => v !== value)
+                              );
+                            }}
+                            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                          />
+                          <label
+                            htmlFor={`journal-${j.id}`}
+                            className="text-sm text-gray-700 cursor-pointer select-none"
+                          >
+                            {j.short_name
+                              ? `${j.journal_name}`
+                              : j.journal_name}
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          )} */}
 
-    </div>
-  </div>
-)}
+          {/* Advanced Search Section */}
+          {showAdvanced && (
+            <div className="border border-gray-200 bg-gray-50 rounded-lg p-5 shadow-sm space-y-6 animate-fade-in">
+
+              {/* ✅ Search Type Checkboxes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search Type
+                </label>
+                <div className="flex flex-wrap gap-6">
+                  {["article", "author", "journal", "website"].map((type) => (
+                    <label
+                      key={type}
+                      className="inline-flex items-center gap-2 cursor-pointer select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        value={type}
+                        checked={searchType.includes(type)}
+                        onChange={(e) => {
+                          const { checked, value } = e.target;
+                          setSearchType((prev) =>
+                            checked
+                              ? [...prev, value]
+                              : prev.filter((t) => t !== value)
+                          );
+                        }}
+                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                      />
+                      <span className="flex items-center gap-1 capitalize">
+                        {typeIcons[type]} {type}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  You can select multiple types (e.g. Article + Author)
+                </p>
+              </div>
+
+              {/* ✅ Journal Filter — only show when NOT searching website */}
+              {(searchType.includes("article") ||
+                searchType.includes("author") ||
+                searchType.includes("journal")) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Journal
+                    </label>
+                    <div className="border border-gray-200 rounded-lg bg-white p-4 max-h-64 overflow-y-auto shadow-sm">
+                      {journals.length === 0 ? (
+                        <p className="text-gray-500 text-sm">Loading journals…</p>
+                      ) : (
+                        <ul className="space-y-2">
+                          {journals.map((j) => (
+                            <li key={j.id} className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                id={`journal-${j.id}`}
+                                value={j.id}
+                                checked={selectedJournal.includes(String(j.id))}
+                                onChange={(e) => {
+                                  const { checked, value } = e.target;
+                                  setSelectedJournal((prev) =>
+                                    checked
+                                      ? [...prev, value]
+                                      : prev.filter((v) => v !== value)
+                                  );
+                                }}
+                                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                              />
+                              <label
+                                htmlFor={`journal-${j.id}`}
+                                className="text-sm text-gray-700 cursor-pointer select-none"
+                              >
+                                {j.short_name || j.journal_name}
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
+            </div>
+          )}
         </form>
 
         {/* =================== 🔁 RESULTS =================== */}
         {loading && (
           <p className="text-center text-gray-500 animate-pulse">Searching…</p>
         )}
-
         {!loading && q && (
           <div className="mt-6">
             <h2 className="text-lg font-semibold mb-4">
@@ -176,30 +273,57 @@ const data = await res.json();
               <p className="text-gray-500">No results found.</p>
             ) : (
               <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {results.map((item) => (
-                  <Link
-                    key={item.article_id}
-                    href={`/article/${item.article_id}`}
-                    className="border border-gray-200 rounded-xl p-4 hover:shadow-lg transition bg-white group"
-                  >
-                    <div className="flex items-start gap-3 mb-2">
-                      <FileText
-                        size={22}
-                        className="text-primary shrink-0 mt-1"
-                      />
-                      <h3 className="font-medium text-gray-800 group-hover:text-primary line-clamp-2">
-                        {item.article_title}
-                      </h3>
-                    </div>
-                    <p className="text-xs text-gray-500 mb-1">
-                      {item.journal_name}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Vol {item.volume_number} | Issue {item.issue_number} |{" "}
-                      {item.year}
-                    </p>
-                  </Link>
-                ))}
+                {results.map((item) => {
+                  // 🧩 Determine icon, link, and label based on type
+                  let icon, href, subtitle;
+
+                  switch (item.type) {
+                    case "article":
+                      icon = <FileText size={22} className="text-primary shrink-0 mt-1" />;
+                      href = `/article/${item.article_id ?? item.id}`;
+                      subtitle = "Article";
+                      break;
+
+                    case "journal":
+                      icon = <Book size={22} className="text-blue-600 shrink-0 mt-1" />;
+                      href = `/journal/${item.short_name ?? item.id}`;
+                      subtitle = "Journal";
+                      break;
+
+                    case "page":
+                      icon = <Globe size={22} className="text-green-600 shrink-0 mt-1" />;
+                      href = `${item.slug ?? item.title}`;
+                      subtitle = "Website Page";
+                      break;
+
+                    case "static":
+                      icon = <Globe size={22} className="text-orange-600 shrink-0 mt-1" />;
+                      href = `/${item.slug ?? item.title.toLowerCase().replace(/\s+/g, "-")}`;
+                      subtitle = "Static Page";
+                      break;
+
+                    default:
+                      icon = <FileText size={22} className="text-gray-500 shrink-0 mt-1" />;
+                      href = "#";
+                      subtitle = "Other";
+                  }
+
+                  return (
+                    <Link
+                      key={`${item.type}-${item.id ?? item.slug ?? item.title}`}
+                      href={href}
+                      className="border border-gray-200 rounded-xl p-4 hover:shadow-lg transition bg-white group"
+                    >
+                      <div className="flex items-start gap-3 mb-2">
+                        {icon}
+                        <h3 className="font-medium text-gray-800 group-hover:text-primary line-clamp-2">
+                          {item.title}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-gray-500">{subtitle}</p>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
