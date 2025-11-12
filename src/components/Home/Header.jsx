@@ -51,7 +51,7 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-100 bg-[#f4f8fa] xxl:bg-white py-5 px-3"
+      className="satic top-0 z-100 bg-[#f4f8fa] xxl:bg-white py-5 px-3"
       onMouseLeave={() => setDesktopSearchOpen(false)}
     >
       <div>
@@ -122,7 +122,7 @@ export default function Header() {
             <button
               aria-label="Search"
               onClick={() => setMobileSearchOpen((v) => !v)}
-              className="p-2"
+              className="p-2 cursor-pointer"
             >
               <SearchIcon className="h-5 w-5" />
             </button>
@@ -138,7 +138,7 @@ export default function Header() {
               )}
             </button>
             {mobileSearchOpen && (
-              <div className="absolute right-0 top-full mt-2 w-[320px] bg-secondary text-white rounded-md shadow-lg p-3">
+              <div className="absolute right-0 top-full mt-2 w-[300px] bg-secondary text-white rounded-md shadow-lg p-3 z-100">
                 <form onSubmit={onSearchSubmit} className="relative">
                   <input
                     name="q"
@@ -161,7 +161,7 @@ export default function Header() {
 
       {/* Mobile menu panel (unchanged) */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white absolute left-0 top-full w-full">
+        <div className="md:hidden border-t border-slate-200 bg-white absolute left-0 top-full w-full shadow-md">
           <div className="max-w-7xl px-4 py-3">
             <nav className="flex flex-col  w-full gap-2 text-sm">
               {NAV.map((item) => (
@@ -169,9 +169,7 @@ export default function Header() {
                   key={item.href}
                   href={item.href}
                   prefetch={false}
-                  className={`rounded px-3 py-2 ${linkCls(
-                    item.href
-                  )} hover:bg-slate-50`}
+                  className={`rounded px-3 py-2 hover:text-primary relative transition duration-300 text-base`}
                   onClick={() => setMobileOpen(false)}
                 >
                   {item.label}

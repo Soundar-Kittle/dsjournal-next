@@ -1,14 +1,5 @@
 import { createDbConnection } from "@/lib/db";
 
-function slugFromShortName(s) {
-  if (!s) return null;
-  return s
-    .replace(/^DS-?/i, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 export async function getJournalBySlug(slug) {
   if (!slug) return null;
 
@@ -83,45 +74,6 @@ export async function getJournals(q) {
   }
 }
 
-// export async function getJournals(q) {
-//   const connection = await createDbConnection();
-//   try {
-//     let sql = `
-//       SELECT * FROM journals
-//       WHERE is_active = 1
-//     `;
-//     const params = [];
-
-//     if (q) {
-//       sql += `
-//         AND (
-//           journal_name LIKE ? 
-//           OR issn_print LIKE ? 
-//           OR issn_online LIKE ?
-//         )
-//       `;
-//       const like = `%${q}%`;
-//       params.push(like, like, like);
-//     }
-
-//     sql += ` ORDER BY sort_index ASC`;
-
-//     const [rows] = await connection.execute(sql, params);
-
-//     return rows.map((r) => ({
-//       id: Number(r.id),
-//       name: String(r.journal_name ?? ""),
-//       slug: r.slug
-//         ? String(r.slug).toLowerCase()
-//         : slugFromShortName(r.short_name) ?? String(r.id),
-//       cover_image: r.cover_image,
-//       issn_print: r.issn_print,
-//       issn_online: r.issn_online,
-//     }));
-//   } finally {
-//     await connection.end();
-//   }
-// }
 
 export async function getMonthGroupsBySlug(slug) {
   if (!slug) return { grouped: [], currentIssue: null };

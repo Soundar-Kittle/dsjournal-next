@@ -2,10 +2,10 @@ import { getEditorialBoardBySlug } from "@/utils/editorialBoard";
 import { getJournalBySlug } from "@/utils/journals";
 import { getJournalPageByTitle } from "@/utils/journalPage";
 
-
 /* ---------------- SEO METADATA ---------------- */
 export async function generateMetadata({ params }) {
-  const slug = params.slug?.toLowerCase();
+  const param = await params;
+  const slug = param.slug?.toLowerCase();
   const baseUrl = process.env.BASE_URL;
   const journal = await getJournalBySlug(slug);
 
@@ -69,7 +69,8 @@ export async function generateMetadata({ params }) {
 
 /* ---------------- PAGE COMPONENT ---------------- */
 export default async function Page({ params }) {
-  const slug = params.slug?.toLowerCase();
+  const param = await params;
+  const slug = param.slug?.toLowerCase();
   const journal = await getJournalBySlug(slug);
 
   if (!journal) {
@@ -101,10 +102,14 @@ export default async function Page({ params }) {
 
   const addressHTML = editor?.has_address
     ? editor.address.replace(/<\/?strong>/g, "")
-    : `<p>${[editor?.department, editor?.university, editor?.state, editor?.country]
+    : `<p>${[
+        editor?.department,
+        editor?.university,
+        editor?.state,
+        editor?.country,
+      ]
         .filter(Boolean)
         .join(", ")}.</p>`;
-
 
   return (
     <div>
@@ -140,30 +145,38 @@ export default async function Page({ params }) {
                         <span className="text-gray-500">&nbsp;</span> // empty placeholder
                       )} */}
                       {editor ? (
-                          <>
-                            <span>{editor.name}</span>
-                            <div dangerouslySetInnerHTML={{ __html: addressHTML }} />
-                          </>
-                        ) : (
-                          <span className="text-gray-500">&nbsp;</span> // empty placeholder
-                        )}
+                        <>
+                          <span>{editor.name}</span>
+                          <div
+                            dangerouslySetInnerHTML={{ __html: addressHTML }}
+                          />
+                        </>
+                      ) : (
+                        <span className="text-gray-500">&nbsp;</span> // empty placeholder
+                      )}
                     </td>
                   </tr>
                 )}
 
                 {/* ISSN fields (show only when valid) */}
-                {(journal.issn_online && journal.issn_online.toLowerCase() !== "null") && (
-                  <tr>
-                    <td className="font-semibold pr-4 text-[#222]">ISSN (Online)</td>
-                    <td>{journal.issn_online}</td>
-                  </tr>
-                )}
-                {(journal.issn_print && journal.issn_print.toLowerCase() !== "null") && (
-                  <tr>
-                    <td className="font-semibold pr-4 text-[#222]">ISSN (Print)</td>
-                    <td>{journal.issn_print}</td>
-                  </tr>
-                )}
+                {journal.issn_online &&
+                  journal.issn_online.toLowerCase() !== "null" && (
+                    <tr>
+                      <td className="font-semibold pr-4 text-[#222]">
+                        ISSN (Online)
+                      </td>
+                      <td>{journal.issn_online}</td>
+                    </tr>
+                  )}
+                {journal.issn_print &&
+                  journal.issn_print.toLowerCase() !== "null" && (
+                    <tr>
+                      <td className="font-semibold pr-4 text-[#222]">
+                        ISSN (Print)
+                      </td>
+                      <td>{journal.issn_print}</td>
+                    </tr>
+                  )}
 
                 {journal.subject && (
                   <tr>
@@ -173,13 +186,17 @@ export default async function Page({ params }) {
                 )}
                 {journal.year_started && (
                   <tr>
-                    <td className="font-semibold pr-4 text-[#222]">Year of Starting</td>
+                    <td className="font-semibold pr-4 text-[#222]">
+                      Year of Starting
+                    </td>
                     <td>{journal.year_started}</td>
                   </tr>
                 )}
                 {journal.publication_frequency && (
                   <tr>
-                    <td className="font-semibold pr-4 text-[#222]">Publication Frequency</td>
+                    <td className="font-semibold pr-4 text-[#222]">
+                      Publication Frequency
+                    </td>
                     <td>{journal.publication_frequency}</td>
                   </tr>
                 )}
@@ -191,25 +208,33 @@ export default async function Page({ params }) {
                 )}
                 {journal.paper_submission_id && (
                   <tr>
-                    <td className="font-semibold pr-4 text-[#222]">Paper Submission ID</td>
+                    <td className="font-semibold pr-4 text-[#222]">
+                      Paper Submission ID
+                    </td>
                     <td className="break-all">{journal.paper_submission_id}</td>
                   </tr>
                 )}
                 {journal.format && (
                   <tr>
-                    <td className="font-semibold pr-4 text-[#222]">Format of Publication</td>
+                    <td className="font-semibold pr-4 text-[#222]">
+                      Format of Publication
+                    </td>
                     <td>{journal.format}</td>
                   </tr>
                 )}
                 {journal.publication_fee && (
                   <tr>
-                    <td className="font-semibold pr-4 text-[#222]">Publication Fee</td>
+                    <td className="font-semibold pr-4 text-[#222]">
+                      Publication Fee
+                    </td>
                     <td>{journal.publication_fee}</td>
                   </tr>
                 )}
                 {journal.publisher && (
                   <tr>
-                    <td className="font-semibold pr-4 text-[#222]">Publisher</td>
+                    <td className="font-semibold pr-4 text-[#222]">
+                      Publisher
+                    </td>
                     <td>{journal.publisher}</td>
                   </tr>
                 )}

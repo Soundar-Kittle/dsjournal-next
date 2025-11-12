@@ -120,7 +120,7 @@
   --color-light-blue: var(--light-blue);
   --color-blue: var(--bread-link);
   --breakpoint-xxl: 1400px;
-  --container-8xl : 1400px;
+  --container-8xl: 1400px;
 }
 
 @layer base {

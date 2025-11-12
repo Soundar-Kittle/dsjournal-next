@@ -1,9 +1,9 @@
-import ManageBanner from "@/components/Dashboard/Meta/ManageMeta";
+import ManageMeta from "@/components/Dashboard/Meta/ManageMeta";
 
 const page = () => {
   return (
     <div>
-      <ManageBanner />
+      <ManageMeta />
     </div>
   );
 };

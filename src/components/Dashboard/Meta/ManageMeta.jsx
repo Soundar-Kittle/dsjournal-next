@@ -18,8 +18,13 @@ const ManageMeta = () => {
         columnHelper.accessor("reference_type", { header: "Reference Type" }),
         columnHelper.accessor("reference_id", {
           header: "Reference Page",
-          cell: (info) =>
-            sitemaps?.rows.find((s) => s.value === info.getValue())?.label || "N/A",
+          cell: (info) => {
+            return sitemaps?.rows && sitemaps?.rows.length > 0
+              ? sitemaps?.rows?.find((s) => {
+                  return s.url === info.getValue();
+                })?.label
+              : "N/A";
+          },
         }),
       ],
     },

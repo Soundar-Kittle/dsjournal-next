@@ -180,7 +180,10 @@ const AddMeta = ({ type = "add", editData = {}, onClose }) => {
 
   // Watch reference_type to decide options for reference_id
   const refType = useWatch({ control, name: "reference_type" });
-  const referenceOptions = refType === "page" ? sitemap?.rows || [] : [];
+  const referenceOptions =
+    refType === "page"
+      ? sitemap?.rows?.map((s) => ({ value: s.url, label: s.label })) || []
+      : [];
 
   // Mutation
   const mutation = useApiMutation({
@@ -246,7 +249,7 @@ const AddMeta = ({ type = "add", editData = {}, onClose }) => {
                 placeholder="Select type"
                 options={[
                   { label: "Static Page", value: "page" },
-                  // { label: "Journal", value: "journal" },
+                  { label: "Journal", value: "journal" },
                 ]}
                 onValueChange={field.onChange}
                 error={errors.reference_type?.message}
@@ -269,6 +272,7 @@ const AddMeta = ({ type = "add", editData = {}, onClose }) => {
                 error={errors.reference_id?.message}
                 required
                 disabled={!refType}
+                searchable={true}
               />
             )}
           />

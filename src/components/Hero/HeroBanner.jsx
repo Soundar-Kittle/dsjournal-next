@@ -50,11 +50,15 @@ const HeroBanner = ({ data }) => {
             const marginSide = getTextAlign(slide.alignment);
             const visibility = slide.visibility || {};
 
+            const imageSrc = slide.image?.startsWith("/")
+              ? slide.image.slice(1)
+              : slide.image;
+
             return (
               <CarouselItem key={i} className="w-full h-full">
                 <div className="relative h-full w-full py-15">
                   <Image
-                    src={`${slide.image}`}
+                    src={`/${imageSrc}`}
                     alt={slide.title}
                     fill
                     className="object-cover"
