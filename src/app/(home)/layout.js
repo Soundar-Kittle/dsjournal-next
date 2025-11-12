@@ -7,11 +7,11 @@ import RouteProgress from "@/components/ui/RouteProgress";
 export default function RootLayout({ children }) {
   return (
     <div className="bg-[#f8f9fa]">
-      <div className="bg-white max-w-8xl mx-auto flex flex-col min-h-screen">
+      <div className="relative bg-white max-w-8xl mx-auto flex flex-col min-h-screen">
         {/* <RouteProgress /> */}
         <Header />
         {/* <PageTransition> */}
-          <main className="flex-grow">{children}</main>
+          <main className="flex-grow overflow-x-hidden">{children}</main>
         {/* </PageTransition> */}
         <Footer />
       </div>
