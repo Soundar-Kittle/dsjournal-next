@@ -20,6 +20,31 @@ export default async function Page({ params }) {
     return <p>No articles found.</p>;
   }
 
+    // 👤 Normalize authors, keywords, references
+const parseList = (v) => {
+  if (!v) return [];
+
+  try {
+    if (Array.isArray(v)) return v;
+    const parsed = JSON.parse(v);
+    if (Array.isArray(parsed)) return parsed;
+    if (typeof parsed === "string") v = parsed;
+  } catch {
+    // ignore JSON errors
+  }
+
+  return String(v)
+    .trim()
+    .replace(/^"+|"+$/g, "")    // remove leading/trailing double quotes
+    .replace(/^'+|'+$/g, "")    // remove leading/trailing single quotes
+    .replace(/^\[|\]$/g, "")    // remove [ ]
+    .replace(/['"]+/g, "")      // remove any remaining quotes inside
+    .split(/[,;]\s*/)           // split by comma or semicolon
+    .map((s) => s.trim())
+    .filter(Boolean);
+};
+
+
   const { volume, issue, months, year } = articles[0];
 
   return (
@@ -30,7 +55,9 @@ export default async function Page({ params }) {
       </h3>
 
       <div className="space-y-4">
-        {articles.map((a) => (
+        {articles.map((a) => {
+ const authors = parseList(a.authors); // ✅ parse once
+            return (
           <div
             key={a.articleId}
             className="rounded border-b p-4 shadow border-[#bbb]"
@@ -46,11 +73,14 @@ export default async function Page({ params }) {
             >
               {a.title}
             </Link>
-            {a.authors?.length > 0 && (
-              <p className="text-sm text-black mb-2">{a.authors.join(", ")}</p>
-            )}
+         {parseList(a.authors)?.length > 0 && (
+  <p className="text-sm text-black mb-2">
+    {parseList(a.authors).join(", ")}
+  </p>
+)}
           </div>
-        ))}
+        )
+        })}
       </div>
     </div>
   );
