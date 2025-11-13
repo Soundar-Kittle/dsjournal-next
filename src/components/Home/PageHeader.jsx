@@ -48,7 +48,7 @@ const PageHeader = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeInOut" }}
         className={`absolute top-1/2 left-1/2 -translate-1/2 w-full px-10 max-sm:px-5
-              ${size ? size : "text-2xl"}
+              ${size ? size : "text-2xl sm:text-3xl  md:text-4xl lg:text-5xl "}
              font-semibold text-center z-10 `}
       >
         {title}

@@ -1,5 +1,5 @@
+import { getSitemapArticles } from "@/utils/getSitemapArticles";
 import { getStaticRoutes } from "@/utils/getStaticRoutes";
-import { getJournals } from "@/utils/journals";
 
 export default async function sitemap() {
   const baseUrl =
@@ -14,20 +14,13 @@ export default async function sitemap() {
     priority: url === "/" ? 1.0 : 0.7,
   }));
 
-  // const journals = await getJournals();
+  const articles = await getSitemapArticles();
+  const articleEntries = articles.map((a) => ({
+    url: `${baseUrl}/${a.journal_slug}/${a.article_id}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
 
-  // const journalsEntries = journals.map((s) => ({
-  //   url: `${baseUrl}/${s.slug}`,
-  //   lastModified: new Date().toISOString(),
-  //   changeFrequency: "weekly",
-  //   priority: 0.8,
-  // }));
-
-  return [
-    ...staticEntries,
-    {
-      url: `${baseUrl}/journals/sitemap.xml`,
-      lastModified: new Date().toISOString(),
-    },
-  ];
+  return [...staticEntries, ...articleEntries];
 }

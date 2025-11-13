@@ -51,7 +51,7 @@ export default function Header() {
 
   return (
     <header
-      className="satic top-0 z-100 bg-[#f4f8fa] xxl:bg-white py-5 px-3"
+      className="sticky top-0 z-100 bg-[#f4f8fa] xxl:bg-white py-5 px-3"
       onMouseLeave={() => setDesktopSearchOpen(false)}
     >
       <div>

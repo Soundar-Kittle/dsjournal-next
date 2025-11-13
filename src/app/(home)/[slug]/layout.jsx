@@ -61,7 +61,7 @@ export default async function JournalDetailLayout({ params, children }) {
     <main>
       <header>
         <PageHeader
-          size=""
+          size="text-2xl"
           title={`${journal?.journal_name} (${shortNameFull})`}
           image={journal?.banner_image}
           overlayOpacity="10"
