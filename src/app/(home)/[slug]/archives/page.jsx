@@ -5,7 +5,7 @@ import ContentAccordian from "@/components/ui/ContentAccordian";
 const Page = async ({ params }) => {
   const { slug } = await params;
   const monthGroups = await getMonthGroupsBySlug(slug);
-  console.log("monthGroups --->", monthGroups);
+
   const formattedData = monthGroups.grouped.map((group) => ({
     t: group.year,
     c: [

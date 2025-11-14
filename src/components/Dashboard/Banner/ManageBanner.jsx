@@ -4,7 +4,6 @@ import { Button, DataTable, Input } from "@/components/ui";
 
 import { AddBanner } from "./AddBanner";
 import { banners } from "@/services";
-import { linkOptions } from "@/@data/data";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
@@ -52,23 +51,16 @@ const ManageBanner = () => {
             const value = info.getValue();
             if (!value) return "N/A";
 
-            const match = linkOptions.find((opt) => opt.value === value);
-
-            if (!match) return value;
-
-            if (match.type === "link") {
-              return (
-                <Link
-                  href={`/${value}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-primary underline"
-                >
-                  View
-                </Link>
-              );
-            }
-            return <span className="text-gray-500">{match.label}</span>;
+            return (
+              <Link
+                href={`/${value}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary underline"
+              >
+                View
+              </Link>
+            );
           },
         }),
         columnHelper.accessor("button_name", {

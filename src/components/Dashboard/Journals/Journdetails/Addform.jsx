@@ -1005,6 +1005,7 @@ export default function Addform({ editData = null, onSuccess }) {
 
       <Input
         label="Short Name"
+        className="uppercase"
         placeholder="Enter Short Name"
         error={errors.short_name?.message}
         {...register("short_name")}

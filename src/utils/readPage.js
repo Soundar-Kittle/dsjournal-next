@@ -2,11 +2,6 @@ import fs from "fs";
 import path from "path";
 import { createDbConnection } from "@/lib/db";
 
-/**
- * Reads content either from DB (journal_pages) or static page file
- * @param {string} slug - example: 'about', 'editorial-board'
- * @param {number|null} journalId - optional for multi-journal system
- */
 export async function readPage(slug, journalId = null) {
   const connection = await createDbConnection();
   try {

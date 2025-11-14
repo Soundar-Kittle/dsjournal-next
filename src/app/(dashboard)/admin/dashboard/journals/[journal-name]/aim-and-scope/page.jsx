@@ -7,8 +7,6 @@ const page = async ({ searchParams }) => {
   const page = "aim_and_scope";
   const data = await getJournalPageByTitle(jid, page);
 
-  console.log(data);
-
   return (
     <AddJournalPage
       journal_id={jid}

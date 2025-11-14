@@ -101,8 +101,6 @@
 //   );
 // }
 
-
-
 //     // ── Volume / Issue consistency
 //     const [[volRow]] = await conn.query(
 //       "SELECT volume_number FROM volumes WHERE id = ? LIMIT 1",
@@ -461,25 +459,25 @@
 //   const journal_id = searchParams.get("journal_id");
 //   const checkTitle = searchParams.get("checkTitle");
 //   const title = searchParams.get("title");
-  
+
 //   // new filters
 //   const query = searchParams.get("query")?.toLowerCase() || "";
 //   const volume = searchParams.get("volume");
 //   const issue = searchParams.get("issue");
 //   const year = searchParams.get("year");
-  
+
 //   const page = parseInt(searchParams.get("page") || "1", 10);
 //   const limit = parseInt(searchParams.get("limit") || "0", 10); // 0 = no pagination
 
 //   const conn = await createDbConnection();
-  
+
 //   try {
 //     // ✅ title duplicate check
 //     if (checkTitle && journal_id && title) {
 //       const [rows] = await conn.query(
-//         `SELECT id 
-//          FROM articles 
-//          WHERE journal_id = ? 
+//         `SELECT id
+//          FROM articles
+//          WHERE journal_id = ?
 //          AND LOWER(TRIM(article_title)) = LOWER(TRIM(?))
 //          LIMIT 1`,
 //         [journal_id, title]
@@ -491,9 +489,9 @@
 //     if (id || article_id) {
 //       const where = id ? "a.id = ?" : "a.article_id = ?";
 //       const val = id ? Number(id) : article_id;
-      
+
 //       const [rows] = await conn.query(
-//         `SELECT 
+//         `SELECT
 //         a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
 //           a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
 //           a.authors, a.abstract, a.keywords, a.\`references\`,
@@ -524,12 +522,12 @@
 //     // ✅ multiple articles with optional filters + pagination
 //     let baseWhere = "WHERE 1=1";
 //     const params = [];
-    
+
 //     if (journal_id) {
 //       baseWhere += " AND a.journal_id = ?";
 //       params.push(journal_id);
 //     }
-    
+
 //     if (query) {
 //       baseWhere += ` AND (
 //         LOWER(a.article_title) LIKE ? OR
@@ -538,12 +536,12 @@
 //       )`;
 //       params.push(`%${query}%`, `%${query}%`, `%${query}%`);
 //     }
-    
+
 //     if (volume) {
 //       baseWhere += " AND a.volume_id = ?";
 //       params.push(volume);
 //     }
-    
+
 //     if (issue) {
 //       baseWhere += " AND a.issue_id = ?";
 //       params.push(issue);
@@ -553,7 +551,7 @@
 //       baseWhere += " AND v.year = ?";
 //       params.push(year);
 //     }
-    
+
 //     // count for pagination
 //     const [countRows] = await conn.query(
 //       `SELECT COUNT(*) AS total
@@ -565,10 +563,10 @@
 //     );
 
 //     const total = countRows[0]?.total ?? 0;
-    
+
 //     // main query
 //     let sql = `
-//     SELECT 
+//     SELECT
 //     a.id, a.journal_id, a.volume_id, a.issue_id, a.month_from, a.month_to,
 //     a.article_id, a.doi, a.article_title, a.page_from, a.page_to,
 //     a.authors, a.abstract, a.keywords, a.\`references\`,
@@ -591,9 +589,9 @@
 //       sql += " LIMIT ?, ?";
 //       params.push(offset, limit);
 //     }
-    
+
 //     const [rows] = await conn.query(sql, params);
-    
+
 //     return NextResponse.json({
 //       success: true,
 //       articles: rows,
@@ -621,7 +619,7 @@
 //       // 1) Accept id from either query string OR JSON body
 //       const { searchParams } = new URL(req.url);
 //       let id = searchParams.get("id");
-      
+
 //       if (!id) {
 //         const ct = req.headers.get("content-type") || "";
 //         if (ct.includes("application/json")) {
@@ -629,7 +627,7 @@
 //           if (body?.id) id = body.id;
 //         }
 //       }
-      
+
 //       id = Number(id);
 //       if (!id) {
 //         return NextResponse.json(
@@ -649,7 +647,7 @@
 //           { status: 404 }
 //         );
 //       }
-      
+
 //       // 3) Try to remove the PDF (fix: strip leading slash before joining)
 //       if (article.pdf_path) {
 //         const relative = String(article.pdf_path).replace(/^\/+/, ""); // <-- important
@@ -666,7 +664,7 @@
 
 //       // 4) Delete the row
 //       const [result] = await conn.query("DELETE FROM articles WHERE id = ?", [id]);
-      
+
 //       // MySQL returns affectedRows; if 0, nothing was deleted
 //       if (!result?.affectedRows) {
 //         return NextResponse.json(
@@ -708,6 +706,7 @@ import { parseForm } from "@/lib/parseForm";
 import { createDbConnection } from "@/lib/db";
 import path from "path";
 import fs, { writeFile } from "fs";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 // Disable Next.js body parsing (we handle multipart)
 export const config = { api: { bodyParser: false } };
@@ -765,7 +764,11 @@ export async function POST(req) {
     // ── Required checks
     if (!journal_id || !volume_id || !issue_id || !article_id) {
       return NextResponse.json(
-        { success: false, message: "journal_id, volume_id, issue_id, and article_id are required." },
+        {
+          success: false,
+          message:
+            "journal_id, volume_id, issue_id, and article_id are required.",
+        },
         { status: 400 }
       );
     }
@@ -775,14 +778,22 @@ export async function POST(req) {
       "SELECT short_name FROM journals WHERE id = ? LIMIT 1",
       [journal_id]
     );
-    if (!jr) return NextResponse.json({ success: false, message: "Invalid journal_id." }, { status: 400 });
+    if (!jr)
+      return NextResponse.json(
+        { success: false, message: "Invalid journal_id." },
+        { status: 400 }
+      );
 
     let expectedPrefix = (jr.short_name || "").trim().toUpperCase();
     if (expectedPrefix.startsWith("DS-"))
       expectedPrefix = expectedPrefix.replace(/^DS-/, "");
+    const jounalSlug = expectedPrefix.toLowerCase();
 
     const articleIdUpper = String(article_id).trim().toUpperCase();
-    const validPrefixPattern = new RegExp(`^${expectedPrefix}-V\\d+I\\d+P\\d+$`, "i");
+    const validPrefixPattern = new RegExp(
+      `^${expectedPrefix}-V\\d+I\\d+P\\d+$`,
+      "i"
+    );
     if (!validPrefixPattern.test(articleIdUpper)) {
       return NextResponse.json(
         {
@@ -794,38 +805,59 @@ export async function POST(req) {
     }
 
     // ── Volume / Issue consistency
-    const [[volRow]] = await conn.query("SELECT volume_number FROM volumes WHERE id = ? LIMIT 1", [volume_id]);
-    const [[issRow]] = await conn.query("SELECT issue_number FROM issues WHERE id = ? LIMIT 1", [issue_id]);
+    const [[volRow]] = await conn.query(
+      "SELECT volume_number FROM volumes WHERE id = ? LIMIT 1",
+      [volume_id]
+    );
+    const [[issRow]] = await conn.query(
+      "SELECT issue_number FROM issues WHERE id = ? LIMIT 1",
+      [issue_id]
+    );
     if (!volRow || !issRow)
-      return NextResponse.json({ success: false, message: "Invalid volume_id or issue_id." }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Invalid volume_id or issue_id." },
+        { status: 400 }
+      );
 
     const volNum = String(volRow.volume_number);
     const issNum = String(issRow.issue_number);
     const m = String(article_id).match(/-V(\d+)I(\d+)/i);
     if (!m)
       return NextResponse.json(
-        { success: false, message: 'Article ID must include "-V<vol>I<issue>".' },
+        {
+          success: false,
+          message: 'Article ID must include "-V<vol>I<issue>".',
+        },
         { status: 400 }
       );
 
     const [, volInId, issInId] = m;
     if (volInId !== volNum || issInId !== issNum) {
       return NextResponse.json(
-        { success: false, message: `Article ID volume/issue mismatch. Expected V${volNum}I${issNum}.` },
+        {
+          success: false,
+          message: `Article ID volume/issue mismatch. Expected V${volNum}I${issNum}.`,
+        },
         { status: 400 }
       );
     }
 
     // ── Uniqueness
-    const [dupes] = await conn.query("SELECT id FROM articles WHERE article_id = ? AND id <> ? LIMIT 1", [
-      article_id,
-      idNum,
-    ]);
+    const [dupes] = await conn.query(
+      "SELECT id FROM articles WHERE article_id = ? AND id <> ? LIMIT 1",
+      [article_id, idNum]
+    );
     if (dupes.length)
-      return NextResponse.json({ success: false, message: "Duplicate article_id." }, { status: 409 });
+      return NextResponse.json(
+        { success: false, message: "Duplicate article_id." },
+        { status: 409 }
+      );
 
     if (!article_title?.trim())
-      return NextResponse.json({ success: false, message: "Title is required." }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Title is required." },
+        { status: 400 }
+      );
 
     const [titleDupes] = await conn.query(
       `SELECT id FROM articles WHERE journal_id = ? AND title_norm = ? AND id <> ? LIMIT 1`,
@@ -833,7 +865,10 @@ export async function POST(req) {
     );
     if (titleDupes.length)
       return NextResponse.json(
-        { success: false, message: "An article with this title already exists in this journal." },
+        {
+          success: false,
+          message: "An article with this title already exists in this journal.",
+        },
         { status: 409 }
       );
 
@@ -843,7 +878,10 @@ export async function POST(req) {
         [doi, idNum]
       );
       if (doiDupes.length)
-        return NextResponse.json({ success: false, message: "Duplicate DOI." }, { status: 409 });
+        return NextResponse.json(
+          { success: false, message: "Duplicate DOI." },
+          { status: 409 }
+        );
     }
 
     // ── PDF path
@@ -856,17 +894,25 @@ export async function POST(req) {
     }
 
     // ── Normalize authors/keywords arrays → JSON strings
-    const keywordArray = typeof keywords === "string"
-      ? keywords.split(",").map((k) => k.trim()).filter(Boolean)
-      : Array.isArray(keywords)
-      ? keywords.map((k) => k.trim()).filter(Boolean)
-      : [];
+    const keywordArray =
+      typeof keywords === "string"
+        ? keywords
+            .split(",")
+            .map((k) => k.trim())
+            .filter(Boolean)
+        : Array.isArray(keywords)
+        ? keywords.map((k) => k.trim()).filter(Boolean)
+        : [];
 
-    const authorArray = typeof authors === "string"
-      ? authors.split(",").map((a) => a.trim()).filter(Boolean)
-      : Array.isArray(authors)
-      ? authors.map((a) => a.trim()).filter(Boolean)
-      : [];
+    const authorArray =
+      typeof authors === "string"
+        ? authors
+            .split(",")
+            .map((a) => a.trim())
+            .filter(Boolean)
+        : Array.isArray(authors)
+        ? authors.map((a) => a.trim()).filter(Boolean)
+        : [];
 
     // ── Payload
     const payload = {
@@ -905,6 +951,13 @@ export async function POST(req) {
     const params = Object.values(payload);
 
     const [result] = await conn.query(sql, params);
+    revalidateTag("articles");
+    revalidatePath(`/${jounalSlug}/${article_id}`);
+    revalidatePath(`/${jounalSlug}/archives`);
+    revalidatePath(`/${jounalSlug}/current-issue`);
+    revalidatePath(
+      `/${jounalSlug}/archives/volume${volume_id}/issue${issue_id}`
+    );
     return NextResponse.json({
       success: true,
       message: "✅ Article submitted successfully",
@@ -913,7 +966,10 @@ export async function POST(req) {
   } catch (e) {
     console.error("POST /api/articles error:", e);
     return NextResponse.json(
-      { success: false, message: e.sqlMessage || e.message || "Failed to save article" },
+      {
+        success: false,
+        message: e.sqlMessage || e.message || "Failed to save article",
+      },
       { status: 500 }
     );
   } finally {
@@ -929,8 +985,29 @@ export async function PUT(req) {
   try {
     const formData = await req.formData();
     const id = formData.get("id");
+    const journal_id = Number(formData.get("journal_id"));
+    const volume_id = Number(formData.get("volume_id"));
+    const issue_id = Number(formData.get("issue_id"));
     if (!id)
-      return NextResponse.json({ success: false, message: "Article ID required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Article ID required" },
+        { status: 400 }
+      );
+
+    const [[jr]] = await connection.query(
+      "SELECT short_name FROM journals WHERE id = ? LIMIT 1",
+      [journal_id]
+    );
+    if (!jr)
+      return NextResponse.json(
+        { success: false, message: "Invalid journal_id." },
+        { status: 400 }
+      );
+
+    let expectedPrefix = (jr.short_name || "").trim().toUpperCase();
+    if (expectedPrefix.startsWith("DS-"))
+      expectedPrefix = expectedPrefix.replace(/^DS-/, "");
+    const jounalSlug = expectedPrefix.toLowerCase();
 
     const updates = {};
     for (const [k, v] of formData.entries()) {
@@ -948,10 +1025,17 @@ export async function PUT(req) {
       }
     }
 
-    const [rows] = await connection.query(`SELECT pdf_path FROM articles WHERE id = ?`, [id]);
+    const [rows] = await connection.query(
+      `SELECT pdf_path FROM articles WHERE id = ?`,
+      [id]
+    );
     const existing = rows[0] || {};
     const oldPath = existing.pdf_path
-      ? path.join(process.cwd(), "public", existing.pdf_path.replace(/^\/+/, ""))
+      ? path.join(
+          process.cwd(),
+          "public",
+          existing.pdf_path.replace(/^\/+/, "")
+        )
       : null;
 
     const uploadDir = path.join(process.cwd(), "public", "uploads", "articles");
@@ -985,14 +1069,21 @@ export async function PUT(req) {
       [...values, id]
     );
 
+    revalidateTag("articles");
+    revalidatePath(`/${jounalSlug}/${article_id}`);
+    revalidatePath(`/${jounalSlug}/archives`);
+    revalidatePath(`/${jounalSlug}/current-issue`);
+    revalidatePath(
+      `/${jounalSlug}/archives/volume${volume_id}/issue${issue_id}`
+    );
+
     return NextResponse.json({
       success: true,
-      message:
-        newFile
-          ? "✅ Article updated and file replaced."
-          : removeFlag === "1"
-          ? "✅ Article updated and file removed."
-          : "✅ Article updated successfully.",
+      message: newFile
+        ? "✅ Article updated and file replaced."
+        : removeFlag === "1"
+        ? "✅ Article updated and file removed."
+        : "✅ Article updated successfully.",
     });
   } catch (err) {
     console.error("❌ PUT /articles error:", err);
@@ -1004,7 +1095,6 @@ export async function PUT(req) {
     await connection.end();
   }
 }
-
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -1189,4 +1279,3 @@ export async function GET(req) {
     await conn.end();
   }
 }
-

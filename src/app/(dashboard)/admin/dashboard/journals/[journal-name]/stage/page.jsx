@@ -275,8 +275,6 @@ useEffect(() => {
       const record = j.staged || j.record || j.item || j.data || null;
       if (!record) throw new Error("No record found");
 
-      console.log("object", record);
-
       setRow({
         ...record,
         received_date: normalizeDate(record.received_date),

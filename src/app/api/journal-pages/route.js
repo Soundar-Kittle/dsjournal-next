@@ -47,21 +47,21 @@ export async function POST(req) {
     }
 
     // 🔍 1️⃣ Check if a record already exists for same journal_id + page_title
-    const [existing] = await connection.query(
-      `SELECT id FROM journal_pages WHERE journal_id = ? AND page_title = ? LIMIT 1`,
-      [cleaned.journal_id, cleaned.page_title]
-    );
+    // const [existing] = await connection.query(
+    //   `SELECT id FROM journal_pages WHERE journal_id = ? AND page_title = ? LIMIT 1`,
+    //   [cleaned.journal_id, cleaned.page_title]
+    // );
 
-    if (existing.length > 0) {
-      await connection.rollback();
-      return Response.json(
-        {
-          success: false,
-          message: `A page with title "${cleaned.page_title}" already exists for this journal.`,
-        },
-        { status: 409 } // Conflict
-      );
-    }
+    // if (existing.length > 0) {
+    //   await connection.rollback();
+    //   return Response.json(
+    //     {
+    //       success: false,
+    //       message: `A page with title "${cleaned.page_title}" already exists for this journal.`,
+    //     },
+    //     { status: 409 } // Conflict
+    //   );
+    // }
 
     // ✅ 2️⃣ Proceed to insert if unique
     const [result] = await connection.query(

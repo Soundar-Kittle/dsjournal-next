@@ -10,8 +10,7 @@ import { useApiMutation } from "@/hooks";
 import { queryClient } from "@/lib/queryClient";
 import { Input, Button, Checkbox, Select } from "@/components/ui";
 import { CustomDropZone } from "@/components/ui/FormInput/Inputs";
-import { linkOptions } from "@/@data/data";
-import { banners } from "@/services";
+import { banners, useSitemaps } from "@/services";
 
 // ----------------- Validation -----------------
 const schema = yup.object({
@@ -61,6 +60,7 @@ const AddBanner = ({ type = "add", editData = {}, onClose }) => {
     defaultValues: defaults,
     resolver: yupResolver(schema, { context: { type } }),
   });
+  const { data: sitemap } = useSitemaps();
 
   // local file holder for CustomDropZone
   const [imageFile, setImageFile] = useState({ image: [] });
@@ -173,7 +173,15 @@ const AddBanner = ({ type = "add", editData = {}, onClose }) => {
                 {...field}
                 label="Button Link"
                 placeholder="Select a link"
-                options={linkOptions}
+                options={
+                  sitemap?.rows?.length > 0
+                    ? sitemap?.rows?.map((s) => ({
+                        value: s.url,
+                        label: s.label,
+                      }))
+                    : []
+                }
+                searchable
                 onValueChange={field.onChange}
               />
             )}

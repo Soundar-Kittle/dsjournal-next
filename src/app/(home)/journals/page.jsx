@@ -28,7 +28,7 @@ export default async function JournalsPage({ searchParams }) {
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-10 py-10">
         {/* Search Form */}
-        <form
+        {/* <form
           className="mb-6 flex gap-3 max-sm:max-w-2xs max-sm:mx-auto"
           action="/journals"
           method="get"
@@ -54,7 +54,7 @@ export default async function JournalsPage({ searchParams }) {
               ))}
             </datalist>
           </div>
-        </form>
+        </form> */}
 
         {/* Journals List */}
         {journals.length === 0 ? (

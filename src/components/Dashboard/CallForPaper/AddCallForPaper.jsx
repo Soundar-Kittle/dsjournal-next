@@ -318,7 +318,6 @@
 
 // export { AddCallForPaper };
 
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -331,7 +330,7 @@ import moment from "moment";
 import { useApiMutation } from "@/hooks";
 import { queryClient } from "@/lib/queryClient";
 import { Input, Button, Checkbox, Select } from "@/components/ui";
-import { callForPaper, useJournals, useMonthGroups} from "@/services";
+import { callForPaper, useJournals, useMonthGroups } from "@/services";
 
 // ----------------- Validation Schema -----------------
 const schema = yup.object({
@@ -380,9 +379,7 @@ const schema = yup.object({
 
   permit_dates: yup
     .number()
-    .transform((v, o) =>
-      o === "" || o === null ? null : Number(o)
-    )
+    .transform((v, o) => (o === "" || o === null ? null : Number(o)))
     .nullable()
     .when("date_mode", {
       is: "auto",
@@ -406,14 +403,21 @@ function getCurrentPeriod(monthGroups = []) {
 
   const monthIndex = new Date().getMonth(); // 0=Jan, 11=Dec
   const monthNames = [
-    "January","February","March",
-    "April","May","June",
-    "July","August","September",
-    "October","November","December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const currentMonthName = monthNames[monthIndex];
-
 
   let current = null;
 
@@ -447,11 +451,10 @@ function getCurrentPeriod(monthGroups = []) {
   return current;
 }
 
-
 // ----------------- Component -----------------
 const AddCallForPaper = ({ type = "add", editData = {}, onClose }) => {
   const defaults = {
-    is_common: editData?.is_common ?? false,
+    is_common: type === "edit" ? !!editData?.is_common : false,
     date_mode: editData?.date_mode || "manual",
     manual_date: editData?.manual_date || "",
     start_date: editData?.start_date || "",
@@ -459,7 +462,7 @@ const AddCallForPaper = ({ type = "add", editData = {}, onClose }) => {
     permit_dates: editData?.permit_dates || "",
     journal_id: editData?.journal_id || "",
     month_group_id: editData?.month_group_id || "",
-    is_active: editData?.is_active ?? true,
+    is_active: type === "edit" ? !!editData?.is_active : true,
   };
 
   const {
@@ -478,8 +481,8 @@ const AddCallForPaper = ({ type = "add", editData = {}, onClose }) => {
   const dateMode = watch("date_mode");
   const isCommon = watch("is_common");
   const selectedJournal = watch("journal_id");
-    const [monthGroups, setMonthGroups] = useState([]);
-    const [selectedMonthGroup, setSelectedMonthGroup] = useState("");
+  const [monthGroups, setMonthGroups] = useState([]);
+  const [selectedMonthGroup, setSelectedMonthGroup] = useState("");
 
   // --------------- Journals Fetch ---------------
   const { data: journalsData } = useJournals();
@@ -495,19 +498,20 @@ const AddCallForPaper = ({ type = "add", editData = {}, onClose }) => {
     enabled: !!selectedJournal,
   });
 
+  useEffect(() => {
+    const loadActiveAndUpcoming = async () => {
+      const res = await fetch(
+        `/api/month-groups/active?journal_id=${selectedJournal}`
+      );
+      const data = await res.json();
+      if (data.success) setMonthGroups(data.month_groups);
+    };
+    if (selectedJournal) loadActiveAndUpcoming();
+  }, [selectedJournal]);
 
-useEffect(() => {
-  const loadActiveAndUpcoming = async () => {
-    const res = await fetch(`/api/month-groups/active?journal_id=${selectedJournal}`);
-    const data = await res.json();
-    if (data.success) setMonthGroups(data.month_groups);
-  };
-  if (selectedJournal) loadActiveAndUpcoming();
-}, [selectedJournal]);
-
-useEffect(() => {
-  console.log("📦 monthGroupData:", monthGroupData);
-}, [monthGroupData]);
+  useEffect(() => {
+    console.log("📦 monthGroupData:", monthGroupData);
+  }, [monthGroupData]);
   // --------------- Mutation ----------------
   const mutation = useApiMutation({
     endpoint: type === "add" ? callForPaper.add.url : callForPaper.update.url,
@@ -523,9 +527,6 @@ useEffect(() => {
     },
     onError: (err) => toast.error(err?.message || "Something went wrong"),
   });
-
-  
-
 
   // --------------- Submit ------------------
   const onSubmit = async (data) => {
@@ -555,6 +556,9 @@ useEffect(() => {
       finalData.month_group_id = null;
     }
 
+    if (type === "edit") {
+      finalData.id = editData.id;
+    }
     console.log("✅ Final Cleaned Submit Data:", finalData);
     await mutation.mutateAsync(finalData);
   };
@@ -618,27 +622,27 @@ useEffect(() => {
               )}
             /> */}
             <Controller
-  name="month_group_id"
-  control={control}
-  render={({ field }) => (
-    <select
-      className="border p-2 w-full"
-      value={field.value || ""}
-      onChange={(e) => {
-        field.onChange(e.target.value);
-        setSelectedMonthGroup(e.target.value);
-      }}
-    >
-      <option value="">Select issue period</option>
-      {monthGroups.map((m) => (
-        <option key={m.id} value={m.id}>
-          {m.from_month} – {m.to_month} (Vol {m.volume_number}, Issue {m.issue_number}) – {m.status}
-        </option>
-      ))}
-    </select>
-  )}
-/>
-
+              name="month_group_id"
+              control={control}
+              render={({ field }) => (
+                <select
+                  className="border p-2 w-full"
+                  value={field.value || ""}
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                    setSelectedMonthGroup(e.target.value);
+                  }}
+                >
+                  <option value="">Select issue period</option>
+                  {monthGroups.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.from_month} – {m.to_month} (Vol {m.volume_number},
+                      Issue {m.issue_number}) – {m.status}
+                    </option>
+                  ))}
+                </select>
+              )}
+            />
           </div>
         )}
 

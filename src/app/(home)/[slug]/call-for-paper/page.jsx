@@ -58,7 +58,7 @@ import { getJournalBySlug } from "@/utils/journals";
 
 
 export default async function CallForPaperPage({ params }) {
-  const { slug } = params;
+  const { slug } = await params;
 
   // 1️⃣ Fetch journal
   const journal = await getJournalBySlug(slug);

@@ -3,8 +3,9 @@ import { createDbConnection } from "@/lib/db";
 import { handleFileUploads } from "@/lib/fileUpload";
 import { removeFile } from "@/lib/removeFile";
 import { cleanData } from "@/lib/utils";
+import { revalidatePath, revalidateTag } from "next/cache";
 
-export const runtime = "nodejs"; // needed to use fs in App Router
+export const runtime = "nodejs";
 
 // ---------- helpers ----------
 const intOrNull = (v) =>
@@ -57,7 +58,8 @@ export async function POST(req) {
     const form = await req.formData();
 
     const journal_name = form.get("journal_name")?.toString().trim() || "";
-    const short_name = form.get("short_name")?.toString().trim() || "";
+    const short_name =
+      form.get("short_name")?.toString().trim().toUpperCase() || "";
     if (!journal_name || !short_name) {
       return NextResponse.json(
         { success: false, message: "journal_name and short_name are required" },
@@ -99,9 +101,18 @@ export async function POST(req) {
       afterId,
     });
 
+    const slug = short_name.replace(/^DS-/i, "").toLowerCase();
+
     // Use INSERT ... SET ? to avoid value-count mismatches
     await conn.query("INSERT INTO journals SET ?", row);
     await conn.end();
+    revalidateTag("journals");
+    revalidateTag("journal_slug");
+    revalidateTag("journal_month_groups");
+    revalidateTag("journal_analytics");
+
+    revalidatePath("/journals");
+    revalidatePath(`/${slug}`);
 
     return NextResponse.json({ success: true, message: "Journal created" });
   } catch (e) {
@@ -168,8 +179,8 @@ export async function PATCH(req) {
         : false;
 
       if (isRemoval) {
-        if (existing[key]) removeFile(existing[key]); 
-        return null; 
+        if (existing[key]) removeFile(existing[key]);
+        return null;
       }
 
       if (newFiles[key]) {
@@ -184,7 +195,7 @@ export async function PATCH(req) {
 
     const row = {
       journal_name: cleanedData.journal_name || null,
-      short_name: cleanedData.short_name || null,
+      short_name: String(cleanedData.short_name)?.toUpperCase() || null,
       issn_online: cleanedData.issn_online || null,
       issn_print: cleanedData.issn_print || null,
       is_print_issn: cleanedData.is_print_issn === "1" ? 1 : 0,
@@ -242,7 +253,16 @@ export async function PATCH(req) {
       params
     );
 
+    const slug = short_name.replace(/^DS-/i, "").toLowerCase();
+
     await conn.commit();
+    revalidateTag("journals");
+    revalidateTag("journal_slug");
+    revalidateTag("journal_month_groups");
+    revalidateTag("journal_analytics");
+
+    revalidatePath("/journals");
+    revalidatePath(`/${slug}`);
     return NextResponse.json({
       success: true,
       message: "Journal updated successfully",
@@ -258,64 +278,6 @@ export async function PATCH(req) {
     await conn.end();
   }
 }
-
-
-// ---------- READ ----------
-// export async function GET(req) {
-//   const { searchParams } = new URL(req.url);
-//   const id = searchParams.get("jid") || searchParams.get("id");
-//   const short = searchParams.get("short");
-//   const slug = searchParams.get("slug"); // cleaned slug like "lll"
-
-//   let conn;
-//   try {
-//     conn = await createDbConnection();
-//     let result;
-
-//     if (id) {
-//       [result] = await conn.query(
-//         "SELECT * FROM journals WHERE id = ? LIMIT 1",
-//         [id]
-//       );
-//     } else if (short) {
-//       [result] = await conn.query(
-//         "SELECT * FROM journals WHERE LOWER(TRIM(short_name)) = LOWER(TRIM(?)) LIMIT 1",
-//         [short]
-//       );
-//     } else if (slug) {
-//       // match DS- prefix variants OR explicit slug/alias columns if you have them
-//       const [rows] = await conn.query(
-//         `SELECT * FROM journals
-//          WHERE
-//            REPLACE(LOWER(TRIM(short_name)), 'ds-', '') = LOWER(TRIM(?))
-//            OR REPLACE(LOWER(TRIM(short_name)), 'ds', '') = LOWER(TRIM(?))
-//            OR LOWER(TRIM(short_name)) = LOWER(TRIM(?))          -- allow exact short_name
-//            OR LOWER(TRIM(short_name))       = LOWER(TRIM(?))          -- if you have a slug column
-//            OR LOWER(TRIM(short_name))      = LOWER(TRIM(?))          -- if you have an alias column
-//          LIMIT 1`,
-//         [slug, slug, slug, slug, slug]
-//       );
-//       result = rows;
-//     } else {
-//       [result] = await conn.query(
-//         "SELECT * FROM journals ORDER BY sort_index ASC, id ASC"
-//       );
-//     }
-
-//     await conn.end();
-//     const rows = Array.isArray(result) ? result : result ? [result] : [];
-//     return NextResponse.json({ success: true, journals: rows });
-//   } catch (err) {
-//     if (conn)
-//       try {
-//         await conn.end();
-//       } catch {}
-//     return NextResponse.json(
-//       { success: false, error: err.message },
-//       { status: 500 }
-//     );
-//   }
-// }
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -403,7 +365,10 @@ export async function GET(req) {
       journals,
     });
   } catch (err) {
-    if (conn) try { await conn.end(); } catch {}
+    if (conn)
+      try {
+        await conn.end();
+      } catch {}
 
     console.error("❌ Journals API Error:", err);
     return NextResponse.json(
@@ -412,7 +377,6 @@ export async function GET(req) {
     );
   }
 }
-
 
 export async function DELETE(req) {
   const { searchParams } = new URL(req.url);
@@ -430,7 +394,7 @@ export async function DELETE(req) {
     await conn.beginTransaction();
 
     const [rows] = await conn.query(
-      `SELECT cover_image, banner_image, paper_template, copyright_form 
+      `SELECT cover_image, banner_image, paper_template, copyright_form, short_name
          FROM journals WHERE id = ?`,
       [id]
     );
@@ -444,6 +408,8 @@ export async function DELETE(req) {
       );
     }
 
+    const slug = journal.short_name?.replace(/^DS-/i, "").toLowerCase();
+
     await conn.query(`DELETE FROM journals WHERE id = ?`, [id]);
 
     if (journal.cover_image) removeFile(journal.cover_image);
@@ -452,6 +418,14 @@ export async function DELETE(req) {
     if (journal.copyright_form) removeFile(journal.copyright_form);
 
     await conn.commit();
+    revalidateTag("journals");
+    revalidateTag("journal_slug");
+    revalidateTag("journal_month_groups");
+    revalidateTag("journal_analytics");
+
+    revalidatePath("/journals");
+    revalidatePath(`/${slug}`);
+
     return NextResponse.json({
       success: true,
       message: "Journal and associated files deleted successfully",

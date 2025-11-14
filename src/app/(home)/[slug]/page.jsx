@@ -6,7 +6,7 @@ import { getJournalPageByTitle } from "@/utils/journalPage";
 export async function generateMetadata({ params }) {
   const param = await params;
   const slug = param.slug?.toLowerCase();
-  const baseUrl = process.env.BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   const journal = await getJournalBySlug(slug);
 
   if (!journal) {

@@ -36,8 +36,9 @@
 
 import { createDbConnection } from "@/lib/db";
 import { getCallForPaper } from "@/utils/callForPaper";
+import { unstable_cache } from "next/cache";
 
-export async function getRenderedJournalPage(journalId, pageTitle) {
+export async function _getRenderedJournalPage(journalId, pageTitle) {
   const conn = await createDbConnection();
   try {
     // 🧩 Step 1: Fetch journal page content
@@ -72,3 +73,19 @@ export async function getRenderedJournalPage(journalId, pageTitle) {
     conn.end();
   }
 }
+
+
+export const getRenderedJournalPage = unstable_cache(
+  async (journalId, pageTitle) =>
+    _getRenderedJournalPage(journalId, pageTitle),
+  (journalId, pageTitle) => [
+    `rendered_page_${journalId}_${pageTitle}`,
+  ],
+
+  {
+    tags: (journalId, pageTitle) => [
+      `journal_page_${journalId}_${pageTitle}`,
+      `cfp_tag_${journalId || "common"}`,
+    ],
+  }
+);

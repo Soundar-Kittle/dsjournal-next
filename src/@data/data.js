@@ -8,13 +8,6 @@ export const publicationFrequencies = [
 export const languages = ["English", "Hindi", "Tamil", "French", "Arabic"];
 export const formatofpublication = ["Online", "Print"];
 
-export const linkOptions = [
-  { value: "journals", label: "Journals", type: "link" },
-  { value: "authors", label: "Authors", type: "link" },
-  { value: "reviewers", label: "Reviewers", type: "link" },
-  { value: "editors", label: "Editors", type: "link" },
-];
-
 // export const roleThemes = {
 //   admin: {
 //     bg: "bg-gradient-to-r from-primary via-secondary to-primary ",

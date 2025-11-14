@@ -133,8 +133,6 @@ export async function POST(req) {
   try {
     /* ── bulk attach all active titles ─────────────────────── */
     if (body.bulk) {
-      console.log("▶ bulk attach for journal", journal_id);
-
       await conn.query(
         `
         SET @row := -1;
@@ -161,8 +159,6 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-
-    console.log("▶ single attach – j:", journal_id, "t:", title_id);
 
     await conn.query(
       `INSERT IGNORE INTO journal_editorial_titles

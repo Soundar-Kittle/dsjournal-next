@@ -253,7 +253,7 @@ export default function Page() {
           <DialogContent className="md:min-w-3xl lg:min-w-5xl xl:min-w-6xl max-h-[90vh] overflow-auto">
             <DialogHeader>
               <DialogTitle className="bg-primary/10 text-primary p-4 text-center rounded-lg">
-                {editData ? `${editData.short_name} Edit Journal ` : "Add New Journal"}{console.log(editData)}
+                {editData ? `${editData.short_name} Edit Journal ` : "Add New Journal"}
               </DialogTitle>
             </DialogHeader>
             <Addform

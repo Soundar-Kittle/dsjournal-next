@@ -2,6 +2,7 @@ import { createDbConnection } from "@/lib/db";
 import { cleanData } from "@/lib/utils";
 import { handleFileUploads } from "@/lib/fileUpload";
 import { removeFile } from "@/lib/removeFile";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function POST(req) {
   const connection = await createDbConnection();
@@ -36,6 +37,8 @@ export async function POST(req) {
     );
 
     await connection.commit();
+    revalidateTag("banners");
+    revalidatePath("/");
     return Response.json(
       { message: "Banner added successfully", id: result.insertId },
       { status: 201 }
@@ -283,6 +286,8 @@ export async function PATCH(req) {
     );
 
     await connection.commit();
+    revalidateTag("banners");
+    revalidatePath("/");
     return Response.json(
       { message: "Banner updated successfully" },
       { status: 200 }
@@ -315,6 +320,8 @@ export async function DELETE(req) {
     if (existingImage) removeFile(existingImage);
 
     await connection.commit();
+    revalidateTag("banners");
+    revalidatePath("/");
     return Response.json(
       { message: "Banner deleted successfully" },
       { status: 200 }

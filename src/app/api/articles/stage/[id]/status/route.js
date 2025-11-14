@@ -377,16 +377,6 @@ if (status === "approved") {
   let monthFrom = monthRows?.[0]?.from_month || null;
   let monthTo = monthRows?.[0]?.to_month || null;
 
-  // 🔹 Console debug
-  console.log("🧾 month_groups lookup:", {
-    journal_id: existing.journal_id,
-    volume_id: existing.volume_id,
-    issue_id: existing.issue_id,
-    monthFrom,
-    monthTo,
-    raw: monthRows,
-  });
-
   // Fallback: volume-level if issue-level not found
   if (!monthFrom || !monthTo) {
     const [fallback] = await conn.query(

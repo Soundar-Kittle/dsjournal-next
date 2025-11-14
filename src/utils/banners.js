@@ -1,6 +1,7 @@
 import { createDbConnection } from "@/lib/db";
+import { unstable_cache } from "next/cache";
 
-export async function getBanners() {
+export async function _getBanners() {
   const connection = await createDbConnection();
   try {
     const [rows] = await connection.execute(
@@ -15,3 +16,11 @@ export async function getBanners() {
     await connection.end();
   }
 }
+
+export const getBanners = unstable_cache(
+  async () => _getBanners(),
+  ["banners-list"],
+  {
+    tags: ["banners"],
+  }
+);

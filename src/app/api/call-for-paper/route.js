@@ -1,9 +1,10 @@
 import { createDbConnection } from "@/lib/db";
-
+import { revalidatePath } from "next/cache";
 
 function cleanData(body) {
   // optional simple cleaner if you used it earlier
   return {
+    id: body.id || null,
     is_common: body.is_common ? 1 : 0,
     journal_id: body.journal_id || null,
     month_group_id: body.month_group_id || null,
@@ -43,16 +44,25 @@ export async function POST(req) {
     );
 
     await connection.commit();
+    // revalidatePath("/call-for-paper");
 
     return Response.json(
-      { success: true, message: "Call for Paper added successfully", id: result.insertId },
+      {
+        success: true,
+        message: "Call for Paper added successfully",
+        id: result.insertId,
+      },
       { status: 201 }
     );
   } catch (error) {
     await connection.rollback();
     console.error("❌ Add Call for Paper Error:", error);
     return Response.json(
-      { success: false, message: "Failed to add Call for Paper", details: error.message },
+      {
+        success: false,
+        message: "Failed to add Call for Paper",
+        details: error.message,
+      },
       { status: 500 }
     );
   } finally {
@@ -216,17 +226,21 @@ export async function PATCH(req) {
     );
 
     await connection.commit();
+    // revalidatePath("/call-for-paper");
 
     return Response.json(
       { success: true, message: "Call for Paper updated successfully" },
       { status: 200 }
     );
-
   } catch (error) {
     await connection.rollback();
     console.error("❌ Update Call for Paper Error:", error);
     return Response.json(
-      { success: false, error: "Failed to update Call for Paper", details: error.message },
+      {
+        success: false,
+        error: "Failed to update Call for Paper",
+        details: error.message,
+      },
       { status: 500 }
     );
   } finally {
@@ -243,6 +257,7 @@ export async function DELETE(req) {
     await connection.beginTransaction();
     await connection.query(`DELETE FROM call_for_papers WHERE id = ?`, [id]);
     await connection.commit();
+    // revalidatePath("/call-for-paper");
 
     return Response.json(
       { message: "Call for Paper deleted successfully" },

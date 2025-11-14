@@ -25,7 +25,7 @@ export function Select({
   showIcons = true,
   value = "",
   onValueChange,
-  searchable = true,
+  searchable = false,
   searchPlaceholder = "Search...",
   ...props
 }) {
@@ -112,8 +112,8 @@ export function Select({
               )}
             </div>
           )}
-
-          {allowClear && value && (
+          {/* {allowClear && value && ( */}
+          {allowClear && value !== 0 && (
             <SelectItem value="__clear__" icon={X} hasIconSlot>
               {clearLabel}
             </SelectItem>

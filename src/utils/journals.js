@@ -1,6 +1,7 @@
 import { createDbConnection } from "@/lib/db";
+import { unstable_cache } from "next/cache";
 
-export async function getJournalBySlug(slug) {
+export async function _getJournalBySlug(slug) {
   if (!slug) return null;
 
   const normalizedSlug = slug.trim().toUpperCase();
@@ -23,7 +24,7 @@ export async function getJournalBySlug(slug) {
   }
 }
 
-export async function getJournals(q) {
+export async function _getJournals(q) {
   const connection = await createDbConnection();
   try {
     let sql = `
@@ -74,8 +75,7 @@ export async function getJournals(q) {
   }
 }
 
-
-export async function getMonthGroupsBySlug(slug) {
+export async function _getMonthGroupsBySlug(slug) {
   if (!slug) return { grouped: [], currentIssue: null };
 
   const journal = await getJournalBySlug(slug);
@@ -153,7 +153,7 @@ export async function getMonthGroupsBySlug(slug) {
   }
 }
 
-export async function getJournalAnalytics() {
+export async function _getJournalAnalytics() {
   const connection = await createDbConnection();
   try {
     const [rows] = await connection.execute(`
@@ -169,7 +169,7 @@ export async function getJournalAnalytics() {
       ORDER BY j.sort_index ASC
     `);
 
-    return rows.map(r => ({
+    return rows.map((r) => ({
       short_name: r.short_name,
       journal_name: r.journal_name,
       total_papers: Number(r.total_papers),
@@ -180,3 +180,35 @@ export async function getJournalAnalytics() {
     await connection.end();
   }
 }
+
+export const getJournals = unstable_cache(
+  async (q) => _getJournals(q),
+  ["journals-list"],
+  {
+    tags: ["journals"],
+  }
+);
+
+export const getJournalBySlug = unstable_cache(
+  async (slug) => _getJournalBySlug(slug),
+  ["journal_by_slug"],
+  {
+    tags: ["journal_slug"],
+  }
+);
+
+export const getMonthGroupsBySlug = unstable_cache(
+  async (slug) => _getMonthGroupsBySlug(slug),
+  ["journals-month-groups"],
+  {
+    tags: ["journal_month_groups"],
+  }
+);
+
+export const getJournalAnalytics = unstable_cache(
+  async () => _getJournalAnalytics(),
+  ["journals-analytics"],
+  {
+    tags: ["journal_analytics"],
+  }
+);

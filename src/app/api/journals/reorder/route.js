@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createDbConnection } from "@/lib/db";
+import { revalidatePath } from "next/cache";
 
 export async function POST(req) {
   let conn;
@@ -27,7 +28,7 @@ export async function POST(req) {
     await conn.beginTransaction();
     await conn.query(sql);
     await conn.commit();
-
+    revalidatePath("/journals");
     return NextResponse.json({ success: true });
   } catch (e) {
     if (conn) try { await conn.rollback(); } catch {}

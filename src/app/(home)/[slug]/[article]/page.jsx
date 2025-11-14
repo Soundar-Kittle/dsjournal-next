@@ -7,7 +7,7 @@ export async function generateMetadata({ params }) {
   const { article: articleId } = await params;
   const article = await getArticleById(articleId);
 
-  const baseUrl = process.env.BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!article) {
     return {
       title: "Article Not Found",
