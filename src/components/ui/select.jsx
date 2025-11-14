@@ -25,7 +25,7 @@ export function Select({
   showIcons = true,
   value = "",
   onValueChange,
-  searchable = false,
+  searchable = true,
   searchPlaceholder = "Search...",
   ...props
 }) {
