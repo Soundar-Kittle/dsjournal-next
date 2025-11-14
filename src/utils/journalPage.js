@@ -28,6 +28,6 @@ export const getJournalPageByTitle = unstable_cache(
   async (journalId, pageTitle) => _getJournalPageByTitle(journalId, pageTitle),
   [`journal-page-list`],
   {
-    tags: ["journal-page"],
+    tags: ["journal_page"],
   }
 );

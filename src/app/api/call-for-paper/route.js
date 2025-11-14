@@ -1,5 +1,6 @@
 import { createDbConnection } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { getJournalSlug } from "@/utils/getJouralSlug";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 function cleanData(body) {
   // optional simple cleaner if you used it earlier
@@ -26,6 +27,48 @@ export async function POST(req) {
     const body = await req.json();
     const cleanedData = cleanData(body);
 
+    // ------------------------------------------------------------
+    // 🔍 DUPLICATE CHECKS
+    // ------------------------------------------------------------
+
+    // 1. A common call_for_paper already exists
+    if (cleanedData.is_common) {
+      const [commonExists] = await connection.query(
+        `SELECT id FROM call_for_papers WHERE is_common = 1 LIMIT 1`
+      );
+
+      if (commonExists.length > 0) {
+        await connection.rollback();
+        return Response.json(
+          { success: false, message: "Common Call for Paper already exists." },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 2. A CFP for the same journal already exists
+    if (!cleanedData.is_common && cleanedData.journal_id) {
+      const [journalExists] = await connection.query(
+        `SELECT id FROM call_for_papers 
+         WHERE is_common = 0 AND journal_id = ? LIMIT 1`,
+        [cleanedData.journal_id]
+      );
+
+      if (journalExists.length > 0) {
+        await connection.rollback();
+        return Response.json(
+          {
+            success: false,
+            message: "A Call for Paper for this journal already exists.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // ------------------------------------------------------------
+    // 📝 INSERT OPERATION
+    // ------------------------------------------------------------
     const [result] = await connection.query(
       `INSERT INTO call_for_papers 
         (is_common, journal_id, month_group_id, date_mode, manual_date, start_date, end_date, permit_dates, is_active)
@@ -33,7 +76,7 @@ export async function POST(req) {
       [
         cleanedData.is_common,
         cleanedData.is_common ? null : cleanedData.journal_id,
-        cleanedData.is_common ? null : cleanedData.month_group_id, // ✅ added this
+        cleanedData.is_common ? null : cleanedData.month_group_id,
         cleanedData.date_mode,
         cleanedData.manual_date,
         cleanedData.start_date,
@@ -43,8 +86,16 @@ export async function POST(req) {
       ]
     );
 
+    let slug = null;
+    if (cleanedData.journal_id) {
+      const slugRes = await getJournalSlug(connection, cleanedData.journal_id);
+      slug = slugRes.slug;
+    }
+
     await connection.commit();
-    // revalidatePath("/call-for-paper");
+
+    revalidateTag("call_for_papers");
+    revalidatePath(slug ? `/${slug}/call-for-paper` : "/call-for-paper");
 
     return Response.json(
       {
@@ -225,8 +276,16 @@ export async function PATCH(req) {
       ]
     );
 
+    let slug = null;
+    if (cleanedData.journal_id) {
+      const slugRes = await getJournalSlug(connection, cleanedData.journal_id);
+      slug = slugRes.slug;
+    }
+
     await connection.commit();
-    // revalidatePath("/call-for-paper");
+
+    revalidateTag("call_for_papers");
+    revalidatePath(slug ? `/${slug}/call-for-paper` : "/call-for-paper");
 
     return Response.json(
       { success: true, message: "Call for Paper updated successfully" },
@@ -255,9 +314,23 @@ export async function DELETE(req) {
   const connection = await createDbConnection();
   try {
     await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      `SELECT journal_id FROM call_for_papers WHERE id = ?`,
+      [id]
+    );
+    const journal_id = rows?.[0]?.journal_id;
+
     await connection.query(`DELETE FROM call_for_papers WHERE id = ?`, [id]);
+
+    let slug = null;
+    if (journal_id) {
+      const slugRes = await getJournalSlug(connection, journal_id);
+      slug = slugRes.slug;
+    }
     await connection.commit();
-    // revalidatePath("/call-for-paper");
+    revalidatePath("/call-for-paper");
+    revalidatePath(slug ? `/${slug}/call-for-paper` : "/call-for-paper");
 
     return Response.json(
       { message: "Call for Paper deleted successfully" },

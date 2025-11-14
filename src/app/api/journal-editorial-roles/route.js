@@ -1,23 +1,7 @@
 import { createDbConnection } from "@/lib/db";
+import { getJournalSlug } from "@/utils/getJouralSlug";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
-
-// export async function GET(req) {
-//   const { searchParams } = new URL(req.url);
-//   const journalId = searchParams.get("journalId");
-
-//   const conn = await createDbConnection();
-//   const [rows] = await conn.query(
-//     `SELECT jer.id, jer.journal_id, jer.member_id, jer.title_id,
-//             em.name AS member_name, et.title AS title_name
-//      FROM journal_editorial_roles jer
-//      JOIN editorial_members em ON jer.member_id = em.id
-//      JOIN editorial_titles et ON jer.title_id = et.id
-//      WHERE jer.journal_id = ?`,
-//     [journalId]
-//   );
-//   await conn.end();
-//   return NextResponse.json({ success: true, roles: rows });
-// }
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -49,18 +33,6 @@ export async function GET(req) {
 
   return NextResponse.json({ success: true, roles: rows });
 }
-
-// export async function POST(req) {
-//   const body = await req.json();
-//   const { journal_id, member_id, title_id } = body;
-//   const conn = await createDbConnection();
-//   await conn.query(
-//     `INSERT INTO journal_editorial_roles (journal_id, member_id, title_id) VALUES (?, ?, ?)`,
-//     [journal_id, member_id, title_id]
-//   );
-//   await conn.end();
-//   return NextResponse.json({ success: true, message: "Role assigned" });
-// }
 
 export async function POST(req) {
   try {
@@ -118,8 +90,16 @@ export async function POST(req) {
        VALUES (?, ?, ?, ?, ?)`,
       [journal_id, member_id, title_id, titleSortOrder, memberSortOrder]
     );
+    let slug = null;
+    if (journal_id) {
+      const slugRes = await getJournalSlug(conn, journal_id);
+      slug = slugRes.slug;
+    }
 
     await conn.end();
+    revalidateTag("editorial_board");
+    revalidatePath(`/${slug}/editorial-board`);
+
     return NextResponse.json({ success: true, message: "Role assigned" });
   } catch (err) {
     console.error("POST error:", err);
@@ -129,18 +109,6 @@ export async function POST(req) {
     );
   }
 }
-
-// export async function PATCH(req) {
-//   const body = await req.json();
-//   const { id, title_id, member_id } = body;
-//   const conn = await createDbConnection();
-//   await conn.query(
-//     `UPDATE journal_editorial_roles SET title_id = ?, member_id = ? WHERE id = ?`,
-//     [title_id, member_id, id]
-//   );
-//   await conn.end();
-//   return NextResponse.json({ success: true, message: "Role updated" });
-// }
 
 export async function PATCH(req) {
   try {
@@ -224,7 +192,16 @@ export async function PATCH(req) {
       );
     }
 
+    let slug = null;
+    if (role.journal_id) {
+      const slugRes = await getJournalSlug(conn, role.journal_id);
+      slug = slugRes.slug;
+    }
+
     await conn.end();
+    revalidateTag("editorial_board");
+    revalidatePath(`/${slug}/editorial-board`);
+
     return NextResponse.json({ success: true, message: "Role updated" });
   } catch (err) {
     console.error("PATCH error:", err);
@@ -299,7 +276,15 @@ export async function PUT(req) {
       }
     }
 
+    let slug = null;
+    if (journal_id) {
+      const slugRes = await getJournalSlug(conn, journal_id);
+      slug = slugRes.slug;
+    }
+
     await conn.end();
+    revalidateTag("editorial_board");
+    revalidatePath(`/${slug}/editorial-board`);
     return NextResponse.json({ success: true, message: "Order updated" });
   } catch (err) {
     console.error("PUT error:", err);
@@ -315,7 +300,21 @@ export async function DELETE(req) {
   const id = searchParams.get("id");
 
   const conn = await createDbConnection();
+  const [rows] = await connection.query(
+    `SELECT journal_id FROM journal_editorial_roles WHERE id = ?`,
+    [id]
+  );
+  const journal_id = rows?.[0]?.journal_id;
   await conn.query("DELETE FROM journal_editorial_roles WHERE id = ?", [id]);
+
+  let slug = null;
+  if (journal_id) {
+    const slugRes = await getJournalSlug(conn, journal_id);
+    slug = slugRes.slug;
+  }
+
   await conn.end();
+  revalidateTag("editorial_board");
+  revalidatePath(`/${slug}/editorial-board`);
   return NextResponse.json({ success: true, message: "Role deleted" });
 }

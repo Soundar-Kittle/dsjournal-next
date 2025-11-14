@@ -1,8 +1,10 @@
 import { createDbConnection } from "@/lib/db";
 import { cleanData } from "@/lib/utils";
+import { getJournalSlug } from "@/utils/getJouralSlug";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function getRenderedJournalPage(journal_id, page_title) {
-  const conn =  await createDbConnection();
+  const conn = await createDbConnection();
   try {
     const [[page]] = await conn.query(
       "SELECT * FROM journal_pages WHERE journal_id = ? AND page_title = ? LIMIT 1",
@@ -46,23 +48,6 @@ export async function POST(req) {
       );
     }
 
-    // 🔍 1️⃣ Check if a record already exists for same journal_id + page_title
-    // const [existing] = await connection.query(
-    //   `SELECT id FROM journal_pages WHERE journal_id = ? AND page_title = ? LIMIT 1`,
-    //   [cleaned.journal_id, cleaned.page_title]
-    // );
-
-    // if (existing.length > 0) {
-    //   await connection.rollback();
-    //   return Response.json(
-    //     {
-    //       success: false,
-    //       message: `A page with title "${cleaned.page_title}" already exists for this journal.`,
-    //     },
-    //     { status: 409 } // Conflict
-    //   );
-    // }
-
     // ✅ 2️⃣ Proceed to insert if unique
     const [result] = await connection.query(
       `INSERT INTO journal_pages (journal_id, page_title, content, is_active)
@@ -75,7 +60,26 @@ export async function POST(req) {
       ]
     );
 
+    let slug = null;
+    if (cleaned.journal_id) {
+      const slugRes = await getJournalSlug(connection, cleaned.journal_id);
+      slug = slugRes.slug;
+    }
+    const page = cleaned.page_title?.replaceAll("_", "-");
+
     await connection.commit();
+    console.log("----------------------------------");
+    console.log("revalidatePath 1", `/${slug}/call-for-paper`);
+    console.log(
+      "revalidatePath 2",
+      `/${slug}${page == "aim-and-scope" ? "" : "/" + page}`
+    );
+    console.log("----------------------------------");
+
+    revalidateTag("journal_page");
+    revalidatePath(`/${slug}/call-for-paper`);
+    revalidatePath(`/${slug}${page == "aim-and-scope" ? "" : "/" + page}`);
+
     return Response.json(
       {
         success: true,
@@ -93,14 +97,19 @@ export async function POST(req) {
       return Response.json(
         {
           success: false,
-          message: "Duplicate entry — this journal already has that page title.",
+          message:
+            "Duplicate entry — this journal already has that page title.",
         },
         { status: 409 }
       );
     }
 
     return Response.json(
-      { success: false, message: "Failed to add journal page", error: error.message },
+      {
+        success: false,
+        message: "Failed to add journal page",
+        error: error.message,
+      },
       { status: 500 }
     );
   } finally {
@@ -231,7 +240,18 @@ export async function PATCH(req) {
       ]
     );
 
+    let slug = null;
+    if (cleaned.journal_id) {
+      const slugRes = await getJournalSlug(connection, cleaned.journal_id);
+      slug = slugRes.slug;
+    }
+    const page = cleaned.page_title?.replaceAll("_", "-");
+
     await connection.commit();
+
+    revalidateTag("journal_page");
+    revalidatePath(`/${slug}${page == "aim-and-scope" ? "" : "/" + page}`);
+
     return Response.json(
       { message: "Journal page updated successfully" },
       { status: 200 }
@@ -260,10 +280,27 @@ export async function DELETE(req) {
   const connection = await createDbConnection();
   try {
     await connection.beginTransaction();
+    const [rows] = await connection.query(
+      `SELECT journal_id, page_title FROM journal_pages WHERE id = ?`,
+      [id]
+    );
+    const journal_id = rows?.[0]?.journal_id;
+    const page_title = rows?.[0]?.page_title;
 
     await connection.query(`DELETE FROM journal_pages WHERE id = ?`, [id]);
 
+    let slug = null;
+    if (journal_id) {
+      const slugRes = await getJournalSlug(connection, journal_id);
+      slug = slugRes.slug;
+    }
+    const page = page_title?.replaceAll("_", "-");
+
     await connection.commit();
+
+    revalidateTag("journal_page");
+    revalidatePath(`/${slug}${page == "aim-and-scope" ? "" : "/" + page}`);
+
     return Response.json(
       { message: "Journal page deleted successfully" },
       { status: 200 }

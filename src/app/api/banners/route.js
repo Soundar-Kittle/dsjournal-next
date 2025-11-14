@@ -55,43 +55,6 @@ export async function POST(req) {
   }
 }
 
-// export async function GET(req) {
-//   const { searchParams } = new URL(req.url);
-//   const pageIndex = parseInt(searchParams.get("pageIndex") || "0", 10);
-//   const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
-//   const offset = pageIndex * pageSize;
-//   const pool = await createDbConnection();
-//   try {
-//     const [rows] = await pool.query(
-//       `SELECT id, title, image, button_link, button_name, description, status, visibility, alignment,
-//               DATE_FORMAT(created_at, '%Y-%m-%d') as created_at,
-//               DATE_FORMAT(updated_at, '%Y-%m-%d') as updated_at
-//        FROM banners
-//        ORDER BY id DESC
-//        LIMIT ? OFFSET ?`,
-//       [pageSize, offset]
-//     );
-
-//     const normalized = rows.map((r) => ({
-//       ...r,
-//       visibility:
-//         typeof r.visibility === "string"
-//           ? JSON.parse(r.visibility)
-//           : r.visibility,
-//     }));
-
-//     const [count] = await pool.query(`SELECT COUNT(*) as count FROM banners`);
-
-//     return Response.json(
-//       { rows: normalized, rowCount: count[0]?.count || 0 },
-//       { status: 200 }
-//     );
-//   } catch (error) {
-//     console.error("❌ Get Banner Error:", error);
-//     return Response.json({ error: "Failed to fetch banners" }, { status: 500 });
-//   }
-// }
-
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
 

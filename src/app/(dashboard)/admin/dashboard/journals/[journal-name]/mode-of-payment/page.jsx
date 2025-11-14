@@ -4,11 +4,7 @@ import { getJournalPageByTitle } from "@/utils/journalPage";
 const Page = async ({ searchParams }) => {
   const params = await searchParams;
   const jid = String(params?.jid ?? "").trim();
-
-  // Define which journal page to load
   const page = "mode_of_payment";
-
-  // Fetch data for this specific page title
   const data = await getJournalPageByTitle(jid, page);
 
   return (

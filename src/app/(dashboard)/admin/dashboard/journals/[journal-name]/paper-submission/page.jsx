@@ -4,11 +4,7 @@ import { getJournalPageByTitle } from "@/utils/journalPage";
 const Page = async ({ searchParams }) => {
   const params = await searchParams;
   const jid = String(params?.jid ?? "").trim();
-
-  // page_title in DB (based on your schema)
   const page = "paper_submission";
-
-  // Fetch from DB using utils
   const data = await getJournalPageByTitle(jid, page);
 
   return (
