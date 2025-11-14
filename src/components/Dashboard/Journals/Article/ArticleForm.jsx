@@ -36,7 +36,7 @@
 //   // defaults
 //   defaultJournalId,
 //   defaultArticleStatus = "unpublished",
-//    resetSignal, 
+//    resetSignal,
 // }) {
 //   // ---- RHF setup (Option B: use context if available, else self-wrap) ----
 // // Initialize once (and persist values through rerenders)
@@ -73,7 +73,6 @@
 
 // const methods = ctx ?? localForm;
 
-
 //   const {
 //     register,
 //     control,
@@ -81,7 +80,7 @@
 //     trigger,
 //     handleSubmit,
 //     getValues,
-//     reset,      
+//     reset,
 //     formState: { isSubmitting },
 //   } = methods;
 
@@ -117,7 +116,7 @@
 //   }
 //   onFileSelect?.(null);
 //     setStep(0);  // 👈 optional: jump back to first tab
-  
+
 // }, [resetSignal, reset, defaultJournalId, defaultArticleStatus]);
 
 //   // ---- Watches (RHF is the source of truth) ----
@@ -152,7 +151,6 @@
 //   // Step 2
 //   const references = useWatch({ control, name: "references" }) ?? "";
 
-
 //   useEffect(() => {
 //   if (!article_id || !journal_id) return;
 //   const jr = journals.find(j => String(j.id) === String(journal_id));
@@ -163,7 +161,6 @@
 //     setValue("doi", `${prefix}/${article_id}`, { shouldDirty: true });
 //   }
 // }, [article_id, journal_id, journals, setValue]);
-
 
 //   useEffect(() => {
 //   if (defaultJournalId) {
@@ -229,7 +226,6 @@
 //   loadMonthRange();
 // }, [journal_id, volume_id, issue_id, setValue]);
 
-
 // // 🔍 Auto-check for duplicate title
 // useEffect(() => {
 //   if (!article_title || !journal_id) return;
@@ -288,7 +284,6 @@
 //   return (requiredByStep[idx] || []).every((k) => isFilled(vals[k]));
 // };
 
-
 //   const canGoNext = isStepCompleted(step);
 
 //   // ---- Navigation ----
@@ -323,7 +318,6 @@
 //   setStep((s) => Math.min(s + 1, 2));
 // };
 
-
 //   const handlePrev = () => setStep((s) => Math.max(s - 1, 0));
 
 //   // ---- Select handlers (reset dependents) ----
@@ -342,7 +336,6 @@
 //     setValue("month_from", "", { shouldDirty: true, shouldValidate: false });
 //     setValue("month_to", "", { shouldDirty: true, shouldValidate: false });
 //   };
-
 
 //   // Step 0 — Basic Information
 //   const Step0 = (
@@ -601,7 +594,6 @@
 //   )}
 // </div>
 
-
 //       <div>
 //         <label className="block text-sm font-medium">
 //           Authors (comma separated) <span className="text-red-500">*</span>
@@ -739,7 +731,6 @@
 //     </div>
 //   );
 
-
 //    // --- Step Content (trimmed for brevity) ---
 // const Steps = (
 //   <>
@@ -784,8 +775,6 @@
 //   </div>
 // );
 
-
-
 //  const body = (
 //     <div className="space-y-6">
 //       {Stepper}
@@ -793,7 +782,6 @@
 //       {Navigation}
 //     </div>
 //   );
-
 
 //   // If wrapped by an external FormProvider, render just the body.
 //   if (ctx) return body;
@@ -835,6 +823,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import CKEditorField from "./CKEditorField";
+import { Select } from "@/components/ui";
 
 function ArticleForm({
   journals = [],
@@ -912,15 +901,21 @@ function ArticleForm({
       article_status: formData.article_status || defaultArticleStatus,
       journal_id: formData.journal_id || defaultJournalId || "",
     });
-if (formData.volume_id && fetchIssuesByVolume) {
-  fetchIssuesByVolume(formData.volume_id).then((issues) => {
-    setIssuesMeta(Array.isArray(issues) ? issues : []);
-    if (formData.issue_id) {
-      setValue("issue_id", String(formData.issue_id)); // ✅ auto-select issue
+    if (formData.volume_id && fetchIssuesByVolume) {
+      fetchIssuesByVolume(formData.volume_id).then((issues) => {
+        setIssuesMeta(Array.isArray(issues) ? issues : []);
+        if (formData.issue_id) {
+          setValue("issue_id", String(formData.issue_id)); // ✅ auto-select issue
+        }
+      });
     }
-  });
-}
-  }, [formData, reset, defaultJournalId, defaultArticleStatus, fetchIssuesByVolume]);
+  }, [
+    formData,
+    reset,
+    defaultJournalId,
+    defaultArticleStatus,
+    fetchIssuesByVolume,
+  ]);
 
   // --------------------------------------------------------------------
   // Reset for add mode
@@ -983,61 +978,64 @@ if (formData.volume_id && fetchIssuesByVolume) {
     const jr = journals.find((j) => String(j.id) === String(journal_id));
     if (!jr) return;
     const prefix = jr.doi_prefix?.replace(/\/$/, "") || "";
-    if (prefix) setValue("doi", `${prefix}/${article_id}`, { shouldDirty: true });
+    if (prefix)
+      setValue("doi", `${prefix}/${article_id}`, { shouldDirty: true });
   }, [article_id, journal_id, journals, setValue]);
 
   // --------------------------------------------------------------------
   // Issues + Months
   // --------------------------------------------------------------------
-// --------------------------------------------------------------------
-// Load Issues (handles both Add & Edit safely)
-// --------------------------------------------------------------------
-useEffect(() => {
-  const loadIssues = async () => {
-    if (!volume_id || !fetchIssuesByVolume) {
-      setIssuesMeta([]);
-      setValue("issue_id", "");
-      return;
-    }
-
-    try {
-      // reset issue field to prevent stale state
-      setValue("issue_id", "", { shouldDirty: true, shouldValidate: true });
-
-      let issues = [];
-
-      // Detect case
-      if (isEdit && formData?.issue_id) {
-        // 🧩 Case B — Edit Mode
-        console.log("Edit mode: fetch with include_id", formData.issue_id);
-        issues = await fetchIssuesByVolume(volume_id, formData.issue_id);
-      } else {
-        // 🆕 Case A — Add Mode
-        console.log("Add mode: normal fetch");
-        issues = await fetchIssuesByVolume(volume_id);
+  // --------------------------------------------------------------------
+  // Load Issues (handles both Add & Edit safely)
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    const loadIssues = async () => {
+      if (!volume_id || !fetchIssuesByVolume) {
+        setIssuesMeta([]);
+        setValue("issue_id", "");
+        return;
       }
 
-      console.log("✅ Loaded issues:", issues);
-      setIssuesMeta(Array.isArray(issues) ? issues : []);
+      try {
+        // reset issue field to prevent stale state
+        setValue("issue_id", "", { shouldDirty: true, shouldValidate: true });
 
-      // Prefill issue_id if editing and issue exists in response
-      if (isEdit && formData?.issue_id) {
-        const found = issues.some((i) => i.id == formData.issue_id);
-        if (found) {
-          console.log("Prefilling issue_id:", formData.issue_id);
-          setValue("issue_id", String(formData.issue_id), { shouldDirty: false });
+        let issues = [];
+
+        // Detect case
+        if (isEdit && formData?.issue_id) {
+          // 🧩 Case B — Edit Mode
+          console.log("Edit mode: fetch with include_id", formData.issue_id);
+          issues = await fetchIssuesByVolume(volume_id, formData.issue_id);
         } else {
-          console.warn("⚠️ Prefill issue not found in loaded list");
+          // 🆕 Case A — Add Mode
+          console.log("Add mode: normal fetch");
+          issues = await fetchIssuesByVolume(volume_id);
         }
-      }
-    } catch (err) {
-      console.error("❌ Failed to fetch issues:", err);
-      setIssuesMeta([]);
-    }
-  };
 
-  loadIssues();
-},  [volume_id, fetchIssuesByVolume, setValue, isEdit, formData]);
+        console.log("✅ Loaded issues:", issues);
+        setIssuesMeta(Array.isArray(issues) ? issues : []);
+
+        // Prefill issue_id if editing and issue exists in response
+        if (isEdit && formData?.issue_id) {
+          const found = issues.some((i) => i.id == formData.issue_id);
+          if (found) {
+            console.log("Prefilling issue_id:", formData.issue_id);
+            setValue("issue_id", String(formData.issue_id), {
+              shouldDirty: false,
+            });
+          } else {
+            console.warn("⚠️ Prefill issue not found in loaded list");
+          }
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch issues:", err);
+        setIssuesMeta([]);
+      }
+    };
+
+    loadIssues();
+  }, [volume_id, fetchIssuesByVolume, setValue, isEdit, formData]);
 
   useEffect(() => {
     const loadMonthRange = async () => {
@@ -1072,8 +1070,8 @@ useEffect(() => {
   });
   const titleCheckTimeout = useRef(null);
 
-useEffect(() => {
-  if (isEdit || !article_title || !journal_id || !formData.article_id) return;
+  useEffect(() => {
+    if (isEdit || !article_title || !journal_id || !formData.article_id) return;
 
     clearTimeout(titleCheckTimeout.current);
     titleCheckTimeout.current = setTimeout(async () => {
@@ -1113,7 +1111,10 @@ useEffect(() => {
   // Stepper logic
   // --------------------------------------------------------------------
   const stripHtml = (html) =>
-    (html || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+    (html || "")
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
   const isFilled = (val) =>
     typeof val === "string" ? stripHtml(val).length > 0 : !!val;
 
@@ -1171,78 +1172,95 @@ useEffect(() => {
     <div className="space-y-6">
       {/* article status + journal + volume + issue + article_id */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Status */}
-        <div>
-          <label className="block text-sm font-medium">Article Status *</label>
-          <select
-            {...register("article_status")}
-            value={article_status}
-            onChange={(e) => setValue("article_status", e.target.value)}
-            className="border rounded-md p-2 w-full"
-          >
-            <option value="">Select Status</option>
-            <option value="unpublished">Unpublished</option>
-            <option value="published">Published</option>
-          </select>
-        </div>
+        <Controller
+          name="article_status"
+          control={control}
+          render={({ field }) => (
+            <Select
+              label="Select Status"
+              placeholder="Select Status"
+              value={article_status}
+              onValueChange={(val) => {
+                field.onChange(val);
+                setValue("article_status", val);
+              }}
+              options={[
+                { value: "unpublished", label: "Unpublished" },
+                { value: "published", label: "Published" },
+              ]}
+            />
+          )}
+        />
 
-        {/* Journal */}
-        <div>
-          <label className="block text-sm font-medium">Journal *</label>
-          <select
-            {...register("journal_id")}
-            value={journal_id}
-            onChange={onJournalChange}
-            disabled={disabledJournal}
-            className={`border rounded-md p-2 w-full ${
-              disabledJournal ? "bg-gray-100 cursor-not-allowed" : ""
-            }`}
-          >
-            <option value="">Select Journal</option>
-            {journals.map((j) => (
-              <option key={j.id} value={`${j.id}`}>
-                {j.journal_name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Controller
+          name="journal_id"
+          control={control}
+          render={({ field }) => (
+            <Select
+              label="Select Journal"
+              placeholder="Choose Journal"
+              value={journal_id}
+              disabled={disabledJournal}
+              options={journals.map((j) => ({
+                value: `${j.id}`,
+                label: j.journal_name,
+              }))}
+              onValueChange={(val) => {
+                field.onChange(val);
+                onJournalChange({
+                  target: { value: val },
+                });
+              }}
+            />
+          )}
+        />
 
-        {/* Volume */}
-        <div>
-          <label className="block text-sm font-medium">Volume *</label>
-          <select
-            {...register("volume_id")}
-            value={volume_id}
-            onChange={onVolumeChange}
-            className="border rounded-md p-2 w-full"
-          >
-            <option value="">Select Volume</option>
-            {volumesMeta.map((v) => (
-              <option key={v.id} value={`${v.id}`}>
-                {v.volume_number ?? v.volume_label ?? v.id}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Controller
+          name="volume_id"
+          control={control}
+          render={({ field }) => (
+            <Select
+              label="Select Volume"
+              placeholder="Select Volume"
+              value={volume_id}
+              options={[
+                ...volumesMeta.map((v) => ({
+                  value: `${v.id}`,
+                  label: v.volume_number ?? v.volume_label ?? v.id,
+                })),
+              ]}
+              onValueChange={(val) => {
+                field.onChange(val);
+                onVolumeChange({
+                  target: { value: val },
+                });
+              }}
+            />
+          )}
+        />
 
-        {/* Issue */}
-        <div>
-          <label className="block text-sm font-medium">Issue *</label>
-          <select
-            {...register("issue_id")}
-            value={issue_id}
-            onChange={(e) => setValue("issue_id", e.target.value)}
-            disabled={!volume_id}
-            className="border rounded-md p-2 w-full"
-          >
-            <option value="">Select Issue</option>
-            {issuesMeta.map((i) => (
-              <option key={i.id} value={`${i.id}`}>
-                {i.issue_number ?? i.issue_label ?? i.id}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Controller
+          name="issue_id"
+          control={control}
+          render={({ field }) => (
+            <Select
+              label="Select Issue"
+              placeholder="Select Issue"
+              value={issue_id}
+              disabled={!volume_id}
+              options={[
+                ...issuesMeta.map((i) => ({
+                  value: `${i.id}`,
+                  label: i.issue_number ?? i.issue_label ?? i.id,
+                })),
+              ]}
+              onValueChange={(val) => {
+                field.onChange(val);
+                setValue("issue_id", val);
+              }}
+            />
+          )}
+        />
 
         {/* Article ID */}
         <div className="md:col-span-2">
@@ -1259,19 +1277,33 @@ useEffect(() => {
 
       {/* Page and month ranges */}
       <div className="grid grid-cols-2 gap-4">
-        <Input {...register("page_from")} value={page_from} placeholder="Page From" />
+        <Input
+          {...register("page_from")}
+          value={page_from}
+          placeholder="Page From"
+        />
         <Input {...register("page_to")} value={page_to} placeholder="Page To" />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Input {...register("month_from")} value={month_from} readOnly disabled />
+        <Input
+          {...register("month_from")}
+          value={month_from}
+          readOnly
+          disabled
+        />
         <Input {...register("month_to")} value={month_to} readOnly disabled />
       </div>
 
       {/* Dates */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {["received", "revised", "accepted", "published"].map((k) => (
-          <Input key={k} {...register(k)} type="date" className="border p-2 rounded-md" />
+          <Input
+            key={k}
+            {...register(k)}
+            type="date"
+            className="border p-2 rounded-md"
+          />
         ))}
       </div>
     </div>
@@ -1282,7 +1314,12 @@ useEffect(() => {
   // --------------------------------------------------------------------
   const Step1 = (
     <div className="space-y-4">
-      <Input {...register("doi")} value={doi} readOnly className="bg-gray-100" />
+      <Input
+        {...register("doi")}
+        value={doi}
+        readOnly
+        className="bg-gray-100"
+      />
 
       <div>
         <label className="block text-sm font-medium">Title *</label>
@@ -1317,7 +1354,11 @@ useEffect(() => {
         name="abstract"
         control={control}
         render={({ field: { value, onChange } }) => (
-          <CKEditorField value={value || ""} onChange={onChange} placeholder="Abstract…" />
+          <CKEditorField
+            value={value || ""}
+            onChange={onChange}
+            placeholder="Abstract…"
+          />
         )}
       />
 
@@ -1328,78 +1369,82 @@ useEffect(() => {
         placeholder="Keywords (comma separated)"
       />
 
-{/* 📄 Article PDF */}
-<div>
-  <label className="block text-sm font-medium mb-1">Article PDF (optional)</label>
-  <input
-    key={selectedFile ? selectedFile.name : formData?.pdf_path || "no-file"} // ✅ force re-render when cleared
-    ref={fileInputRef}
-    type="file"
-    accept="application/pdf"
-    onChange={(e) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        const MAX = 10 * 1024 * 1024;
-        if (file.size > MAX) {
-          alert("PDF must be ≤ 10 MB.");
-          e.target.value = "";
-          return;
-        }
-        onFileSelect?.(file);
-      }
-    }}
-    disabled={submitting || isSubmitting}
-    className="block w-full border rounded-md p-2"
-  />
+      {/* 📄 Article PDF */}
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Article PDF (optional)
+        </label>
+        <input
+          key={
+            selectedFile ? selectedFile.name : formData?.pdf_path || "no-file"
+          } // ✅ force re-render when cleared
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const MAX = 10 * 1024 * 1024;
+              if (file.size > MAX) {
+                alert("PDF must be ≤ 10 MB.");
+                e.target.value = "";
+                return;
+              }
+              onFileSelect?.(file);
+            }
+          }}
+          disabled={submitting || isSubmitting}
+          className="block w-full border rounded-md p-2"
+        />
 
-  {/* ✅ Handle all states */}
-  {selectedFile ? (
-    <div className="text-sm mt-1">
-      Selected: <strong>{selectedFile.name}</strong>{" "}
-      <button
-        type="button"
-        onClick={() => {
-          onFileSelect?.(null);
-          if (fileInputRef.current) fileInputRef.current.value = ""; // clear native file input
-        }}
-        className="text-blue-600 underline ml-2"
-      >
-        remove
-      </button>
-    </div>
-  ) : formData?.pdf_path ? (
-    <div className="text-sm mt-1">
-      Existing:{" "}
-      <a
-        href={
-          formData.pdf_path.startsWith("http")
-            ? formData.pdf_path
-            : `/uploads/${formData.pdf_path.replace(/^\/+/, "")}`
-        }
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 underline"
-      >
-        {formData.pdf_path.split("/").pop()}
-      </a>
-      <button
-        type="button"
-        onClick={() => {
-          // 🗑 allow removing existing file before uploading new one
-          onFileSelect?.(null);
-          if (fileInputRef.current) fileInputRef.current.value = "";
-        }}
-        className="text-red-600 underline ml-3"
-      >
-        remove
-      </button>
-    </div>
-  ) : (
-    <div className="text-xs text-gray-500 mt-1">No file selected yet.</div>
-  )}
-</div>
-
-
+        {/* ✅ Handle all states */}
+        {selectedFile ? (
+          <div className="text-sm mt-1">
+            Selected: <strong>{selectedFile.name}</strong>{" "}
+            <button
+              type="button"
+              onClick={() => {
+                onFileSelect?.(null);
+                if (fileInputRef.current) fileInputRef.current.value = ""; // clear native file input
+              }}
+              className="text-blue-600 underline ml-2"
+            >
+              remove
+            </button>
+          </div>
+        ) : formData?.pdf_path ? (
+          <div className="text-sm mt-1">
+            Existing:{" "}
+            <a
+              href={
+                formData.pdf_path.startsWith("http")
+                  ? formData.pdf_path
+                  : `/uploads/${formData.pdf_path.replace(/^\/+/, "")}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline"
+            >
+              {formData.pdf_path.split("/").pop()}
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                // 🗑 allow removing existing file before uploading new one
+                onFileSelect?.(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+              }}
+              className="text-red-600 underline ml-3"
+            >
+              remove
+            </button>
+          </div>
+        ) : (
+          <div className="text-xs text-gray-500 mt-1">
+            No file selected yet.
+          </div>
+        )}
+      </div>
     </div>
   );
 

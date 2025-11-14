@@ -7,9 +7,18 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { Select } from "@/components/ui";
 
 export default function Addform({ onSaved, editMail, onCancelEdit }) {
-  const { register, handleSubmit, reset, control, setValue, watch } = useForm({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    control,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       id: null,
       journal_id: "",
@@ -35,7 +44,7 @@ export default function Addform({ onSaved, editMail, onCancelEdit }) {
       .catch(() => toast.error("Failed to load journals"));
   }, []);
 
-   // 🟢 Prefill when editing
+  // 🟢 Prefill when editing
   useEffect(() => {
     if (editMail) {
       Object.entries(editMail).forEach(([k, v]) => setValue(k, v));
@@ -68,13 +77,12 @@ export default function Addform({ onSaved, editMail, onCancelEdit }) {
       toast.error("Failed to save mail configuration");
     }
   };
- // 🟠 Reset / Clear form handler
+  // 🟠 Reset / Clear form handler
   const handleReset = () => {
     reset();
     onCancelEdit?.();
     toast.info("Form cleared");
   };
-
 
   return (
     <form
@@ -82,35 +90,51 @@ export default function Addform({ onSaved, editMail, onCancelEdit }) {
       className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 bg-white p-6 rounded-lg shadow"
     >
       <div className="md:col-span-2 text-lg font-semibold">
-          {editMail ? "Edit Mail Configuration" : "Add Mail Configuration"}
+        {editMail ? "Edit Mail Configuration" : "Add Mail Configuration"}
       </div>
 
       <div>
-        <Label>Journal</Label>
-        <select
-          {...register("journal_id", { required: true })}
-          className="w-full border rounded px-2 py-2"
-        >
-          <option value="">Select Journal</option>
-          {journals.map((j) => (
-            <option key={j.id} value={j.id}>
-              {j.journal_name}
-            </option>
-          ))}
-        </select>
+        <Controller
+          name="journal_id"
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <Select
+              label="Select Journal"
+              placeholder="Choose Journal"
+              className="w-full"
+              value={field.value}
+              onValueChange={field.onChange}
+              error={errors.journal_id?.message}
+              options={journals.map((j) => ({
+                value: j.id,
+                label: j.journal_name,
+              }))}
+            />
+          )}
+        />
       </div>
 
       <div>
-        <Label>Purpose</Label>
-        <select
-          {...register("purpose")}
-          className="w-full border rounded px-2 py-2"
-        >
-          <option value="editor">Editor</option>
-          <option value="author">Author</option>
-          <option value="paper_submission">Paper Submission</option>
-          <option value="notification">Notification</option>
-        </select>
+        <Controller
+          name="purpose"
+          control={control}
+          render={({ field }) => (
+            <Select
+              label="Purpose"
+              placeholder="Select Purpose"
+              className="w-full"
+              value={field.value}
+              onValueChange={field.onChange}
+              options={[
+                { value: "editor", label: "Editor" },
+                { value: "author", label: "Author" },
+                { value: "paper_submission", label: "Paper Submission" },
+                { value: "notification", label: "Notification" },
+              ]}
+            />
+          )}
+        />
       </div>
 
       <div>
@@ -182,7 +206,7 @@ export default function Addform({ onSaved, editMail, onCancelEdit }) {
         <Label className="text-sm">Active</Label>
       </div>
 
- <div className="md:col-span-2 text-right mt-2">
+      <div className="md:col-span-2 text-right mt-2">
         <Button type="submit">
           {editMail ? "Update Configuration" : "Save Configuration"}
         </Button>
@@ -209,7 +233,6 @@ export default function Addform({ onSaved, editMail, onCancelEdit }) {
           Reset
         </Button>
       </div>
-      
     </form>
   );
 }

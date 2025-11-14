@@ -1023,7 +1023,6 @@
 //   actions: true,     // visible
 // });
 //   const [activeMenu, setActiveMenu] = useState(null);
-   
 
 //   // ------------------------------------------------------------------
 //   // ARTICLES (server pagination)
@@ -1068,9 +1067,6 @@
 //   const articles = data?.articles || [];
 //   const total = data?.total || 0;
 //   const totalPages = Math.max(1, Math.ceil(total / pagination.pageSize));
-
-
-
 
 //   // ------------------------------------------------------------------
 //   // META DATA
@@ -1405,7 +1401,6 @@
 //   </table>
 // </div>
 
-
 //       {/* Pagination */}
 //       <div className="flex justify-between items-center mt-4 text-sm">
 //         <div>
@@ -1625,7 +1620,6 @@
 //   );
 // }
 
-
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState, useEffect } from "react";
@@ -1637,6 +1631,7 @@ import {
 } from "@tanstack/react-table";
 import { Dialog } from "@headlessui/react";
 import { Settings, MoreVertical, Loader2 } from "lucide-react";
+import { Input, Select } from "@/components/ui";
 
 // -------------------------------------------------------------
 // Utility
@@ -1697,7 +1692,10 @@ export default function Page() {
   // -------------------------------------------------------------
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest(".article-menu") && !event.target.closest(".columns-menu")) {
+      if (
+        !event.target.closest(".article-menu") &&
+        !event.target.closest(".columns-menu")
+      ) {
         setOpenMenuId(null);
         setActiveMenu(null);
       }
@@ -1721,7 +1719,13 @@ export default function Page() {
   // Fetch Articles (server pagination)
   // -------------------------------------------------------------
   const { data, isFetching } = useQuery({
-    queryKey: ["articles", jid, pagination.pageIndex, pagination.pageSize, filters],
+    queryKey: [
+      "articles",
+      jid,
+      pagination.pageIndex,
+      pagination.pageSize,
+      filters,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams({
         journal_id: jid,
@@ -1803,7 +1807,9 @@ export default function Page() {
         return {
           id: issue.id,
           volume_id: issue.volume_id,
-          label: `Vol. ${vol?.volume_number ?? "?"} / Issue ${issue.issue_number}`,
+          label: `Vol. ${vol?.volume_number ?? "?"} / Issue ${
+            issue.issue_number
+          }`,
         };
       }),
     [issuesMeta, volumesMeta]
@@ -1852,11 +1858,15 @@ export default function Page() {
           };
 
           const handleDelete = async () => {
-            if (!confirm("Are you sure you want to delete this article?")) return;
+            if (!confirm("Are you sure you want to delete this article?"))
+              return;
             try {
-              const res = await fetch(`/api/articles?id=${id}`, { method: "DELETE" });
+              const res = await fetch(`/api/articles?id=${id}`, {
+                method: "DELETE",
+              });
               const json = await res.json();
-              if (!json.success) throw new Error(json.message || "Failed to delete");
+              if (!json.success)
+                throw new Error(json.message || "Failed to delete");
               alert("✅ Article deleted successfully.");
               queryClient.invalidateQueries(["articles", jid]);
             } catch (err) {
@@ -1925,8 +1935,9 @@ export default function Page() {
       <h2 className="text-xl font-bold mb-4">{getJournalName(jid)}</h2>
 
       {/* Filters */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-        <input
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mb-6">
+        <Input
+          label="Search"
           placeholder="Search by Title, Author, or Article ID"
           value={filters.query || ""}
           onChange={(e) => setFilters({ ...filters, query: e.target.value })}
@@ -1934,38 +1945,39 @@ export default function Page() {
         />
 
         <div className="flex flex-col">
-          <label className="text-xs text-gray-600 mb-1 font-medium">
-            Volume & Issue
-          </label>
-          <select
+          <Select
+            label="Volume / Issue"
+            placeholder="All"
+            className="border p-2 rounded w-full"
             value={
               filters.volume && filters.issue
                 ? `${filters.volume}|${filters.issue}`
                 : ""
             }
-            onChange={(e) => {
-              const val = e.target.value;
-              if (!val) return setFilters({ ...filters, volume: "", issue: "" });
+            onValueChange={(val) => {
+              if (!val) {
+                return setFilters({ ...filters, volume: "", issue: "" });
+              }
+
               const [vol, iss] = val.split("|");
               setFilters({ ...filters, volume: vol, issue: iss });
             }}
-            className="border p-2 rounded"
-          >
-            <option value="">All</option>
-            {volumeIssueList.map((i) => (
-              <option key={i.id} value={`${i.volume_id}|${i.id}`}>
-                {i.label}
-              </option>
-            ))}
-          </select>
+            options={[
+              ...volumeIssueList.map((i) => ({
+                value: `${i.volume_id}|${i.id}`,
+                label: i.label,
+              })),
+            ]}
+          />
         </div>
       </div>
 
       {/* Column Settings */}
       <div className="flex justify-between items-center mb-3 text-sm">
         <div className="text-gray-600">
-          Showing {(pagination.pageIndex * pagination.pageSize) + 1}–
-          {Math.min((pagination.pageIndex + 1) * pagination.pageSize, total)} of {total}
+          Showing {pagination.pageIndex * pagination.pageSize + 1}–
+          {Math.min((pagination.pageIndex + 1) * pagination.pageSize, total)} of{" "}
+          {total}
         </div>
 
         <div className="relative columns-menu">
@@ -2006,8 +2018,14 @@ export default function Page() {
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((header) => (
-                  <th key={header.id} className="p-2 text-left border-b font-medium">
-                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  <th
+                    key={header.id}
+                    className="p-2 text-left border-b font-medium"
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
                   </th>
                 ))}
               </tr>
@@ -2017,9 +2035,15 @@ export default function Page() {
           <tbody className="relative min-h-[200px]">
             {isFetching && (
               <tr>
-                <td colSpan={columns.length} className="p-6 text-center align-middle">
+                <td
+                  colSpan={columns.length}
+                  className="p-6 text-center align-middle"
+                >
                   <div className="flex items-center justify-center">
-                    <Loader2 size={30} className="animate-spin text-blue-600 opacity-80" />
+                    <Loader2
+                      size={30}
+                      className="animate-spin text-blue-600 opacity-80"
+                    />
                     <span className="ml-2 text-gray-600">Loading...</span>
                   </div>
                 </td>
@@ -2029,17 +2053,26 @@ export default function Page() {
             {!isFetching &&
               (articles.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="border-b hover:bg-gray-50 transition">
+                  <tr
+                    key={row.id}
+                    className="border-b hover:bg-gray-50 transition"
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="p-2">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </td>
                     ))}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={columns.length} className="p-4 text-center text-gray-500">
+                  <td
+                    colSpan={columns.length}
+                    className="p-4 text-center text-gray-500"
+                  >
                     No records found.
                   </td>
                 </tr>
@@ -2056,7 +2089,10 @@ export default function Page() {
         <div className="space-x-2">
           <button
             onClick={() =>
-              setPagination((p) => ({ ...p, pageIndex: Math.max(p.pageIndex - 1, 0) }))
+              setPagination((p) => ({
+                ...p,
+                pageIndex: Math.max(p.pageIndex - 1, 0),
+              }))
             }
             disabled={pagination.pageIndex === 0}
             className="px-3 py-1 border rounded disabled:opacity-50"
@@ -2068,7 +2104,8 @@ export default function Page() {
               setPagination((p) => ({
                 ...p,
                 pageIndex: Math.min(p.pageIndex + 1, totalPages - 1),
-              }))}
+              }))
+            }
             disabled={pagination.pageIndex + 1 >= totalPages}
             className="px-3 py-1 border rounded disabled:opacity-50"
           >
@@ -2101,13 +2138,13 @@ export default function Page() {
             <>
               {/* Header */}
               <div className="relative mb-4 border-b pb-2">
-<button
-  onClick={() => setViewArticle(null)}
-  className="absolute top-2 right-2 bg-white/90 backdrop-blur border border-gray-200 rounded-full w-8 h-8 flex items-center justify-center shadow hover:bg-white hover:scale-105 transition"
-  aria-label="Close"
->
-  ✕
-</button>
+                <button
+                  onClick={() => setViewArticle(null)}
+                  className="absolute top-2 right-2 bg-white/90 backdrop-blur border border-gray-200 rounded-full w-8 h-8 flex items-center justify-center shadow hover:bg-white hover:scale-105 transition"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
 
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-[13px] font-semibold text-blue-700 uppercase tracking-wide">
@@ -2121,7 +2158,8 @@ export default function Page() {
                       rel="noopener noreferrer"
                       className="text-[13px] text-blue-600 font-semibold hover:underline flex items-center gap-1"
                     >
-                      <span className="text-blue-500">|</span> Download Full Text
+                      <span className="text-blue-500">|</span> Download Full
+                      Text
                     </a>
                   )}
                 </div>
@@ -2138,7 +2176,8 @@ export default function Page() {
                         className="text-blue-600 underline"
                         target="_blank"
                       >
-                        {viewArticle.doi}{viewArticle.article_id}
+                        {viewArticle.doi}
+                        {viewArticle.article_id}
                       </a>
                     </>
                   )}
@@ -2182,80 +2221,77 @@ export default function Page() {
               </div>
 
               {/* Citation */}
-{viewArticle.authors && (
-  <div className="mb-4">
-    <h4 className="font-semibold text-gray-800 mb-1">Citation</h4>
+              {viewArticle.authors && (
+                <div className="mb-4">
+                  <h4 className="font-semibold text-gray-800 mb-1">Citation</h4>
 
-    {(() => {
-      // 🔧 normalize keys from API
-      const title =
-        viewArticle?.article_title ?? viewArticle?.title ?? "";
+                  {(() => {
+                    // 🔧 normalize keys from API
+                    const title =
+                      viewArticle?.article_title ?? viewArticle?.title ?? "";
 
-      const volume =
-        viewArticle?.volume_number ?? viewArticle?.volume ?? null;
+                    const volume =
+                      viewArticle?.volume_number ?? viewArticle?.volume ?? null;
 
-      const issue =
-        viewArticle?.issue_number ?? viewArticle?.issue ?? null;
+                    const issue =
+                      viewArticle?.issue_number ?? viewArticle?.issue ?? null;
 
-      const pageFrom =
-        viewArticle?.page_from ?? viewArticle?.pages_from ?? null;
+                    const pageFrom =
+                      viewArticle?.page_from ?? viewArticle?.pages_from ?? null;
 
-      const pageTo =
-        viewArticle?.page_to ?? viewArticle?.pages_to ?? null;
+                    const pageTo =
+                      viewArticle?.page_to ?? viewArticle?.pages_to ?? null;
 
-      const year = viewArticle?.year ?? null;
+                    const year = viewArticle?.year ?? null;
 
-      // 👤 authors can be LONGTEXT JSON or plain text
-      let authorsText = "";
-      const rawAuthors = viewArticle?.authors;
-      if (Array.isArray(rawAuthors)) {
-        authorsText = rawAuthors.join(", ");
-      } else if (typeof rawAuthors === "string") {
-        try {
-          const parsed = JSON.parse(rawAuthors);
-          authorsText = Array.isArray(parsed)
-            ? parsed.join(", ")
-            : rawAuthors;
-        } catch {
-          authorsText = rawAuthors;
-        }
-      }
+                    // 👤 authors can be LONGTEXT JSON or plain text
+                    let authorsText = "";
+                    const rawAuthors = viewArticle?.authors;
+                    if (Array.isArray(rawAuthors)) {
+                      authorsText = rawAuthors.join(", ");
+                    } else if (typeof rawAuthors === "string") {
+                      try {
+                        const parsed = JSON.parse(rawAuthors);
+                        authorsText = Array.isArray(parsed)
+                          ? parsed.join(", ")
+                          : rawAuthors;
+                      } catch {
+                        authorsText = rawAuthors;
+                      }
+                    }
 
-
-      return (
-        <p className="text-gray-700 leading-relaxed">
-          {/* Authors */}
-          {authorsText && <span>{authorsText}</span>}
-          {authorsText ? ", " : ""}
-
-          {/* Title */}
-          “
-          <span
-            dangerouslySetInnerHTML={{
-              __html: title,
-            }}
-          />
-          ”,&nbsp;
-
-          {/* Journal */}
-          <em>{getJournalName(viewArticle.journal_id)}</em>
-
-          {/* Volume / Issue */}
-          {volume ? <> , vol. {volume}</> : null}
-          {issue ? <> , no. {issue}</> : null}
-
-          {/* Pages */}
-          {pageFrom && pageTo ? <> , pp. {pageFrom}–{pageTo}</> : null}
-
-          {/* Year */}
-          {year ? <> , {year}.</> : "."}
-
-        </p>
-      );
-    })()}
-  </div>
-)}
-
+                    return (
+                      <p className="text-gray-700 leading-relaxed">
+                        {/* Authors */}
+                        {authorsText && <span>{authorsText}</span>}
+                        {authorsText ? ", " : ""}
+                        {/* Title */}
+                        “
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: title,
+                          }}
+                        />
+                        ”,&nbsp;
+                        {/* Journal */}
+                        <em>{getJournalName(viewArticle.journal_id)}</em>
+                        {/* Volume / Issue */}
+                        {volume ? <> , vol. {volume}</> : null}
+                        {issue ? <> , no. {issue}</> : null}
+                        {/* Pages */}
+                        {pageFrom && pageTo ? (
+                          <>
+                            {" "}
+                            , pp. {pageFrom}–{pageTo}
+                          </>
+                        ) : null}
+                        {/* Year */}
+                        {year ? <> , {year}.</> : "."}
+                      </p>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* Abstract */}
               {viewArticle.abstract && (
@@ -2283,7 +2319,9 @@ export default function Page() {
               {/* References */}
               {viewArticle.references && (
                 <div className="mb-4">
-                  <h4 className="font-semibold text-gray-800 mb-1">References</h4>
+                  <h4 className="font-semibold text-gray-800 mb-1">
+                    References
+                  </h4>
                   <div
                     className="text-gray-700 text-xs leading-relaxed space-y-1"
                     dangerouslySetInnerHTML={{ __html: viewArticle.references }}

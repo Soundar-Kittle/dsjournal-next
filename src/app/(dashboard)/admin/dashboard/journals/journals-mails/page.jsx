@@ -5,6 +5,7 @@ import Addform from "@/components/Dashboard/Journals/journalsmaildetails/Addform
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { toast } from "sonner";
+import { Input, Select } from "@/components/ui";
 
 export default function Page() {
   const [journals, setJournals] = useState([]);
@@ -72,7 +73,6 @@ export default function Page() {
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
-      
       {/* 🧾 Add/Edit Form */}
       <Addform
         onSaved={fetchAll}
@@ -81,29 +81,31 @@ export default function Page() {
       />
 
       {/* 🔍 Filter & Search */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-white shadow p-4 rounded-md">
-        <div className="flex gap-3 flex-wrap">
-          <select
-            className="border rounded px-3 py-2"
-            value={journal}
-            onChange={(e) => setJournal(e.target.value)}
-          >
-            <option value="">All Journals</option>
-            {journals.map((j) => (
-              <option key={j.id} value={j.id}>
-                {j.journal_name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="Search by email or purpose..."
-            className="border rounded px-3 py-2 w-64"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-white shadow p-4 rounded-md">
+        <Select
+          label="All Journals"
+          placeholder="Select Journal"
+          className="w-full"
+          value={journal}
+          onValueChange={(val) => setJournal(val)}
+          options={[
+            ...journals.map((j) => ({
+              value: j.id,
+              label: j.journal_name,
+            })),
+          ]}
+        />
+
+        <Input
+          type="text"
+          label="Search"
+          placeholder="Search by email or purpose..."
+          className="border rounded px-3 text-sm"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <div className="flex items-center justify-end">
           <span className="text-sm text-gray-500">
             {filtered.length} result(s)
           </span>

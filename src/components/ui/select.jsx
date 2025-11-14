@@ -218,7 +218,7 @@ function SelectContent({ className, children, position = "popper", ...props }) {
         position={position}
         {...props}
       >
-        <SelectScrollUpButton />
+        {/* <SelectScrollUpButton /> */}
         <SelectPrimitive.Viewport
           className={cn(
             "p-1",
@@ -228,7 +228,7 @@ function SelectContent({ className, children, position = "popper", ...props }) {
         >
           {children}
         </SelectPrimitive.Viewport>
-        <SelectScrollDownButton />
+        {/* <SelectScrollDownButton /> */}
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   );

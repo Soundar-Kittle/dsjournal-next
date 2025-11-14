@@ -566,7 +566,7 @@
 //////////////////////////////////////////
 "use client";
 
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -591,9 +591,9 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { SortableMemberRow, SortableTitleRow } from "../Dnd/SortableRow";
+import { Select } from "@/components/ui";
 
 export function AssignEditorialRolesForm() {
   const { register, handleSubmit, reset, setValue, control } = useForm();
@@ -614,7 +614,8 @@ export function AssignEditorialRolesForm() {
   const { data: allMembers = [] } = useQuery({
     queryKey: ["editorial-members"],
     queryFn: async () => {
-      const res = await axios.get("/api/editorial-members?all=true");
+      const res = await axios.get("/api/editorial-members?limit=All");
+      // const res = await axios.get("/api/editorial-members?all=true");
       return res.data.members ?? [];
     },
   });
@@ -792,44 +793,65 @@ export function AssignEditorialRolesForm() {
     >
       <h2 className="text-lg font-semibold">Assign Roles</h2>
 
-      <Label>Select Journal</Label>
-      <select
-        {...register("journal_id", { required: true })}
-        className="border p-2 rounded w-full"
-      >
-        <option value="">Choose Journal</option>
-        {journals.map((j) => (
-          <option key={j.id} value={j.id}>
-            {j.journal_name}
-          </option>
-        ))}
-      </select>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        <Controller
+          name="journal_id"
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <Select
+              label="Choose Journal"
+              placeholder="Choose Journal"
+              className="w-full"
+              value={field.value}
+              onValueChange={field.onChange}
+              options={journals.map((j) => ({
+                value: j.id,
+                label: j.journal_name,
+              }))}
+            />
+          )}
+        />
 
-      <Label>Select Member</Label>
-      <select
-        {...register("member_id", { required: true })}
-        className="border p-2 rounded w-full"
-      >
-        <option value="">Choose Member</option>
-        {availableMembers.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.name}
-          </option>
-        ))}
-      </select>
+        <Controller
+          name="member_id"
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <Select
+              label="Select Member"
+              placeholder="Choose Member"
+              className="w-full"
+              value={field.value}
+              onValueChange={field.onChange}
+              options={availableMembers.map((m) => ({
+                value: m.id,
+                label: m.name,
+              }))}
+              disabled={!journalId}
+            />
+          )}
+        />
 
-      <Label>Select Title</Label>
-      <select
-        {...register("title_id", { required: true })}
-        className="border p-2 rounded w-full"
-      >
-        <option value="">Choose Title</option>
-        {titles.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.title}
-          </option>
-        ))}
-      </select>
+        <Controller
+          name="title_id"
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <Select
+              label="Select Title"
+              placeholder="Choose Title"
+              className="w-full"
+              value={field.value}
+              onValueChange={field.onChange}
+              options={titles.map((t) => ({
+                value: t.id,
+                label: t.title,
+              }))}
+            />
+          )}
+        />
+      </div>
 
       <Button type="submit" disabled={assignMutation.isPending}>
         {assignMutation.isPending

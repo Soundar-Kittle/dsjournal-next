@@ -181,7 +181,6 @@ const AddBanner = ({ type = "add", editData = {}, onClose }) => {
                       }))
                     : []
                 }
-                searchable
                 onValueChange={field.onChange}
               />
             )}

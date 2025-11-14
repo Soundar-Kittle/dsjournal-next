@@ -66,7 +66,7 @@ export default async function JournalPage({ params }) {
       </header>
 
       {/* Tiles */}
-      <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+      <section className="grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {tiles.map((t) => (
           <Link
             key={t.slug}

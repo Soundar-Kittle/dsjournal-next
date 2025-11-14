@@ -621,26 +621,27 @@ const AddCallForPaper = ({ type = "add", editData = {}, onClose }) => {
 
               )}
             /> */}
+
             <Controller
               name="month_group_id"
               control={control}
               render={({ field }) => (
-                <select
-                  className="border p-2 w-full"
+                <Select
+                  label="Issue Period"
+                  placeholder="Select issue period"
+                  className="w-full"
                   value={field.value || ""}
-                  onChange={(e) => {
-                    field.onChange(e.target.value);
-                    setSelectedMonthGroup(e.target.value);
+                  onValueChange={(val) => {
+                    field.onChange(val);
+                    setSelectedMonthGroup(val);
                   }}
-                >
-                  <option value="">Select issue period</option>
-                  {monthGroups.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.from_month} – {m.to_month} (Vol {m.volume_number},
-                      Issue {m.issue_number}) – {m.status}
-                    </option>
-                  ))}
-                </select>
+                  options={monthGroups.map((m) => ({
+                    value: m.id,
+                    label: `${m.from_month} – ${m.to_month} (Vol ${
+                      m.volume_number
+                    }, Issue ${m.issue_number || ""}) – ${m.status}`,
+                  }))}
+                />
               )}
             />
           </div>
