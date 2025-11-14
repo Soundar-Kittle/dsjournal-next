@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createDbConnection } from "@/lib/db";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { getJournalSlug } from "@/utils/getJouralSlug";
 
 /* ---------------------- POST: Activate/Deactivate Journal ---------------------- */
 export async function POST(req) {
@@ -22,6 +24,14 @@ export async function POST(req) {
       journal_id,
     ]);
 
+    let slug = null;
+    if (journal_id) {
+      const slugRes = await getJournalSlug(connection, journal_id);
+      slug = slugRes.slug;
+    }
+    revalidateTag("journals");
+    revalidatePath("/journals");
+    revalidatePath(slug);
     return NextResponse.json({
       success: true,
       message: is_active ? "Journal activated" : "Journal deactivated",

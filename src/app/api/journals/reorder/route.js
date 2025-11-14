@@ -1,18 +1,24 @@
 import { NextResponse } from "next/server";
 import { createDbConnection } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function POST(req) {
   let conn;
   try {
     const { orderedIds } = await req.json();
     if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
-      return NextResponse.json({ success: false, message: "orderedIds required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "orderedIds required" },
+        { status: 400 }
+      );
     }
 
     const ids = orderedIds.map(Number).filter(Number.isFinite);
     if (ids.length === 0) {
-      return NextResponse.json({ success: false, message: "No valid ids" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "No valid ids" },
+        { status: 400 }
+      );
     }
 
     const cases = ids.map((id, idx) => `WHEN ${id} THEN ${idx}`).join(" ");
@@ -28,13 +34,23 @@ export async function POST(req) {
     await conn.beginTransaction();
     await conn.query(sql);
     await conn.commit();
+    revalidateTag("journals");
     revalidatePath("/journals");
     return NextResponse.json({ success: true });
   } catch (e) {
-    if (conn) try { await conn.rollback(); } catch {}
+    if (conn)
+      try {
+        await conn.rollback();
+      } catch {}
     console.error("reorder bulk error:", e);
-    return NextResponse.json({ success: false, message: "Internal error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Internal error" },
+      { status: 500 }
+    );
   } finally {
-    if (conn) try { await conn.end(); } catch {}
+    if (conn)
+      try {
+        await conn.end();
+      } catch {}
   }
 }

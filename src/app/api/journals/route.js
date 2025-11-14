@@ -107,8 +107,7 @@ export async function POST(req) {
     await conn.query("INSERT INTO journals SET ?", row);
     await conn.end();
     revalidateTag("journals");
-    revalidateTag("journal_slug");
-    revalidateTag("journal_month_groups");
+    revalidateTag("journal_slug");    
     revalidateTag("journal_analytics");
 
     revalidatePath("/journals");
@@ -253,12 +252,11 @@ export async function PATCH(req) {
       params
     );
 
-    const slug = short_name.replace(/^DS-/i, "").toLowerCase();
+    const slug = cleanedData.short_name.replace(/^DS-/i, "").toLowerCase();
 
     await conn.commit();
     revalidateTag("journals");
     revalidateTag("journal_slug");
-    revalidateTag("journal_month_groups");
     revalidateTag("journal_analytics");
 
     revalidatePath("/journals");
@@ -420,7 +418,6 @@ export async function DELETE(req) {
     await conn.commit();
     revalidateTag("journals");
     revalidateTag("journal_slug");
-    revalidateTag("journal_month_groups");
     revalidateTag("journal_analytics");
 
     revalidatePath("/journals");
