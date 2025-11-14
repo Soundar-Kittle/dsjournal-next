@@ -1,7 +1,8 @@
 import { createDbConnection } from "@/lib/db";
 import { getJournalBySlug } from "@/utils/journals";
+import { unstable_cache } from "next/cache";
 
-export async function getArticlesBySlugVolumeIssue(slug, volumeNum, issueNum) {
+export async function _getArticlesBySlugVolumeIssue(slug, volumeNum, issueNum) {
   if (!slug || !volumeNum || !issueNum) return [];
 
   const normalizedSlug = slug.trim().toUpperCase();
@@ -62,3 +63,12 @@ export async function getArticlesBySlugVolumeIssue(slug, volumeNum, issueNum) {
     await connection.end();
   }
 }
+
+export const getArticlesBySlugVolumeIssue = unstable_cache(
+  async (slug, volumeNum, issueNum) =>
+    _getArticlesBySlugVolumeIssue(slug, volumeNum, issueNum),
+  [`volume-issue-list`],
+  {
+    tags: ["volume-issue"],
+  }
+);

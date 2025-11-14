@@ -1,6 +1,7 @@
 import { createDbConnection } from "@/lib/db";
+import { unstable_cache } from "next/cache";
 
-export async function getSitemapArticles() {
+export async function _getSitemapArticles() {
   const connection = await createDbConnection();
   try {
     const sql = `
@@ -26,3 +27,11 @@ export async function getSitemapArticles() {
     await connection.end();
   }
 }
+
+export const getSitemapArticles = unstable_cache(
+  async () => _getSitemapArticles(),
+  [`articles-sitemap-list`],
+  {
+    tags: ["articles-sitemap"],
+  }
+);

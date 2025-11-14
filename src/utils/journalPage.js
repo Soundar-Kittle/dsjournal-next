@@ -1,6 +1,7 @@
 import { createDbConnection } from "@/lib/db";
+import { unstable_cache } from "next/cache";
 
-export async function getJournalPageByTitle(journalId, pageTitle) {
+export async function _getJournalPageByTitle(journalId, pageTitle) {
   const connection = await createDbConnection();
   try {
     const sql = `
@@ -22,3 +23,11 @@ export async function getJournalPageByTitle(journalId, pageTitle) {
     await connection.end();
   }
 }
+
+export const getJournalPageByTitle = unstable_cache(
+  async (journalId, pageTitle) => _getJournalPageByTitle(journalId, pageTitle),
+  [`journal-page-list`],
+  {
+    tags: ["journal-page"],
+  }
+);

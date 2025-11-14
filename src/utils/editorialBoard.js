@@ -1,7 +1,8 @@
 import { createDbConnection } from "@/lib/db";
 import { getJournalBySlug } from "./journals";
+import { unstable_cache } from "next/cache";
 
-export async function getEditorialBoardBySlug(slug) {
+export async function _getEditorialBoardBySlug(slug) {
   if (!slug) return [];
 
   const journal = await getJournalBySlug(slug);
@@ -75,3 +76,11 @@ export async function getEditorialBoardBySlug(slug) {
     await connection.end();
   }
 }
+
+export const getEditorialBoardBySlug = unstable_cache(
+  async (slug) => _getEditorialBoardBySlug(slug),
+  ["editorial-board-list"],
+  {
+    tags: ["editorial_board"],
+  }
+);

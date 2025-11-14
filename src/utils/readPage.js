@@ -1,8 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { createDbConnection } from "@/lib/db";
+import { unstable_cache } from "next/cache";
 
-export async function readPage(slug, journalId = null) {
+export async function _readPage(slug, journalId = null) {
   const connection = await createDbConnection();
   try {
     // 1️⃣ Try fetching from DB
@@ -23,10 +24,19 @@ export async function readPage(slug, journalId = null) {
     }
 
     // 2️⃣ Fallback: Try static file in /app/static-pages/
-    const filePath = path.join(process.cwd(), "src/app/static-pages", `${slug}.html`);
+    const filePath = path.join(
+      process.cwd(),
+      "src/app/static-pages",
+      `${slug}.html`
+    );
     if (fs.existsSync(filePath)) {
       const htmlContent = fs.readFileSync(filePath, "utf-8");
-      return { source: "static", title: slug, content: htmlContent, is_active: true };
+      return {
+        source: "static",
+        title: slug,
+        content: htmlContent,
+        is_active: true,
+      };
     }
 
     // 3️⃣ Fallback: Return null if not found
@@ -38,3 +48,11 @@ export async function readPage(slug, journalId = null) {
     await connection.end();
   }
 }
+
+export const readPage = unstable_cache(
+  async (slug, journalId = null) => _readPage(slug, journalId),
+  [`read-page-list`],
+  {
+    tags: ["read-page"],
+  }
+);

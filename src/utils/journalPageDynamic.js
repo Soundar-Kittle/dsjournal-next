@@ -74,18 +74,25 @@ export async function _getRenderedJournalPage(journalId, pageTitle) {
   }
 }
 
-
 export const getRenderedJournalPage = unstable_cache(
-  async (journalId, pageTitle) =>
-    _getRenderedJournalPage(journalId, pageTitle),
-  (journalId, pageTitle) => [
-    `rendered_page_${journalId}_${pageTitle}`,
-  ],
-
+  async (journalId, pageTitle) => _getRenderedJournalPage(journalId, pageTitle),
+  [`rendered-page-list`],
   {
-    tags: (journalId, pageTitle) => [
-      `journal_page_${journalId}_${pageTitle}`,
-      `cfp_tag_${journalId || "common"}`,
-    ],
+    tags: ["rendered-page"],
   }
 );
+
+// export const getRenderedJournalPage = unstable_cache(
+//   async (journalId, pageTitle) =>
+//     _getRenderedJournalPage(journalId, pageTitle),
+//   (journalId, pageTitle) => [
+//     `rendered_page_${journalId}_${pageTitle}`,
+//   ],
+
+//   {
+//     tags: (journalId, pageTitle) => [
+//       `journal_page_${journalId}_${pageTitle}`,
+//       `cfp_tag_${journalId || "common"}`,
+//     ],
+//   }
+// );
