@@ -1,23 +1,19 @@
-// ISR: Rebuild every 60 seconds
-export const revalidate = 60; // 1 hour;
-
 import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import JournalCard from "@/components/Home/Journals/JournalCard";
 import { getJournals } from "@/utils/journals";
-import { Search } from "lucide-react";
 
-// SEO Metadata
 export async function generateMetadata() {
   return await generateDynamicMeta("journals");
 }
 
-export default async function JournalsPage({ searchParams }) {
-  const params = await searchParams;
-  const q = String(params?.q ?? "").trim();
+export default async function JournalsPage() {
+  // const params = await searchParams;
+  // const q = String(params?.q ?? "").trim();
+  // const journals = await getJournals(q);
 
-  const journals = await getJournals(q);
+  const journals = await getJournals();
 
   return (
     <main>

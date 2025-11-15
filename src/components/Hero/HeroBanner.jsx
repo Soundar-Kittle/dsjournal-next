@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 
 const HeroBanner = ({ data }) => {
   const slides = data?.rows || [];
+  console.log("slides");
 
   const getJustify = (align) => {
     switch (+align) {

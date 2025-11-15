@@ -107,7 +107,7 @@ export const CustomDropZone = ({
     const isFileObject = file instanceof File;
     const fileName = isFileObject ? file.name : file;
     const ext = fileName?.split(".").pop()?.toLowerCase();
-    const imageSrc = file?.startsWith("/") ? file.slice(1) : file;
+    const imageSrc = fileName?.startsWith("/") ? file.slice(1) : file;
 
     const imageExts = ["jpeg", "jpg", "png", "webp", "avif"];
     const docExts = ["pdf", "doc", "docx", "xls", "xlsx", "csv"];
