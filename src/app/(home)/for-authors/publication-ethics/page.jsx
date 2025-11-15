@@ -1,6 +1,10 @@
 import authors from "@/@data/authors/publicationEthics";
 import ContentAccordian from "@/components/ui/ContentAccordian";
-import React from "react";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("for-authors/publication-ethics");
+}
 
 const page = () => {
   return (

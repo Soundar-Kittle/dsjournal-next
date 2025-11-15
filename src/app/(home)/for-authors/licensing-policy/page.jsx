@@ -1,11 +1,14 @@
 import Image from "next/image";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("for-authors/licensing-policy");
+}
 
 const page = () => {
   return (
     <section className="space-y-3">
-      <h1 className="text-4xl font-medium">
-        Copyright and Licensing Policy
-      </h1>
+      <h1 className="text-4xl font-medium">Copyright and Licensing Policy</h1>
       <h5>Copyright</h5>
       <p>
         Authors will be asked to transfer copyright of the article to the

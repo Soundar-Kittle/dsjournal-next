@@ -1,14 +1,22 @@
 import { getJournalBySlug } from "@/utils/journals";
 import { getJournalPageByTitle } from "@/utils/journalPage";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  return await generateDynamicMeta(`${slug}/mode-of-payment`);
+}
+
 export default async function ModeofPage({ params }) {
-  const { slug } = await params;            // 👈 await this
+  const { slug } = await params; // 👈 await this
   const journal = await getJournalBySlug(slug);
   if (!journal) {
-    return <div className="p-10 text-center text-gray-500">Journal Not Found</div>;
+    return (
+      <div className="p-10 text-center text-gray-500">Journal Not Found</div>
+    );
   }
 
   const pageData = await getJournalPageByTitle(journal.id, "mode_of_payment");

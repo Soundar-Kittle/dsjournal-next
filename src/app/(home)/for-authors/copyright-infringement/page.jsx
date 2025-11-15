@@ -1,9 +1,13 @@
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("for-authors/copyright-infringement");
+}
+
 const page = () => {
   return (
     <section className="space-y-3">
-      <h2 className="text-4xl font-medium">
-        Copyright Infringement
-      </h2>
+      <h2 className="text-4xl font-medium">Copyright Infringement</h2>
       <p>
         Any claims of copyright infringement should be addressed to the Editor
         at <b>queries@dsjournals.com</b> bearing the subject line "Copyright

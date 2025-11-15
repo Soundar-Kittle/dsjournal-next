@@ -1,8 +1,13 @@
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 import { getCallForPaper } from "@/utils/callForPaper";
 import moment from "moment";
 import Link from "next/link";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("call-for-paper");
+}
 
 export default async function page() {
   const data = await getCallForPaper();

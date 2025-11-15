@@ -2,6 +2,7 @@ import { createDbConnection } from "@/lib/db";
 import { cleanData } from "@/lib/utils";
 import { handleFileUploads } from "@/lib/fileUpload";
 import { removeFile } from "@/lib/removeFile";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 /* ================================
    ADD META
@@ -62,7 +63,12 @@ export async function POST(req) {
       const [attrRes] = await connection.query(
         `INSERT INTO meta_attributes (attribute_scope, attribute_type, attribute_key, content)
          VALUES (?, ?, ?, ?)`,
-        [attribute_scope, attribute_type, attribute_key?.trim(), content?.trim()]
+        [
+          attribute_scope,
+          attribute_type,
+          attribute_key?.trim(),
+          content?.trim(),
+        ]
       );
       attributeIds.push(attrRes.insertId);
     }
@@ -74,6 +80,8 @@ export async function POST(req) {
     );
 
     await connection.commit();
+    revalidateTag("metas");
+    revalidatePath(`/${reference_id}`);
     return Response.json(
       { message: "Meta added successfully", id: result.insertId },
       { status: 201 }
@@ -344,7 +352,12 @@ export async function PATCH(req) {
       const [attrRes] = await connection.query(
         `INSERT INTO meta_attributes (attribute_scope, attribute_type, attribute_key, content)
          VALUES (?, ?, ?, ?)`,
-        [attribute_scope, attribute_type, attribute_key?.trim(), content?.trim()]
+        [
+          attribute_scope,
+          attribute_type,
+          attribute_key?.trim(),
+          content?.trim(),
+        ]
       );
       newIds.push(attrRes.insertId);
     }
@@ -366,6 +379,8 @@ export async function PATCH(req) {
     }
 
     await connection.commit();
+    revalidateTag("metas");
+    revalidatePath(`/${reference_id}`);
     return Response.json(
       { message: "Meta updated successfully" },
       { status: 200 }
@@ -394,7 +409,7 @@ export async function DELETE(req) {
     await connection.beginTransaction();
 
     const [rows] = await connection.query(
-      `SELECT meta_attribute_ids FROM metas WHERE id=?`,
+      `SELECT meta_attribute_ids, reference_id FROM metas WHERE id=?`,
       [id]
     );
     if (rows.length === 0) {
@@ -408,6 +423,7 @@ export async function DELETE(req) {
     } catch {
       ids = [rows[0].meta_attribute_ids];
     }
+    const reference_id = rows[0].reference_id;
 
     // Fetch attributes before deletion
     let attrs = [];
@@ -438,6 +454,8 @@ export async function DELETE(req) {
     }
 
     await connection.commit();
+    revalidateTag("metas");
+    revalidatePath(`/${reference_id}`);
     return Response.json(
       { message: "Meta deleted successfully" },
       { status: 200 }

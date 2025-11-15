@@ -2,6 +2,11 @@ import faqs from "@/@data/faq";
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import ContentAccordian from "@/components/ui/ContentAccordian";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("faq");
+}
 
 export default function page() {
   return (

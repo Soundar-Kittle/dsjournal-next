@@ -1,5 +1,10 @@
 import authors from "@/@data/authors/publicationEthics";
 import ContentAccordian from "@/components/ui/ContentAccordian";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("for-authors");
+}
 
 export default function AuthorsPage() {
   return (
