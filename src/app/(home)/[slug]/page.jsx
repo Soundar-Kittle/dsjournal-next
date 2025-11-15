@@ -2,71 +2,76 @@ import { getEditorialBoardBySlug } from "@/utils/editorialBoard";
 import { getJournalBySlug } from "@/utils/journals";
 import { getJournalPageByTitle } from "@/utils/journalPage";
 import NotFound from "@/app/not-found";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 
-/* ---------------- SEO METADATA ---------------- */
 export async function generateMetadata({ params }) {
-  const param = await params;
-  const slug = param.slug?.toLowerCase();
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  const journal = await getJournalBySlug(slug);
-
-  if (!journal) {
-    return {
-      title: "Journal Not Found",
-      description: "The requested journal could not be found.",
-    };
-  }
-
-  return {
-    title: journal.journal_name,
-    description: `${journal.short_name} (${journal.issn_online}) is a peer-reviewed journal in ${journal.subject}, published by ${journal.publisher}. Started in ${journal.year_started}, it publishes ${journal.publication_frequency}.`,
-    keywords: [
-      journal.short_name,
-      journal.journal_name,
-      journal.subject,
-      journal.publisher,
-      `ISSN ${journal.issn_online}`,
-      "Research Journal",
-    ],
-    authors: [{ name: journal.publisher }],
-    publisher: journal.publisher,
-    openGraph: {
-      title: journal.journal_name,
-      description: `${journal.short_name} is an international journal in ${journal.subject}.`,
-      url: `${baseUrl}/journals/${slug}`,
-      siteName: "Dream Science Journals",
-      type: "website",
-      images: [
-        {
-          url: `${baseUrl}/${journal.cover_image}`,
-          alt: `${journal.journal_name} Cover`,
-        },
-        {
-          url: `${baseUrl}/${journal.banner_image}`,
-          alt: `${journal.journal_name} Banner`,
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: journal.journal_name,
-      description: `${journal.short_name} is a peer-reviewed journal in ${journal.subject}.`,
-      images: [`${baseUrl}/${journal.cover_image}`],
-    },
-    alternates: { canonical: `${baseUrl}/journals/${slug}` },
-    other: {
-      issn_online: journal.issn_online,
-      issn_print:
-        journal.issn_print && journal.issn_print.toLowerCase() !== "null"
-          ? journal.issn_print
-          : undefined,
-      doi_prefix: journal.doi_prefix,
-      format: journal.format,
-      language: journal.language,
-      publication_fee: journal.publication_fee,
-    },
-  };
+  const { slug } = await params;
+  return await generateDynamicMeta(slug);
 }
+
+// export async function generateMetadata({ params }) {
+//   const param = await params;
+//   const slug = param.slug?.toLowerCase();
+//   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+//   const journal = await getJournalBySlug(slug);
+
+//   if (!journal) {
+//     return {
+//       title: "Journal Not Found",
+//       description: "The requested journal could not be found.",
+//     };
+//   }
+
+//   return {
+//     title: journal.journal_name,
+//     description: `${journal.short_name} (${journal.issn_online}) is a peer-reviewed journal in ${journal.subject}, published by ${journal.publisher}. Started in ${journal.year_started}, it publishes ${journal.publication_frequency}.`,
+//     keywords: [
+//       journal.short_name,
+//       journal.journal_name,
+//       journal.subject,
+//       journal.publisher,
+//       `ISSN ${journal.issn_online}`,
+//       "Research Journal",
+//     ],
+//     authors: [{ name: journal.publisher }],
+//     publisher: journal.publisher,
+//     openGraph: {
+//       title: journal.journal_name,
+//       description: `${journal.short_name} is an international journal in ${journal.subject}.`,
+//       url: `${baseUrl}/journals/${slug}`,
+//       siteName: "Dream Science Journals",
+//       type: "website",
+//       images: [
+//         {
+//           url: `${baseUrl}/${journal.cover_image}`,
+//           alt: `${journal.journal_name} Cover`,
+//         },
+//         {
+//           url: `${baseUrl}/${journal.banner_image}`,
+//           alt: `${journal.journal_name} Banner`,
+//         },
+//       ],
+//     },
+//     twitter: {
+//       card: "summary_large_image",
+//       title: journal.journal_name,
+//       description: `${journal.short_name} is a peer-reviewed journal in ${journal.subject}.`,
+//       images: [`${baseUrl}/${journal.cover_image}`],
+//     },
+//     alternates: { canonical: `${baseUrl}/journals/${slug}` },
+//     other: {
+//       issn_online: journal.issn_online,
+//       issn_print:
+//         journal.issn_print && journal.issn_print.toLowerCase() !== "null"
+//           ? journal.issn_print
+//           : undefined,
+//       doi_prefix: journal.doi_prefix,
+//       format: journal.format,
+//       language: journal.language,
+//       publication_fee: journal.publication_fee,
+//     },
+//   };
+// }
 
 /* ---------------- PAGE COMPONENT ---------------- */
 export default async function Page({ params }) {

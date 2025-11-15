@@ -1,6 +1,5 @@
 import { getJournalBySlug } from "@/utils/journals";
 import { getJournalPageByTitle } from "@/utils/journalPage";
-
 import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 
 export async function generateMetadata({ params }) {
