@@ -68,13 +68,6 @@ export async function POST(req) {
     const page = cleaned.page_title?.replaceAll("_", "-");
 
     await connection.commit();
-    console.log("----------------------------------");
-    console.log("revalidatePath 1", `/${slug}/call-for-paper`);
-    console.log(
-      "revalidatePath 2",
-      `/${slug}${page == "aim-and-scope" ? "" : "/" + page}`
-    );
-    console.log("----------------------------------");
 
     revalidateTag("journal_page");
     revalidatePath(`/${slug}/call-for-paper`);
@@ -299,6 +292,7 @@ export async function DELETE(req) {
     await connection.commit();
 
     revalidateTag("journal_page");
+    revalidatePath(`/${slug}/call-for-paper`);
     revalidatePath(`/${slug}${page == "aim-and-scope" ? "" : "/" + page}`);
 
     return Response.json(

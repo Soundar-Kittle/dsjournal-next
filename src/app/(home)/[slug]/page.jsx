@@ -1,6 +1,7 @@
 import { getEditorialBoardBySlug } from "@/utils/editorialBoard";
 import { getJournalBySlug } from "@/utils/journals";
 import { getJournalPageByTitle } from "@/utils/journalPage";
+import NotFound from "@/app/not-found";
 
 /* ---------------- SEO METADATA ---------------- */
 export async function generateMetadata({ params }) {
@@ -73,18 +74,26 @@ export default async function Page({ params }) {
   const slug = param.slug?.toLowerCase();
   const journal = await getJournalBySlug(slug);
 
+  // if (!journal) {
+  //   return (
+  //     <div className="text-center py-10 text-gray-700">
+  //       <h2 className="text-2xl font-semibold mb-2">Journal not found.</h2>
+  //       <p>
+  //         Please check the URL or return to the{" "}
+  //         <a href="/journals" className="text-blue-600 underline">
+  //           Journals list
+  //         </a>
+  //         .
+  //       </p>
+  //     </div>
+  //   );
+  // }
   if (!journal) {
     return (
-      <div className="text-center py-10 text-gray-700">
-        <h2 className="text-2xl font-semibold mb-2">Journal not found.</h2>
-        <p>
-          Please check the URL or return to the{" "}
-          <a href="/journals" className="text-blue-600 underline">
-            Journals list
-          </a>
-          .
-        </p>
-      </div>
+      <NotFound
+        title="Journal Not Found"
+        description="The requested journal could not be found."
+      />
     );
   }
 

@@ -723,7 +723,10 @@ export function AssignEditorialRolesForm() {
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => deleteMutation.mutate(row.original.id)}
+            onClick={() => {
+              confirm("Delete this role?") &&
+                deleteMutation.mutate(row.original.id);
+            }}
           >
             🗑️
           </Button>

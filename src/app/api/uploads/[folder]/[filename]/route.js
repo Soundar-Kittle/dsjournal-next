@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
+/**
+ * Function to determine MIME type based on file extension
+ */
 function getMimeType(filename) {
   const extension = path.extname(filename).toLowerCase();
   const mimeTypes = {
@@ -15,10 +18,10 @@ function getMimeType(filename) {
     ".txt": "text/plain",
   };
 
-  return mimeTypes[extension] || "application/octet-stream";
+  return mimeTypes[extension] || "application/octet-stream"; // Default MIME type
 }
 
-export async function GET({ params }) {
+export async function GET(req, { params }) {
   try {
     const { folder, filename } = await params;
     const filePath = path.join(
@@ -28,11 +31,16 @@ export async function GET({ params }) {
       folder,
       filename
     );
+
+    // ✅ Ensure file exists
     if (!fs.existsSync(filePath)) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
+
+    // ✅ Get MIME type manually
     const mimeType = getMimeType(filename);
 
+    // ✅ Read file and return response
     const file = fs.readFileSync(filePath);
     return new NextResponse(file, {
       headers: {

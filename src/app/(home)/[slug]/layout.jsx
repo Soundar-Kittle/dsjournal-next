@@ -2,6 +2,7 @@ import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import SideMenu from "@/components/Home/SideMenu";
 import { getJournalBySlug } from "@/utils/journals";
+import NotFound from "@/app/not-found";
 
 export default async function JournalDetailLayout({ params, children }) {
   const param = await params;
@@ -9,9 +10,17 @@ export default async function JournalDetailLayout({ params, children }) {
   const journal = await getJournalBySlug(slug);
 
   // Safety check
+  // if (!journal) {
+  //   return (
+  //     <main className="p-10 text-center text-gray-600">Journal not found.</main>
+  //   );
+  // }
   if (!journal) {
     return (
-      <main className="p-10 text-center text-gray-600">Journal not found.</main>
+      <NotFound
+        title="Journal Not Found"
+        description="The requested journal could not be found."
+      />
     );
   }
 
@@ -54,7 +63,7 @@ export default async function JournalDetailLayout({ params, children }) {
       menu_link: `/${journal?.copyright_form || ""}`,
       name: `${shortNameFull} Copyright Form`,
     },
-    { menu_label: "Call for Paper", menu_link: `/${slug}/call-for-paper` },
+    // { menu_label: "Call for Paper", menu_link: `/${slug}/call-for-paper` },
   ];
 
   return (

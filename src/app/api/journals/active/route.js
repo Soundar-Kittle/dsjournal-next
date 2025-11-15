@@ -30,8 +30,9 @@ export async function POST(req) {
       slug = slugRes.slug;
     }
     revalidateTag("journals");
+    revalidateTag("journal_slug");
     revalidatePath("/journals");
-    revalidatePath(slug);
+    revalidatePath(`/${slug}`, "layout");
     return NextResponse.json({
       success: true,
       message: is_active ? "Journal activated" : "Journal deactivated",

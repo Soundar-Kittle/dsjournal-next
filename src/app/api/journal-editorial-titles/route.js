@@ -65,7 +65,10 @@ export async function POST(req) {
       );
 
       await conn.end();
-      return NextResponse.json({ success: true, message: "Bulk blocks created" });
+      return NextResponse.json({
+        success: true,
+        message: "Bulk blocks created",
+      });
     }
 
     /* ── single attach ─────────────────────────────────────── */
