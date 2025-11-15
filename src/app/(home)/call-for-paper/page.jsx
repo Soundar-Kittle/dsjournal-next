@@ -11,7 +11,11 @@ export default async function page() {
   return (
     <main className="bg-white">
       <PageHeader title="Call for Paper" />
-      <Breadcrumbs />
+      <Breadcrumbs
+        parents={[
+          { menu_label: "Call for Paper", menu_link: "/call-for-paper" },
+        ]}
+      />
 
       <div className="max-w-6xl mx-auto space-y-3 px-4 sm:px-6 lg:px-8 py-10">
         {/* Title Section */}

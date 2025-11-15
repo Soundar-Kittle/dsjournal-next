@@ -7,7 +7,7 @@ export default function page() {
   return (
     <main className="bg-white">
       <PageHeader title="FAQs" />
-      <Breadcrumbs />
+      <Breadcrumbs parents={[{ menu_label: "FAQs", menu_link: "/faq" }]} />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <ContentAccordian data={faqs} />

@@ -23,7 +23,9 @@ export default async function JournalsPage({ searchParams }) {
     <main>
       <header>
         <PageHeader title="Journals" />
-        <Breadcrumbs />
+        <Breadcrumbs
+          parents={[{ menu_label: "Journals", menu_link: "/journals" }]}
+        />
       </header>
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-10 py-10">

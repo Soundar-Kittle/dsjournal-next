@@ -41,7 +41,7 @@
 //   return (
 //     <nav className="py-3 border-b border-gray-200">
 //       <ol
-//         className="flex flex-wrap items-center space-x-1 
+//         className="flex flex-wrap items-center space-x-1
 //         container mx-auto px-4 sm:px-6 lg:px-16 xxl:px-12
 //         text-xs md:text-sm lg:text-base"
 //       >
@@ -69,12 +69,11 @@
 //   );
 // }
 
-
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 export default function Breadcrumbs({ parents = [] }) {
   const pathname = usePathname();
@@ -91,15 +90,9 @@ export default function Breadcrumbs({ parents = [] }) {
         .replace(/\b\w/g, (c) => c.toUpperCase())
         .trim();
 
-    const list = [
-      { menu_label: "Home", menu_link: "/" },
-      ...parents,
-    ];
+    const list = [{ menu_label: "Home", menu_link: "/" }, ...parents];
 
-    // Base page (e.g. /dsm or /dst)
     if (segments.length === 1) return list;
-
-    // Subpages (e.g. /dsm/editorial-board)
     list.push({
       menu_label: formatLabel(lastSegment),
       menu_link: pathname,
@@ -119,7 +112,11 @@ export default function Breadcrumbs({ parents = [] }) {
           const isLast = idx === crumbs.length - 1;
           return (
             <li key={crumb.menu_link} className="flex items-center">
-              {idx > 0 && <span className="px-1 text-light-blue"><ChevronRight/></span>}
+              {idx > 0 && (
+                <span className="px-1 text-light-blue">
+                  <ChevronRight />
+                </span>
+              )}
               {isLast ? (
                 <span className="capitalize">{crumb.menu_label}</span>
               ) : (

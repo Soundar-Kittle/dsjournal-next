@@ -21,7 +21,9 @@ export default function EditorLayout({ children }) {
   return (
     <main className="bg-white">
       <PageHeader items={menu} title="Editors" />
-      <Breadcrumbs menuItems={menu} />
+      <Breadcrumbs
+        parents={[{ menu_label: "Editors", menu_link: "/for-editors" }]}
+      />
       <section className="mx-auto max-w-6xl  px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <aside className="lg:col-span-3">
