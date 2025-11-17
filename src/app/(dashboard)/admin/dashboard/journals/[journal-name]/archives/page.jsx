@@ -1630,8 +1630,9 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { Dialog } from "@headlessui/react";
-import { Settings, MoreVertical, Loader2 } from "lucide-react";
+import { Settings, MoreVertical, Loader2, Plus } from "lucide-react";
 import { Input, Select } from "@/components/ui";
+
 
 // -------------------------------------------------------------
 // Utility
@@ -1933,6 +1934,26 @@ export default function Page() {
   return (
     <div className="relative p-6">
       <h2 className="text-xl font-bold mb-4">{getJournalName(jid)}</h2>
+
+<div className="flex justify-end mb-4">
+<button
+  onClick={() => {
+    const jr = journals.find(j => j.id === Number(jid));
+    if (!jr) return alert("Journal not found.");
+
+    const shortName = encodeURIComponent(jr.short_name);
+
+    router.push(
+      `/admin/dashboard/journals/${shortName}/article?jid=${jid}`
+    );
+  }}
+  className="flex items-center gap-2 px-5 py-2 bg-[#0B1736] text-white rounded-lg shadow hover:bg-[#0d1e45] transition cursor-pointer"
+>
+  <Plus className="w-4 h-4" />
+  <span>Add</span>
+</button>
+</div>
+
 
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mb-6">

@@ -3,26 +3,27 @@ import { unstable_cache } from "next/cache";
 
 export async function _getJournalBySlug(slug) {
   if (!slug) return null;
-
+ 
   const normalizedSlug = slug.trim().toUpperCase();
-  const withPrefix = `DS-${normalizedSlug}`; 
-
+  const withPrefix = `DS-${normalizedSlug}`;
+ 
   const connection = await createDbConnection();
   try {
     const [rows] = await connection.execute(
       `
       SELECT * FROM journals
-      WHERE short_name = ? AND is_active = 1
+      WHERE (short_name = ? OR short_name = ?) AND is_active = 1
       LIMIT 1
       `,
-      [withPrefix] 
+      [normalizedSlug, withPrefix]
     );
-
+ 
     return rows.length > 0 ? rows[0] : null;
   } finally {
     await connection.end();
   }
 }
+ 
 
 export async function _getJournals(q) {
   const connection = await createDbConnection();
