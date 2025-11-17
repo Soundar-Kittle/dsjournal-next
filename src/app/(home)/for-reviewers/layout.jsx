@@ -30,16 +30,16 @@ export default function ReviewerLayout({ children }) {
           parents={[{ menu_label: "Reviewers", menu_link: "/for-reviewers" }]}
         />
       </header>
-      <section className="mx-auto max-w-6xl  px-4 sm:px-6 lg:px-8 py-10">
+        <section className="container mx-auto px-4 sm:px-6 lg:px-16 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <nav className="lg:col-span-3">
+<aside className="lg:col-span-3 lg:min-w-[260px]">
             <SideMenu
               title="Menu"
               items={menu}
               initiallyOpen={true}
               storageKey="reviewers-sidemenu"
             />
-          </nav>
+          </aside>
           <article className="lg:col-span-9 text-justify max-w-none pt-2 leading-relaxed">
             {children}
           </article>
