@@ -300,7 +300,7 @@ export async function DELETE(req) {
   const id = searchParams.get("id");
 
   const conn = await createDbConnection();
-  const [rows] = await connection.query(
+  const [rows] = await conn.query(
     `SELECT journal_id FROM journal_editorial_roles WHERE id = ?`,
     [id]
   );

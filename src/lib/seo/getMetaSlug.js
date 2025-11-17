@@ -1,6 +1,7 @@
 import { createDbConnection } from "@/lib/db";
+import { unstable_cache } from "next/cache";
 
-export async function getMetaSlug(slug) {
+export async function _getMetaSlug(slug) {
   if (!slug) {
     return { ok: false, message: "Slug is required" };
   }
@@ -13,7 +14,7 @@ export async function getMetaSlug(slug) {
               DATE_FORMAT(m.created_at, '%Y-%m-%d') as created_at,
               DATE_FORMAT(m.updated_at, '%Y-%m-%d') as updated_at
        FROM metas m
-       WHERE m.reference_id = ? 
+       WHERE m.reference_id = ?
        LIMIT 1`,
       [slug]
     );
@@ -80,3 +81,10 @@ export async function getMetaSlug(slug) {
     await connection.end();
   }
 }
+export const getMetaSlug = unstable_cache(
+  async (slug) => _getMetaSlug(slug),
+  ["meta-list"],
+  {
+    tags: ["metas"],
+  }
+);

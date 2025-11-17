@@ -24,7 +24,7 @@ const DEFAULT_COLUMNS = [
       { label: "Home", href: "/" },
       { label: "Journals", href: "/journals" },
       { label: "About Us", href: "/about-us" },
-      { label: "Call for Papers", href: "/call-for-paper" },
+      // { label: "Call for Papers", href: "/call-for-paper" },
     ],
   },
   {
@@ -33,7 +33,7 @@ const DEFAULT_COLUMNS = [
       { label: "Authors Guidelines", href: "/for-authors" },
       { label: "Editor Guidelines", href: "/for-editors" },
       { label: "Reviewer Guidelines", href: "/for-reviewers" },
-      { label: "Paper Submission", href: "/paper-submission" },
+      // { label: "Paper Submission", href: "/paper-submission" },
     ],
   },
   {

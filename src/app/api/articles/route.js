@@ -248,6 +248,8 @@ export async function POST(req) {
 
     const [result] = await conn.query(sql, params);
     revalidateTag("articles");
+    revalidateTag("volume-issue");
+    revalidatePath(`/${jounalSlug}/archives`, "layout");
     revalidatePath(`/${jounalSlug}/${article_id}`);
     revalidatePath(`/${jounalSlug}/current-issue`);
     revalidatePath(
@@ -366,7 +368,9 @@ export async function PUT(req) {
     );
 
     revalidateTag("articles");
+    revalidateTag("volume-issue");
     revalidatePath(`/${jounalSlug}/${article_id}`);
+    revalidatePath(`/${jounalSlug}/archives`, "layout");
     revalidatePath(`/${jounalSlug}/current-issue`);
     revalidatePath(
       `/${jounalSlug}/archives/volume${volume_id}/issue${issue_id}`

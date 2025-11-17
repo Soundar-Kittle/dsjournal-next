@@ -1,3 +1,9 @@
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("for-authors/correction-policy");
+}
+
 const page = () => {
   return (
     <section className="space-y-3">

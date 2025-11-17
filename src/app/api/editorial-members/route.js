@@ -18,7 +18,7 @@
 //   if (all) {
 //     // Fetch everything (no pagination)
 //     [rows] = await conn.query(
-//       `SELECT * 
+//       `SELECT *
 //        FROM editorial_members
 //        ORDER BY name ASC`
 //     );
@@ -165,6 +165,7 @@
 // }
 
 import { createDbConnection } from "@/lib/db";
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 /* ----------------------- GET ----------------------- */
@@ -187,9 +188,7 @@ export async function GET(req) {
 
     // 🔍 Add WHERE for search
     if (search) {
-      whereClause.push(
-        `(name LIKE ? OR email LIKE ? OR university LIKE ?)`
-      );
+      whereClause.push(`(name LIKE ? OR email LIKE ? OR university LIKE ?)`);
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
@@ -220,7 +219,7 @@ export async function GET(req) {
 
 /* ----------------------- POST ----------------------- */
 export async function POST(req) {
- const conn = await createDbConnection();
+  const conn = await createDbConnection();
   const body = await req.json();
   const {
     name,
@@ -258,7 +257,7 @@ export async function POST(req) {
         is_active ? 1 : 0,
       ]
     );
-
+    revalidateTag("editorial_board");
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("❌ POST /editorial-members failed:", err);
@@ -328,13 +327,13 @@ export async function PATCH(req) {
 
   await conn.query(query, fields);
   await conn.end();
-
+  revalidateTag("editorial_board");
   return NextResponse.json({ success: true, message: "Member updated" });
 }
 
 /* ----------------------- DELETE ----------------------- */
 export async function DELETE(req) {
- const conn = await createDbConnection();
+  const conn = await createDbConnection();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
@@ -344,6 +343,7 @@ export async function DELETE(req) {
 
   try {
     await conn.query("DELETE FROM editorial_members WHERE id = ?", [id]);
+    revalidateTag("editorial_board");
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("❌ DELETE /editorial-members failed:", err);

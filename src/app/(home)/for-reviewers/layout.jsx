@@ -26,7 +26,9 @@ export default function ReviewerLayout({ children }) {
     <main className="bg-white">
       <header>
         <PageHeader items={menu} title="Reviewers" />
-        <Breadcrumbs menuItems={menu} />
+        <Breadcrumbs
+          parents={[{ menu_label: "Reviewers", menu_link: "/for-reviewers" }]}
+        />
       </header>
       <section className="mx-auto max-w-6xl  px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

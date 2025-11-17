@@ -1,8 +1,13 @@
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 import { getCallForPaper } from "@/utils/callForPaper";
 import moment from "moment";
 import Link from "next/link";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("call-for-paper");
+}
 
 export default async function page() {
   const data = await getCallForPaper();
@@ -11,7 +16,11 @@ export default async function page() {
   return (
     <main className="bg-white">
       <PageHeader title="Call for Paper" />
-      <Breadcrumbs />
+      <Breadcrumbs
+        parents={[
+          { menu_label: "Call for Paper", menu_link: "/call-for-paper" },
+        ]}
+      />
 
       <div className="max-w-6xl mx-auto space-y-3 px-4 sm:px-6 lg:px-8 py-10">
         {/* Title Section */}

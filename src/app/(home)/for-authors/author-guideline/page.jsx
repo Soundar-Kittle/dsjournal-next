@@ -1,5 +1,10 @@
 import autherGuideline from "@/@data/authors/authorGuildline";
 import ContentAccordian from "@/components/ui/ContentAccordian";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("for-authors/author-guideline");
+}
 
 const page = () => {
   return (

@@ -1,4 +1,5 @@
 import { createDbConnection } from "@/lib/db";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
@@ -13,10 +14,12 @@ export async function GET(req) {
     "SELECT * FROM editorial_titles ORDER BY title ASC LIMIT ? OFFSET ?",
     [limit, offset]
   );
-  const [[{ total }]] = await conn.query("SELECT COUNT(*) as total FROM editorial_titles");
+  const [[{ total }]] = await conn.query(
+    "SELECT COUNT(*) as total FROM editorial_titles"
+  );
   await conn.end();
 
-  return NextResponse.json({ success: true, titles: rows,total });
+  return NextResponse.json({ success: true, titles: rows, total });
 }
 
 export async function POST(req) {
@@ -25,40 +28,25 @@ export async function POST(req) {
 
   const status = is_active ? 1 : 0; // fix: define `status` as a number
 
-
   const conn = await createDbConnection();
   await conn.query(
     "INSERT INTO editorial_titles (title, status) VALUES (?, ?)",
     [title, status]
   );
   await conn.end();
-
+  revalidateTag("editorial_board");
   return NextResponse.json({ success: true, message: "Title added" });
 }
-
-
-// export async function PATCH(req) {
-//   const body = await req.json();
-//   const { id, title, is_active } = body;
-
-//   const status = is_active === true || is_active === 1 ? 1 : 0;
-
-//   const conn = await createDbConnection();
-//   await conn.query(
-//     "UPDATE editorial_titles SET title = ?, status = ? WHERE id = ?",
-//     [title, status, id]
-//   );
-//   await conn.end();
-
-//   return NextResponse.json({ success: true, message: "Title updated" });
-// }
 
 export async function PATCH(req) {
   const body = await req.json();
   const { id, title, status } = body;
 
   if (!id) {
-    return NextResponse.json({ success: false, error: "ID is required" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: "ID is required" },
+      { status: 400 }
+    );
   }
 
   const conn = await createDbConnection();
@@ -72,25 +60,28 @@ export async function PATCH(req) {
     );
   } else if (status !== undefined) {
     // Switch-only update
-    await conn.query(
-      "UPDATE editorial_titles SET status = ? WHERE id = ?",
-      [status, id]
-    );
+    await conn.query("UPDATE editorial_titles SET status = ? WHERE id = ?", [
+      status,
+      id,
+    ]);
   } else if (title !== undefined) {
     // Just in case only title is passed
-    await conn.query(
-      "UPDATE editorial_titles SET title = ? WHERE id = ?",
-      [title, id]
-    );
+    await conn.query("UPDATE editorial_titles SET title = ? WHERE id = ?", [
+      title,
+      id,
+    ]);
   } else {
     await conn.end();
-    return NextResponse.json({ success: false, error: "No valid fields to update" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: "No valid fields to update" },
+      { status: 400 }
+    );
   }
 
   await conn.end();
+  revalidateTag("editorial_board");
   return NextResponse.json({ success: true, message: "Title updated" });
 }
-
 
 export async function DELETE(req) {
   const { searchParams } = new URL(req.url);
@@ -98,5 +89,6 @@ export async function DELETE(req) {
   const conn = await createDbConnection();
   await conn.query("DELETE FROM editorial_titles WHERE id = ?", [id]);
   await conn.end();
+  revalidateTag("editorial_board");
   return NextResponse.json({ success: true, message: "Title deleted" });
 }

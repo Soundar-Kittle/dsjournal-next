@@ -1,5 +1,11 @@
 import { getRenderedJournalPage } from "@/utils/journalPageDynamic";
 import { getJournalBySlug } from "@/utils/journals";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  return await generateDynamicMeta(`${slug}/call-for-paper`);
+}
 
 export default async function CallForPaperPage({ params }) {
   const { slug } = await params;

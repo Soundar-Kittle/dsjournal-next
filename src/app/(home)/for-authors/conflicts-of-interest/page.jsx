@@ -1,12 +1,15 @@
 import conflictOfInterest from "@/@data/authors/conflictsOfInterest";
 import ContentAccordian from "@/components/ui/ContentAccordian";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("for-authors/conflicts-of-interest");
+}
 
 const page = () => {
   return (
     <section className="space-y-3">
-      <h2 className="text-4xl font-medium">
-        Conflicts of Interest
-      </h2>
+      <h2 className="text-4xl font-medium">Conflicts of Interest</h2>
       <p>
         Conflicts of interest (also known as "competing interests") arise when
         external factors obstruct or appear to obstruct the impartiality or

@@ -249,7 +249,7 @@ const AddMeta = ({ type = "add", editData = {}, onClose }) => {
                 placeholder="Select type"
                 options={[
                   { label: "Static Page", value: "page" },
-                  { label: "Journal", value: "journal" },
+                  // { label: "Journal", value: "journal" },
                 ]}
                 onValueChange={field.onChange}
                 error={errors.reference_type?.message}

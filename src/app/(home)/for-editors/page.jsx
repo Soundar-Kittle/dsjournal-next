@@ -1,3 +1,9 @@
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("for-editors");
+}
+
 const page = () => {
   return (
     <section className="space-y-3 [&_h3]:font-semibold">
@@ -37,7 +43,10 @@ const page = () => {
         </p>
         <p>Gives you a leading role in your research community.</p>
       </section>
-      <section id="duties-and-responsibilities" className="space-y-3 scroll-mt-30">
+      <section
+        id="duties-and-responsibilities"
+        className="space-y-3 scroll-mt-30"
+      >
         <h3>Duties and Responsibilities</h3>
         <p>
           Our editorial board members and reviewers must be leaders in their

@@ -1,12 +1,19 @@
 import Image from "next/image";
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata() {
+  return await generateDynamicMeta("contact-us");
+}
 
 export default function Page() {
   return (
     <main className="bg-white">
       <PageHeader title="Contact Us" />
-      <Breadcrumbs />
+      <Breadcrumbs
+        parents={[{ menu_label: "Contact Us", menu_link: "/contact-us" }]}
+      />
 
       {/* Contact Section */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -63,10 +70,10 @@ export default function Page() {
           <div>
             <h2 className="text-xl font-semibold mb-2">Office Address</h2>
             <h3 className="font-semibold">Dream Science</h3>
-            <p >
+            <p>
               1272, Thirumetraligai East Street, <br />
               Patteeswaram P.O., <br />
-              Kumbakonam T.K., <br /> 
+              Kumbakonam T.K., <br />
               Thanjavur District - 612 703, <br />
               TamilNadu, India.
             </p>

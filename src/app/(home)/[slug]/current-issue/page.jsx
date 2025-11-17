@@ -3,18 +3,26 @@ import { getArticlesBySlugVolumeIssue } from "@/utils/volumeAndIssue";
 import Link from "next/link";
 import { BsDiamondHalf } from "react-icons/bs";
 import { FaFile } from "react-icons/fa";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  return await generateDynamicMeta(`${slug}/current-issue`);
+}
 
 const Page = async ({ params }) => {
   const { slug } = await params;
-  const {
-    currentIssue
-  } = await getMonthGroupsBySlug(slug);
+  const { currentIssue } = await getMonthGroupsBySlug(slug);
 
   if (!currentIssue?.volume || !currentIssue?.issue) {
     return <p>No cuurent issue found.</p>;
   }
 
-  const articles = await getArticlesBySlugVolumeIssue(slug, currentIssue.volume, currentIssue.issue);
+  const articles = await getArticlesBySlugVolumeIssue(
+    slug,
+    currentIssue.volume,
+    currentIssue.issue
+  );
 
   if (!articles || articles.length === 0) {
     return <p>No cuurent issue articles found.</p>;

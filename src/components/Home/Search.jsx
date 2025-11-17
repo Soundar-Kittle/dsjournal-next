@@ -102,7 +102,9 @@ const SearchPage = () => {
     <main>
       <header>
         <PageHeader title="Search" />
-        <Breadcrumbs />
+        <Breadcrumbs
+          parents={[{ menu_label: "Search", menu_link: "/search" }]}
+        />
       </header>
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-10 py-10">
