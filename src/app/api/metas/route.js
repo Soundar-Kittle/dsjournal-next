@@ -255,6 +255,148 @@ export async function GET(req) {
 /* ================================
    PATCH META
    ================================ */
+// export async function PATCH(req) {
+//   const connection = await createDbConnection();
+//   try {
+//     await connection.beginTransaction();
+
+//     const formData = await req.formData();
+//     const id = formData.get("id");
+//     if (!id)
+//       return Response.json({ error: "Missing Meta ID" }, { status: 400 });
+
+//     const body = Object.fromEntries(formData.entries());
+//     const cleanedData = cleanData(body);
+//     const uploadedFiles = await handleFileUploads(formData);
+
+//     const { reference_type, reference_id } = cleanedData;
+
+//     // ✅ Prevent duplicate reference
+//     const [conflict] = await connection.query(
+//       `SELECT id FROM metas WHERE reference_type=? AND reference_id=? AND id != ?`,
+//       [reference_type, reference_id, id]
+//     );
+//     if (conflict.length > 0) {
+//       return Response.json(
+//         { error: "Meta already exists for this reference" },
+//         { status: 409 }
+//       );
+//     }
+
+//     // ✅ Fetch current attributes (for cleanup)
+//     const [cur] = await connection.query(
+//       `SELECT meta_attribute_ids FROM metas WHERE id=?`,
+//       [id]
+//     );
+//     let oldIds = [];
+//     try {
+//       oldIds = JSON.parse(cur[0].meta_attribute_ids);
+//       if (!Array.isArray(oldIds)) oldIds = [oldIds];
+//     } catch {
+//       oldIds = [cur[0].meta_attribute_ids];
+//     }
+
+//     let oldAttrs = [];
+//     if (oldIds.length > 0) {
+//       const placeholders = oldIds.map(() => "?").join(",");
+//       const [attrs] = await connection.query(
+//         `SELECT id, content FROM meta_attributes WHERE id IN (${placeholders})`,
+//         oldIds
+//       );
+//       oldAttrs = attrs;
+//     }
+
+//     // ✅ Delete old attributes from DB
+//     if (oldIds.length > 0) {
+//       const placeholders = oldIds.map(() => "?").join(",");
+//       await connection.query(
+//         `DELETE FROM meta_attributes WHERE id IN (${placeholders})`,
+//         oldIds
+//       );
+//     }
+
+//     // ✅ Collect new attributes
+//     const formKeys = [...formData.keys()];
+//     const indexes = new Set();
+//     formKeys.forEach((key) => {
+//       const m = key.match(/metas\[(\d+)\]/);
+//       if (m) indexes.add(parseInt(m[1]));
+//     });
+
+//     const newIds = [];
+//     const newContents = []; // track new content for cleanup check
+
+//     for (const index of indexes) {
+//       const attribute_scope = formData.get(`metas[${index}][attribute_scope]`);
+//       const attribute_type = formData.get(`metas[${index}][attribute_type]`);
+//       const attribute_key = formData.get(`metas[${index}][attribute_key]`);
+//       const is_content = formData.get(`metas[${index}][is_content]`) === "1";
+
+//       let content = "";
+//       if (is_content) {
+//         content = formData.get(`metas[${index}][content]`) || "";
+//       } else {
+//         const imageField = `metas[${index}][image]`;
+
+//         // ✅ Try uploaded file first
+//         if (uploadedFiles[imageField]) {
+//           content = uploadedFiles[imageField];
+//         } else {
+//           // ✅ Fallback to existing URL (string value from formData)
+//           content = formData.get(imageField) || "";
+//         }
+//       }
+
+//       newContents.push(content);
+
+//       const [attrRes] = await connection.query(
+//         `INSERT INTO meta_attributes (attribute_scope, attribute_type, attribute_key, content)
+//          VALUES (?, ?, ?, ?)`,
+//         [
+//           attribute_scope,
+//           attribute_type,
+//           attribute_key?.trim(),
+//           content?.trim(),
+//         ]
+//       );
+//       newIds.push(attrRes.insertId);
+//     }
+
+//     // ✅ Update metas table
+//     await connection.query(
+//       `UPDATE metas SET reference_type=?, reference_id=?, meta_attribute_ids=? WHERE id=?`,
+//       [reference_type, reference_id, JSON.stringify(newIds), id]
+//     );
+
+//     // ✅ Cleanup old image files that are no longer used
+//     for (const attr of oldAttrs) {
+//       if (/\.(jpg|jpeg|png|webp)$/i.test(attr.content)) {
+//         const stillUsed = newContents.includes(attr.content);
+//         if (!stillUsed) {
+//           removeFile(attr.content);
+//         }
+//       }
+//     }
+
+//     await connection.commit();
+//     revalidateTag("metas");
+//     revalidatePath(`/${reference_id}`);
+//     return Response.json(
+//       { message: "Meta updated successfully" },
+//       { status: 200 }
+//     );
+//   } catch (err) {
+//     await connection.rollback();
+//     console.error("❌ Update Meta Error:", err);
+//     return Response.json(
+//       { error: "Failed to update meta", details: err.message },
+//       { status: 500 }
+//     );
+//   } finally {
+//     await connection.end();
+//   }
+// }
+
 export async function PATCH(req) {
   const connection = await createDbConnection();
   try {
@@ -349,16 +491,20 @@ export async function PATCH(req) {
 
       newContents.push(content);
 
-      const [attrRes] = await connection.query(
-        `INSERT INTO meta_attributes (attribute_scope, attribute_type, attribute_key, content)
-         VALUES (?, ?, ?, ?)`,
-        [
-          attribute_scope,
-          attribute_type,
-          attribute_key?.trim(),
-          content?.trim(),
-        ]
-      );
+let safeContent =
+  typeof content === "string" ? content.trim() : content || "";
+
+const [attrRes] = await connection.query(
+  `INSERT INTO meta_attributes 
+   (attribute_scope, attribute_type, attribute_key, content)
+   VALUES (?, ?, ?, ?)`,
+  [
+    attribute_scope,
+    attribute_type,
+    attribute_key?.trim(),
+    safeContent,
+  ]
+);
       newIds.push(attrRes.insertId);
     }
 
@@ -396,7 +542,6 @@ export async function PATCH(req) {
     await connection.end();
   }
 }
-
 /* ================================
    DELETE META
    ================================ */

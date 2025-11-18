@@ -585,7 +585,7 @@ const SearchPage = () => {
                     Search Type
                   </label>
                   <div className="flex flex-wrap gap-6">
-                    {["article", "author", "journal", "website"].map((type) => (
+                    {["article", "author", "website"].map((type) => (
                       <label
                         key={type}
                         className="inline-flex items-center gap-2 cursor-pointer select-none"
