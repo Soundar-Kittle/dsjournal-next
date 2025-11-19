@@ -7,6 +7,7 @@ import { FaXTwitter } from "react-icons/fa6";
 
 import { motion } from "framer-motion";
 import ScrollToTop from "./ScrollToTop";
+import { socialIcons } from "@/@data/socialIcons";
 
 const containerVariants = {
   hidden: { opacity: 0, y: 60 },
@@ -57,31 +58,12 @@ const DEFAULT_COLUMNS = [
   },
 ];
 
-const DEFAULT_SOCIAL = [
-  { name: "Twitter", href: "https://x.com/DreamScience4", Icon: FaXTwitter },
-  {
-    name: "Facebook",
-    href: "https://www.facebook.com/Dream-Science-Journals-102737959201943",
-    Icon: FaFacebookF,
-  },
-  {
-    name: "Instagram",
-    href: "https://www.instagram.com/dreamsciencejournals/",
-    Icon: FaInstagram,
-  },
-  {
-    name: "LinkedIn",
-    href: "https://www.linkedin.com/in/dream-science-journals-a7a688246/",
-    Icon: FaLinkedinIn,
-  },
-];
-
-export default function Footer({
-  columns = DEFAULT_COLUMNS,
-  social = DEFAULT_SOCIAL,
-  brand = "Dream Science",
-}) {
+export default function Footer({ settings }) {
   const year = new Date().getFullYear();
+  const columns = DEFAULT_COLUMNS;
+  const whatsapp_number = settings?.phone_number?.find(
+    (p) => p?.is_whatsapp
+  )?.number;
 
   return (
     <footer className="bg-secondary text-white">
@@ -122,25 +104,28 @@ export default function Footer({
           <div className="space-y-4">
             <h4 className="font-semibold">Follow Us</h4>
             <div className="flex items-center gap-1">
-              {social.map(({ name, href, Icon }) => (
-                <Link
-                  key={name}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={name}
-                  className="grid h-9 w-9 place-items-center rounded-full bg-primary text-white hover:text-secondary transition"
-                >
-                  <Icon className="h-4 w-4" />
-                </Link>
-              ))}
+              {settings.social_links.map(({ url, platform }, i) => {
+                const Icon = socialIcons[platform];
+                return (
+                  Icon && (
+                    <Link
+                      key={i}
+                      href={url}
+                      aria-label={"Follow us on " + platform}
+                      className="grid h-9 w-9 place-items-center rounded-full bg-primary text-white hover:text-secondary transition"
+                    >
+                      <Icon size={18} />
+                    </Link>
+                  )
+                );
+              })}
             </div>
           </div>
         </div>
       </motion.div>
       <div className="pb-16 pt-10 text-center text-sm border-t border-white">
-        © Copyright <span className="font-semibold">{brand}</span>. All Rights
-        Reserved {year}
+        © Copyright <span className="font-semibold">{settings.name}</span>. All
+        Rights Reserved {year}
       </div>
       <ScrollToTop />
     </footer>

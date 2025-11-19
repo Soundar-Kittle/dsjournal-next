@@ -13,7 +13,7 @@ const NAV = [
   { label: "Editors", href: "/for-editors" },
 ];
 
-export default function Header() {
+export default function Header({ settings }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -59,7 +59,8 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/logo.png"
+              // src="/logo.png"
+              src={`/${settings?.logo}` || "/logo.png"}
               alt="Dream Science"
               width={140}
               height={40}

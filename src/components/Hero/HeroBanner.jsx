@@ -88,7 +88,8 @@ const HeroBanner = ({ data }) => {
                             slide.button_link && (
                               <Link
                                 href={slide.button_link}
-                                className="inline-block py-2 bg-primary text-white px-6 rounded-full hover:text-secondary font-semibold transition duration-300"
+                                aria-label={slide.button_name}
+                                className="inline-block py-2 bg-primary text-secondary px-6 rounded-full hover:text-secondary font-semibold transition duration-300"
                               >
                                 {slide.button_name}
                               </Link>

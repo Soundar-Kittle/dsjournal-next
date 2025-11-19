@@ -1,12 +1,7 @@
-import React from 'react';
-import SettingsForm from '@/components/Dashboard/Settings/SettingsForm';
+import AddSettings from "@/components/Dashboard/Settings/AddSettings";
 
 const page = () => {
-  return (
-    <div className="space-y-6">
-      <SettingsForm />
-    </div>
-  )
-}
+  return <AddSettings />;
+};
 
-export default page
+export default page;

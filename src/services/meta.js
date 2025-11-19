@@ -40,6 +40,7 @@ export const useMetas = () =>
     endpoint: metas.getPaginated.url,
     method: metas.getPaginated.method,
   });
+  
 export const useMetaSlugs = (slug) =>
   useApiQuery({
     key: metas.getMeta.key,

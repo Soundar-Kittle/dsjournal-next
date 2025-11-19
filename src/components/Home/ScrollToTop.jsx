@@ -38,8 +38,7 @@ const ScrollToTop = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [updateProgress]);
 
-  const scrollToTop = () =>
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
     <AnimatePresence>
@@ -50,6 +49,8 @@ const ScrollToTop = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           transition={{ duration: 0.3 }}
+          type="button"
+          area-label="Scroll to top"
           className="fixed bottom-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg hover:brightness-110 transition cursor-pointer z-[100]"
         >
           {/* Progress Circle */}

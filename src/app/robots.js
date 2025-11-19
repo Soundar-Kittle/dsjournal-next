@@ -5,8 +5,8 @@ export default function robots() {
       allow: "/",
       disallow: ["/admin/", "/author/", "/_next/", "/search"],
     },
-    sitemap: `${
-      process.env.NEXT_PUBLIC_BASE_URL || "https://demo.dreamscience.com"
-    }/sitemap.xml`,
+    // sitemap: `${
+    //   process.env.NEXT_PUBLIC_BASE_URL || "https://demo.dreamscience.com"
+    // }/sitemap.xml`,
   };
 }

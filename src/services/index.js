@@ -5,3 +5,4 @@ export * from "./journalsPage";
 export * from "./callForPaper";
 export * from "./journals";
 export * from "./monthGroups";
+export * from "./settings";

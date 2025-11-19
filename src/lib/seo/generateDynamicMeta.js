@@ -1,3 +1,4 @@
+import { getSettings } from "@/utils/getSettings";
 import { getMetaSlug } from "./getMetaSlug";
 
 const normalizeSlug = (slug) => (Array.isArray(slug) ? slug.join("/") : slug);
@@ -6,6 +7,7 @@ export const generateDynamicMeta = async (slug) => {
   try {
     slug = normalizeSlug(slug);
     const seoRes = await getMetaSlug(slug);
+    const settings = await getSettings();
 
     // 🔹 Fallbacks
     const fallbackTitle = "Dream Science | Engineering and Technology Journals";
@@ -78,21 +80,15 @@ export const generateDynamicMeta = async (slug) => {
 
     metadata.openGraph.title ??= metadata.title;
     metadata.openGraph.description ??= metadata.description;
-    metadata.openGraph.type ??= "website"; // default OG type
+    metadata.openGraph.type ??= "website";
     if (!metadata.openGraph.images?.length && fallbackImage) {
       metadata.openGraph.images = [{ url: fallbackImage }];
     }
 
     metadata.twitter.title ??= metadata.title;
     metadata.twitter.description ??= metadata.description;
-    metadata.twitter.card ??= "summary_large_image"; // default card
+    metadata.twitter.card ??= "summary_large_image";
     metadata.twitter.image ??= fallbackImage || undefined;
-
-    metadata.icons = {
-      icon: [{ url: "/logo.png", type: "image/png" }],
-      apple: [{ url: "/logo.png", type: "image/png" }],
-      shortcut: ["/logo.png"],
-    };
 
     metadata.metadataBase = new URL("http://dsjournals.com");
     return metadata;

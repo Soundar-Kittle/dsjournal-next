@@ -1,138 +1,132 @@
-// app/api/settings/route.js
-import path from "path";
-import fs from "fs";
-import { parseForm } from "@/lib/parseForm";
 import { createDbConnection } from "@/lib/db";
-import { NextResponse } from "next/server";
-
-export const config = { api: { bodyParser: false } };
+import { handleFileUploads } from "@/lib/fileUpload";
+import { resolveUploadedFiles } from "@/lib/removeFile";
+import { cleanData } from "@/lib/utils";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function POST(req) {
+  let connection;
   try {
-    const { fields, files } = await parseForm(req);
-    const { journal_name, alias_name, icon, social_links } = fields;
+    const formData = await req.formData();
+    const body = Object.fromEntries(formData.entries());
+    const cleanedData = cleanData(body);
+    const uploadedFiles = await handleFileUploads(formData);
 
-    const logo = files?.logo?.newFilename || null;
-    const conn = await createDbConnection();
-    await conn.query(
-      `INSERT INTO settings (journal_name, alias_name, icon, logo, social_links)
-       VALUES (?, ?, ?, ?, ?)`,
-      [
-        journal_name,
-        alias_name,
-        icon,
-        logo,
-        social_links, // should be stringified JSON
-      ]
+    connection = await createDbConnection();
+    await connection.beginTransaction();
+
+    const [existingRows] = await connection.query(`
+      SELECT settings_name, settings_value FROM settings_admin
+      WHERE settings_name IN ('logo', 'icon')
+    `);
+
+    const existing = {};
+    for (const row of existingRows) {
+      existing[row.settings_name] = row.settings_value;
+    }
+
+    const filePaths = resolveUploadedFiles(
+      uploadedFiles,
+      cleanedData,
+      existing,
+      ["logo", "icon"]
     );
-    await conn.end();
 
-    return NextResponse.json({ success: true, message: "Settings saved!" });
-  } catch (err) {
-    console.error("Insert failed:", err);
-    return NextResponse.json(
-      { success: false, error: err.message },
+    for (const [key, value] of Object.entries(cleanedData)) {
+      if (key !== "folder") {
+        const stringValue =
+          typeof value === "object" ? JSON.stringify(value) : value;
+
+        const [existingSetting] = await connection.query(
+          `SELECT id FROM settings_admin WHERE settings_name = ?`,
+          [key]
+        );
+
+        if (existingSetting.length > 0) {
+          await connection.query(
+            `UPDATE settings_admin SET settings_value = ? WHERE settings_name = ?`,
+            [stringValue, key]
+          );
+        } else {
+          await connection.query(
+            `INSERT INTO settings_admin (settings_name, settings_value) VALUES (?, ?)`,
+            [key, stringValue]
+          );
+        }
+      }
+    }
+
+    for (const [key, filePath] of Object.entries(filePaths)) {
+      const [existingSetting] = await connection.query(
+        `SELECT id FROM settings_admin WHERE settings_name = ?`,
+        [key]
+      );
+
+      if (existingSetting.length > 0) {
+        await connection.query(
+          `UPDATE settings_admin SET settings_value = ? WHERE settings_name = ?`,
+          [filePath, key]
+        );
+      } else {
+        await connection.query(
+          `INSERT INTO settings_admin (settings_name, settings_value) VALUES (?, ?)`,
+          [key, filePath]
+        );
+      }
+    }
+
+    await connection.commit();
+    revalidateTag("settings");
+    revalidatePath("/");
+    revalidatePath("/contact-us");
+    return Response.json(
+      { message: "Settings updated successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    if (connection) await connection.rollback();
+    console.error("❌ API Error:", error);
+    return Response.json(
+      { error: "Failed to update settings", details: error.message },
       { status: 500 }
     );
+  } finally {
+    if (connection) connection.end();
   }
 }
 
 export async function GET() {
+  let connection;
   try {
-    const connection = await createDbConnection();
+    connection = await createDbConnection();
+    await connection.beginTransaction();
+
     const [rows] = await connection.query(
-      "SELECT * FROM settings WHERE id = 1 LIMIT 1"
+      `SELECT id, settings_name, settings_value FROM settings_admin`
     );
-    await connection.end();
 
-    if (!rows.length) {
-      return Response.json(
-        { success: false, message: "No settings found" },
-        { status: 404 }
-      );
-    }
+    const parsedRows = rows.map((row) => {
+      let value = row.settings_value;
+      try {
+        const parsed = JSON.parse(row.settings_value);
+        if (typeof parsed === "object") value = parsed;
+      } catch (_) {}
+      return {
+        id: row.id,
+        settings_name: row.settings_name,
+        settings_value: value,
+      };
+    });
 
-    const settings = rows[0];
-    // ✅ Fix: parse social_links from string to array
-    try {
-      settings.social_links = JSON.parse(settings.social_links || "[]");
-    } catch {
-      settings.social_links = [];
-    }
-    return Response.json({ success: true, settings });
+    await connection.commit();
+    return Response.json({ rows: parsedRows }, { status: 200 });
   } catch (error) {
-    console.error("GET /api/settings error:", error);
+    if (connection) await connection.rollback();
     return Response.json(
-      { success: false, error: "Internal server error" },
+      { error: "Failed to fetch settings" },
       { status: 500 }
     );
-  }
-}
-
-export async function PATCH(req) {
-  try {
-    const { fields, files } = await parseForm(req);
-    const { journal_name = "", alias_name = "", social_links = "[]" } = fields;
-
-    const parsedLinks =
-      typeof social_links === "string"
-        ? social_links
-        : JSON.stringify(social_links);
-
-    const logo = files?.logo?.[0];
-    const icon = files?.icon?.[0];
-
-    console.log(fields);
-
-    let logoPath = null;
-    let iconPath = null;
-
-    if (logo) {
-      const ext = path.extname(logo.originalFilename);
-      const fileName = `logo_${Date.now()}${ext}`;
-      const uploadDir = path.join(process.cwd(), "public/uploads/logos");
-      console.log("uploadDir:", uploadDir);
-      fs.mkdirSync(uploadDir, { recursive: true });
-      const savePath = path.join(uploadDir, fileName);
-      fs.renameSync(logo.filepath, savePath);
-      logoPath = `uploads/logos/${fileName}`;
-    }
-
-    if (icon) {
-      const ext = path.extname(icon.originalFilename);
-      const fileName = `icon_${Date.now()}${ext}`;
-      const uploadDir = path.join(process.cwd(), "public/uploads/icons");
-      fs.mkdirSync(uploadDir, { recursive: true });
-      const savePath = path.join(uploadDir, fileName);
-      fs.renameSync(icon.filepath, savePath);
-      iconPath = `uploads/icons/${fileName}`;
-    }
-
-    const conn = await createDbConnection();
-
-    const sql = `
-      UPDATE settings
-      SET journal_name = ?, alias_name = ?, social_links = ?
-      ${logoPath ? ", logo = ?" : ""}
-      ${iconPath ? ", icon = ?" : ""}
-      WHERE id = 1
-    `;
-
-    const params = [journal_name, alias_name, parsedLinks];
-    if (logoPath) params.push(logoPath);
-    if (iconPath) params.push(iconPath);
-
-    await conn.query(sql, params);
-    await conn.end();
-
-    console.log("Settings updated");
-
-    return NextResponse.json({ success: true, message: "Settings updated" });
-  } catch (err) {
-    console.error("PATCH error:", err);
-    return NextResponse.json(
-      { success: false, error: err.message },
-      { status: 500 }
-    );
+  } finally {
+    if (connection) connection.end();
   }
 }
