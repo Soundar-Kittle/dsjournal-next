@@ -11,8 +11,6 @@ export async function generateMetadata() {
 
 export default async function Page() {
   const settings = await getSettings();
-  // const number = settings?.phone_number?.[0]?.number;
-  // const is_whatsapp = settings?.phone_number?.[0]?.is_whatsapp;
 
   return (
     <main className="bg-white">
@@ -44,15 +42,6 @@ export default async function Page() {
                 {settings?.email || "queries@dsjournals.com"}
               </Link>
             </p>
-            {/* <p className="mt-2 text-gray-700">
-              Mobile <br />
-              <Link
-                href={`tel:${number}`}
-                className="text-light-blue  hover:text-blue"
-              >
-                +91-{number} ({is_whatsapp && "whatsapp & "}call)
-              </Link>
-            </p> */}
             <ul>
               {settings?.phone_number?.map((p, i) => {
                 const clean = String(p.number).trim();
@@ -73,14 +62,14 @@ export default async function Page() {
             </ul>
             <p className="mt-2 text-gray-700">
               Landline <br />
-              <Link
-                href={`tel:${
-                  settings?.landline?.replace(/[^\d+]/g, "") || "+914352403869"
-                }`}
-                className="text-light-blue  hover:text-blue"
+              <span
+                // href={`tel:${
+                //   settings?.landline?.replace(/[^\d+]/g, "") || "+914352403869"
+                // }`}
+                className="text-light-blue hover:text-blue"
               >
-                {settings?.landlines || "+91 (435) - 2403869"}
-              </Link>
+                {settings?.landline || "+91 (435) - 2403869"}
+              </span>
             </p>
           </div>
         </div>
