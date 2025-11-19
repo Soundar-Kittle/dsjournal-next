@@ -514,18 +514,262 @@ async function getMetaForSlug(connection, slug) {
   return meta;
 }
 
+// export async function GET(req) {
+//   const { searchParams } = new URL(req.url);
+//   const q = searchParams.get("q")?.trim()?.toLowerCase();
+//   if (!q) return Response.json({ results: [] });
+
+//   const like = `%${q}%`;
+//   const connection = await createDbConnection();
+//   let results = [];
+
+//   try {
+//     // ---------------------------------------------------------
+//     // 1️⃣ ARTICLES (with abstract + authors)
+//     // ---------------------------------------------------------
+//     const [articles] = await connection.query(
+//       `
+//       SELECT 
+//         a.id,
+//         a.article_title AS title,
+//         a.article_id,
+//         a.abstract,
+//         a.authors,
+//         a.journal_id,
+//         j.journal_name,
+//         j.short_name,
+//         v.volume_number,
+//         v.year,
+//         i.issue_number
+//       FROM articles a
+//       LEFT JOIN journals j ON a.journal_id = j.id
+//       LEFT JOIN volumes v ON a.volume_id = v.id
+//       LEFT JOIN issues  i ON a.issue_id  = i.id
+//       WHERE 
+//         LOWER(a.article_title) LIKE ?
+//         OR LOWER(a.article_id)   LIKE ?
+//         OR LOWER(a.authors)      LIKE ?
+//       LIMIT 50
+//       `,
+//       [like, like, like]
+//     );
+
+//     const articleResults = articles.map((a) => {
+//       const cleanShort = a.short_name?.toLowerCase()?.replace(/^ds-/, "");
+//       return {
+//         id: a.id,
+//         type: "article",
+//         title: a.title,
+//         article_id: a.article_id,
+//         journal_id: a.journal_id,
+//         journal_name: a.journal_name,
+//         short_name: a.short_name,
+//         volume_number: a.volume_number,
+//         issue_number: a.issue_number,
+//         year: a.year,
+//         slug: `/${cleanShort}/${a.article_id}`,
+//         abstract_snippet: a.abstract
+//           ? a.abstract.replace(/<[^>]*>/g, "").slice(0, 250)
+//           : "",
+//         authors: a.authors
+//           ? a.authors.replace(/[\[\]"]+/g, "").split(",").join(", ")
+//           : "",
+//       };
+//     });
+
+//     results.push(...articleResults);
+
+//     // ---------------------------------------------------------
+//     // 2️⃣ AUTHORS (name matches query)
+//     // ---------------------------------------------------------
+//     const authorMap = {};
+
+//     articleResults.forEach((row) => {
+//       const list = (row.authors || "")
+//         .split(",")
+//         .map((x) => x.trim())
+//         .filter(Boolean);
+
+//       list.forEach((name) => {
+//         if (!name.toLowerCase().includes(q)) return;
+
+//         if (!authorMap[name]) authorMap[name] = [];
+
+//         authorMap[name].push({
+//           article_id: row.article_id,
+//           title: row.title,
+//           slug: row.slug,
+//           journal_name: row.journal_name,
+//         });
+//       });
+//     });
+
+//     Object.keys(authorMap).forEach((name) =>
+//       results.push({
+//         type: "author",
+//         name,
+//         articles: authorMap[name],
+//       })
+//     );
+
+// // ---------------------------------------------------------
+// // 3️⃣ JOURNAL PAGES — with meta.description fallback
+// // ---------------------------------------------------------
+// const [pages] = await connection.query(
+//   `
+//   SELECT 
+//     jp.id,
+//     jp.page_title AS title,
+//     jp.journal_id,
+//     jp.content,
+//     j.short_name
+//   FROM journal_pages jp
+//   LEFT JOIN journals j ON jp.journal_id = j.id
+//   WHERE LOWER(jp.page_title) LIKE ?
+//      OR LOWER(REGEXP_REPLACE(jp.content, '<[^>]*>', '')) LIKE ?
+//   LIMIT 50
+//   `,
+//   [`%${q}%`, `%${q}%`]
+// );
+
+// const pageResults = [];
+
+// for (const p of pages) {
+//   // build journal slug
+//   const journalSlug = (p.short_name || "")
+//     .toLowerCase()
+//     .replace(/^ds-/, "")       // DS-DST → dst
+//     .replace(/[^a-z0-9-]/g, "");
+
+//   // build page slug
+//   const pageSlug = (p.title || "")
+//     .toLowerCase()
+//     .replace(/_/g, "-")
+//     .replace(/\s+/g, "-")
+//     .replace(/[^a-z0-9-]/g, "");
+
+//   // cleanup content → description
+//   const cleanText = p.content
+//     ? p.content.replace(/<[^>]*>/g, "").substring(0, 180)
+//     : "";
+
+//   // fetch meta description from metas table
+//   const [meta] = await connection.query(
+//     `
+//     SELECT ma.content 
+//     FROM metas m
+//     LEFT JOIN meta_attributes ma ON JSON_CONTAINS(m.meta_attribute_ids, JSON_ARRAY(ma.id))
+//     WHERE m.reference_type='page'
+//       AND m.reference_id=?
+//       AND ma.attribute_key='description'
+//     LIMIT 1
+//     `,
+//     [pageSlug]
+//   );
+
+//   const finalDescription =
+//     meta?.[0]?.content || cleanText || "Page description not available.";
+
+//   pageResults.push({
+//     id: p.id,
+//     type: "page",
+//     title: p.title.replace(/_/g, " "),
+//     slug: `/${journalSlug}/${pageSlug}`,
+//     description: finalDescription,
+//   });
+// }
+
+// results.push(...pageResults);
+
+//     // ---------------------------------------------------------
+//     // 4️⃣ SCAN NEXT.JS STATIC ROUTES
+//     // ---------------------------------------------------------
+//     const appDir = path.join(process.cwd(), "src/app");
+
+//     function scanStatic(dir) {
+//       const files = fs.readdirSync(dir, { withFileTypes: true });
+
+//       for (const f of files) {
+//         const full = path.join(dir, f.name);
+
+//         if (f.isDirectory()) {
+//           if (f.name.startsWith("(") || f.name.startsWith("[")) continue;
+//           scanStatic(full);
+//           continue;
+//         }
+
+//         if (!/^page\.(jsx|tsx|js)$/.test(f.name)) continue;
+
+//         const content = fs.readFileSync(full, "utf-8").toLowerCase();
+//         if (!content.includes(q)) continue;
+
+//         const relative = full
+//           .replace(appDir, "")
+//           .replace(/\\/g, "/")
+//           .replace(/\/page\.(jsx|tsx|js)$/i, "")
+//           .replace(/^\/+/, "");
+
+//         const slug = "/" + relative.replace(/^\(home\)\//, "");
+//         const title = relative
+//           .split("/")
+//           .pop()
+//           .replace(/-/g, " ")
+//           .replace(/\b\w/g, (c) => c.toUpperCase());
+
+//         results.push({
+//           type: "static",
+//           title,
+//           slug,
+//         });
+//       }
+//     }
+
+//     scanStatic(appDir);
+
+//     // ---------------------------------------------------------
+//     // 5️⃣ STATIC PAGES FROM metas TABLE (title + description)
+//     // ---------------------------------------------------------
+//     const [metaRows] = await connection.query(
+//       `SELECT reference_id AS slug FROM metas WHERE reference_type='page'`
+//     );
+
+//     for (const m of metaRows) {
+//       const slug = m.slug;
+//       const meta = await getMetaForSlug(connection, slug);
+
+//       if (meta && meta.title.toLowerCase().includes(q)) {
+//         results.push({
+//           type: "static",
+//           slug: `/${slug}`,
+//           title: meta.title,
+//           description: meta.description || "",
+//         });
+//       }
+//     }
+
+//     // ---------------------------------------------------------
+//     return Response.json({ success: true, count: results.length, results });
+//   } catch (error) {
+//     console.error(error);
+//     return Response.json({ error: error.message }, { status: 500 });
+//   } finally {
+//     connection.end();
+//   }
+// }
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim()?.toLowerCase();
   if (!q) return Response.json({ results: [] });
 
   const like = `%${q}%`;
+
   const connection = await createDbConnection();
   let results = [];
 
   try {
     // ---------------------------------------------------------
-    // 1️⃣ ARTICLES (with abstract + authors)
+    // 1️⃣ ARTICLES
     // ---------------------------------------------------------
     const [articles] = await connection.query(
       `
@@ -547,40 +791,33 @@ export async function GET(req) {
       LEFT JOIN issues  i ON a.issue_id  = i.id
       WHERE 
         LOWER(a.article_title) LIKE ?
-        OR LOWER(a.article_id)   LIKE ?
-        OR LOWER(a.authors)      LIKE ?
+        OR LOWER(a.article_id) LIKE ?
+        OR LOWER(a.authors) LIKE ?
       LIMIT 50
       `,
       [like, like, like]
     );
 
-    const articleResults = articles.map((a) => {
-      const cleanShort = a.short_name?.toLowerCase()?.replace(/^ds-/, "");
-      return {
-        id: a.id,
-        type: "article",
-        title: a.title,
-        article_id: a.article_id,
-        journal_id: a.journal_id,
-        journal_name: a.journal_name,
-        short_name: a.short_name,
-        volume_number: a.volume_number,
-        issue_number: a.issue_number,
-        year: a.year,
-        slug: `/${cleanShort}/${a.article_id}`,
-        abstract_snippet: a.abstract
-          ? a.abstract.replace(/<[^>]*>/g, "").slice(0, 250)
-          : "",
-        authors: a.authors
-          ? a.authors.replace(/[\[\]"]+/g, "").split(",").join(", ")
-          : "",
-      };
-    });
+    const articleResults = articles.map((a) => ({
+      id: a.id,
+      type: "article",
+      title: a.title,
+      article_id: a.article_id,
+      journal_id: a.journal_id,
+      journal_name: a.journal_name,
+      slug: `/${a.short_name.toLowerCase().replace(/^ds-/, "")}/${a.article_id}`,
+      abstract_snippet: a.abstract
+        ? a.abstract.replace(/<[^>]*>/g, "").slice(0, 250)
+        : "",
+      authors: a.authors
+        ? a.authors.replace(/[\[\]"]+/g, "").split(",").join(", ")
+        : "",
+    }));
 
     results.push(...articleResults);
 
     // ---------------------------------------------------------
-    // 2️⃣ AUTHORS (name matches query)
+    // 2️⃣ AUTHORS (from article results)
     // ---------------------------------------------------------
     const authorMap = {};
 
@@ -612,142 +849,10 @@ export async function GET(req) {
       })
     );
 
-// ---------------------------------------------------------
-// 3️⃣ JOURNAL PAGES — with meta.description fallback
-// ---------------------------------------------------------
-const [pages] = await connection.query(
-  `
-  SELECT 
-    jp.id,
-    jp.page_title AS title,
-    jp.journal_id,
-    jp.content,
-    j.short_name
-  FROM journal_pages jp
-  LEFT JOIN journals j ON jp.journal_id = j.id
-  WHERE LOWER(jp.page_title) LIKE ?
-     OR LOWER(REGEXP_REPLACE(jp.content, '<[^>]*>', '')) LIKE ?
-  LIMIT 50
-  `,
-  [`%${q}%`, `%${q}%`]
-);
-
-const pageResults = [];
-
-for (const p of pages) {
-  // build journal slug
-  const journalSlug = (p.short_name || "")
-    .toLowerCase()
-    .replace(/^ds-/, "")       // DS-DST → dst
-    .replace(/[^a-z0-9-]/g, "");
-
-  // build page slug
-  const pageSlug = (p.title || "")
-    .toLowerCase()
-    .replace(/_/g, "-")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-
-  // cleanup content → description
-  const cleanText = p.content
-    ? p.content.replace(/<[^>]*>/g, "").substring(0, 180)
-    : "";
-
-  // fetch meta description from metas table
-  const [meta] = await connection.query(
-    `
-    SELECT ma.content 
-    FROM metas m
-    LEFT JOIN meta_attributes ma ON JSON_CONTAINS(m.meta_attribute_ids, JSON_ARRAY(ma.id))
-    WHERE m.reference_type='page'
-      AND m.reference_id=?
-      AND ma.attribute_key='description'
-    LIMIT 1
-    `,
-    [pageSlug]
-  );
-
-  const finalDescription =
-    meta?.[0]?.content || cleanText || "Page description not available.";
-
-  pageResults.push({
-    id: p.id,
-    type: "page",
-    title: p.title.replace(/_/g, " "),
-    slug: `/${journalSlug}/${pageSlug}`,
-    description: finalDescription,
-  });
-}
-
-results.push(...pageResults);
-
     // ---------------------------------------------------------
-    // 4️⃣ SCAN NEXT.JS STATIC ROUTES
+    // NO STATIC PAGES FOR NOW (disabled)
     // ---------------------------------------------------------
-    const appDir = path.join(process.cwd(), "src/app");
 
-    function scanStatic(dir) {
-      const files = fs.readdirSync(dir, { withFileTypes: true });
-
-      for (const f of files) {
-        const full = path.join(dir, f.name);
-
-        if (f.isDirectory()) {
-          if (f.name.startsWith("(") || f.name.startsWith("[")) continue;
-          scanStatic(full);
-          continue;
-        }
-
-        if (!/^page\.(jsx|tsx|js)$/.test(f.name)) continue;
-
-        const content = fs.readFileSync(full, "utf-8").toLowerCase();
-        if (!content.includes(q)) continue;
-
-        const relative = full
-          .replace(appDir, "")
-          .replace(/\\/g, "/")
-          .replace(/\/page\.(jsx|tsx|js)$/i, "")
-          .replace(/^\/+/, "");
-
-        const slug = "/" + relative.replace(/^\(home\)\//, "");
-        const title = relative
-          .split("/")
-          .pop()
-          .replace(/-/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-
-        results.push({
-          type: "static",
-          title,
-          slug,
-        });
-      }
-    }
-
-    scanStatic(appDir);
-
-    // ---------------------------------------------------------
-    // 5️⃣ STATIC PAGES FROM metas TABLE (title + description)
-    // ---------------------------------------------------------
-    const [metaRows] = await connection.query(
-      `SELECT reference_id AS slug FROM metas WHERE reference_type='page'`
-    );
-
-    for (const m of metaRows) {
-      const slug = m.slug;
-      const meta = await getMetaForSlug(connection, slug);
-
-      if (meta && meta.title.toLowerCase().includes(q)) {
-        results.push({
-          type: "static",
-          slug: `/${slug}`,
-          title: meta.title,
-          description: meta.description || "",
-        });
-      }
-    }
-
-    // ---------------------------------------------------------
     return Response.json({ success: true, count: results.length, results });
   } catch (error) {
     console.error(error);
