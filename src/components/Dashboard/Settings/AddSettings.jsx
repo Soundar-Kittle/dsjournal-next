@@ -55,6 +55,7 @@ const schema = yup
         })
       )
       .min(1, "At least one address is required"),
+    landline: yup.string().nullable(),
     app_name: yup.string().nullable(),
     app_email: yup.string().email("Invalid email format").nullable(),
     app_password: yup.string().nullable(),
@@ -140,6 +141,7 @@ export default function AddSettings() {
       email: "",
       name: "",
       phone_number: [{ number: "", is_whatsapp: false }],
+      landline: "",
       addresses: [
         { line1: "", line2: "", city: "", state: "", country: "", pincode: "" },
       ],
@@ -192,6 +194,7 @@ export default function AddSettings() {
       phone_number: settingsData.phone_number?.length
         ? settingsData.phone_number
         : [{ number: "", is_whatsapp: false }],
+      landline: settingsData.landline || "",
       addresses: settingsData.address
         ? settingsData.address
         : [
@@ -223,6 +226,7 @@ export default function AddSettings() {
     const fd = new FormData();
     fd.append("email", payload.email);
     fd.append("name", payload.name);
+    fd.append("landline", payload.landline);
     fd.append("address", JSON.stringify(payload.addresses));
     fd.append("location", payload.location);
     fd.append("app_name", payload.app_name);
@@ -244,8 +248,6 @@ export default function AddSettings() {
     if (iconFile.icon?.[0] instanceof File)
       safeAppend("icon", iconFile.icon[0]);
     else safeAppend("icon", iconFile.icon?.[0]);
-
-    console.log("data", [...fd.entries()]);
 
     await mutation.mutateAsync(fd);
   };
@@ -360,6 +362,24 @@ export default function AddSettings() {
                 )}
               />
               <ErrorMessage error={errors.email} />
+            </div>
+            <div className="">
+              <label htmlFor="name" className="text-sm font-bold mb-2 block">
+                Landline
+              </label>
+              <Controller
+                name="landline"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="landline"
+                    {...field}
+                    placeholder="Landline"
+                    className={errors.landline ? "border-red-500" : ""}
+                  />
+                )}
+              />
+              <ErrorMessage error={errors.landline} />
             </div>
 
             <div className="col-span-full space-y-2">
@@ -532,7 +552,7 @@ export default function AddSettings() {
                 </div>
               ))}
               <ErrorMessage error={errors.addresses} />
-              <Button
+              {/* <Button
                 type="button"
                 onClick={() =>
                   appendAddress({
@@ -546,10 +566,10 @@ export default function AddSettings() {
                 }
               >
                 + Add Address
-              </Button>
+              </Button> */}
             </div>
 
-            <div className="col-span-full space-y-2">
+            {/* <div className="col-span-full space-y-2">
               <label
                 htmlFor="location"
                 className="text-sm font-bold mb-2 block"
@@ -572,7 +592,7 @@ export default function AddSettings() {
                 )}
               />
               <ErrorMessage error={errors.location} />
-            </div>
+            </div> */}
           </TabsContent>
 
           {/* Social Links Tab */}
@@ -596,35 +616,6 @@ export default function AddSettings() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="w-full">
-                      {/* <Controller
-                        name={`social_links.${index}.platform`}
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger
-                              className={`w-full ${
-                                errors.social_links?.[index]?.platform
-                                  ? "border-red-500"
-                                  : ""
-                              }`}
-                            >
-                              <SelectValue placeholder="Select Platform" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="instagram">
-                                Instagram
-                              </SelectItem>
-                              <SelectItem value="facebook">Facebook</SelectItem>
-                              <SelectItem value="twitter">Twitter</SelectItem>
-                              <SelectItem value="youtube">YouTube</SelectItem>
-                              <SelectItem value="linkedin">LinkedIn</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      /> */}
                       <Controller
                         control={control}
                         name={`social_links.${index}.platform`}

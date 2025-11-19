@@ -109,7 +109,7 @@ export default function Login({ role = "default" }) {
             )}
           </button>
 
-          <div className="text-center text-sm text-gray-600">
+          {/* <div className="text-center text-sm text-gray-600">
             Don’t have an account?{" "}
             <Link
               href={`/${role}/register`}
@@ -117,7 +117,7 @@ export default function Login({ role = "default" }) {
             >
               Register
             </Link>
-          </div>
+          </div> */}
           <Link
             href="/"
             className={`flex justify-center items-center gap-2 text-sm ${theme.accent} hover:underline`}

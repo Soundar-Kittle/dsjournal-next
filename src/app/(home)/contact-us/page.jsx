@@ -2,12 +2,18 @@ import Image from "next/image";
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+import { getSettings } from "@/utils/getSettings";
+import Link from "next/link";
 
 export async function generateMetadata() {
   return await generateDynamicMeta("contact-us");
 }
 
-export default function Page() {
+export default async function Page() {
+  const settings = await getSettings();
+  // const number = settings?.phone_number?.[0]?.number;
+  // const is_whatsapp = settings?.phone_number?.[0]?.is_whatsapp;
+
   return (
     <main className="bg-white">
       <PageHeader title="Contact Us" />
@@ -30,30 +36,51 @@ export default function Page() {
             <h2 className="text-xl font-semibold mb-2">Emails Us</h2>
             <p className="text-gray-700">
               General inquiries <br />
-              <a
-                href="mailto:queries@dsjournals.com"
+              <Link
+                href={`mailto:${settings?.email || "queries@dsjournals.com"}`}
+                aria-label="conatct email"
                 className="text-light-blue  hover:text-blue"
               >
-                queries@dsjournals.com
-              </a>
+                {settings?.email || "queries@dsjournals.com"}
+              </Link>
             </p>
-            <p className="mt-2 text-gray-700">
+            {/* <p className="mt-2 text-gray-700">
               Mobile <br />
-              <a
-                href="tel:+919578957897"
+              <Link
+                href={`tel:${number}`}
                 className="text-light-blue  hover:text-blue"
               >
-                +91-9578957897 (whatsapp &amp; call)
-              </a>
-            </p>
+                +91-{number} ({is_whatsapp && "whatsapp & "}call)
+              </Link>
+            </p> */}
+            <ul>
+              {settings?.phone_number?.map((p, i) => {
+                const clean = String(p.number).trim();
+                const is_whatsapp = p.is_whatsapp;
+                return (
+                  <li key={i} className="flex items-center space-x-2 mt-2">
+                    <Link
+                      href={`tel:${clean}`}
+                      className="text-light-blue  hover:text-blue"
+                    >
+                      +91-{clean.slice(0, 5)} {clean.slice(5)} (
+                      {is_whatsapp && "whatsapp & "}call)
+                      <br />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
             <p className="mt-2 text-gray-700">
               Landline <br />
-              <a
-                href="tel:+914352403869"
+              <Link
+                href={`tel:${
+                  settings?.landline?.replace(/[^\d+]/g, "") || "+914352403869"
+                }`}
                 className="text-light-blue  hover:text-blue"
               >
-                +91 (435) - 2403869
-              </a>
+                {settings?.landlines || "+91 (435) - 2403869"}
+              </Link>
             </p>
           </div>
         </div>
@@ -71,11 +98,15 @@ export default function Page() {
             <h2 className="text-xl font-semibold mb-2">Office Address</h2>
             <h3 className="font-semibold">Dream Science</h3>
             <p>
-              1272, Thirumetraligai East Street, <br />
-              Patteeswaram P.O., <br />
-              Kumbakonam T.K., <br />
-              Thanjavur District - 612 703, <br />
-              TamilNadu, India.
+              {settings?.address[0]?.line1}
+              <br />
+              {settings?.address[0]?.line2?.split("|")[0]?.trim()}
+              <br />
+              {settings?.address[0]?.line2?.split("|")[1]?.trim()}
+              <br />
+              {settings?.address[0]?.city} - {settings?.address[0]?.pincode},{" "}
+              <br />
+              {settings?.address[0]?.state} {settings?.address[0]?.country}
             </p>
           </div>
         </div>

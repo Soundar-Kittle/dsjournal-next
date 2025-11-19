@@ -128,8 +128,6 @@ const AddBanner = ({ type = "add", editData = {}, onClose }) => {
     if (imageFile.image?.[0] instanceof File) {
       fd.append("image", imageFile.image[0]);
     }
-
-    // console.log([...fd.entries()]);
     await mutation.mutateAsync(fd);
   };
 

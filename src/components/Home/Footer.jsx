@@ -61,9 +61,9 @@ const DEFAULT_COLUMNS = [
 export default function Footer({ settings }) {
   const year = new Date().getFullYear();
   const columns = DEFAULT_COLUMNS;
-  const whatsapp_number = settings?.phone_number?.find(
-    (p) => p?.is_whatsapp
-  )?.number;
+  // const whatsapp_number = settings?.phone_number?.find(
+  //   (p) => p?.is_whatsapp
+  // )?.number;
 
   return (
     <footer className="bg-secondary text-white">
@@ -104,7 +104,7 @@ export default function Footer({ settings }) {
           <div className="space-y-4">
             <h4 className="font-semibold">Follow Us</h4>
             <div className="flex items-center gap-1">
-              {settings.social_links.map(({ url, platform }, i) => {
+              {settings?.social_links.map(({ url, platform }, i) => {
                 const Icon = socialIcons[platform];
                 return (
                   Icon && (
