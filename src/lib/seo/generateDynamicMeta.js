@@ -107,4 +107,3 @@ export const generateDynamicMeta = async (slug) => {
     };
   }
 };
-
