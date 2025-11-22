@@ -1,8 +1,9 @@
 "use client";
-import AboutUs from "@/components/Home/AboutUs";
+// import AboutUs from "@/components/Home/AboutUs";
 import PageHeader from "@/components/Home/PageHeader";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 50 },
@@ -44,7 +45,33 @@ export default function AboutUsPage() {
           researchers succeed, wherever they are in their education and
           professional careers
         </p>
-        <AboutUs />
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Left: Image */}
+                <div className="relative w-full h-[320px] md:h-[420px] overflow-hidden">
+                  <Image
+                    src="/images/about.jpg"
+                    alt="About Dream Science"
+                    fill
+                    className="object-cover"
+                    priority
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                </div>
+        
+                {/* Right: Text */}
+                <div className="space-y-5 leading-relaxed text-justify">
+                 <p>
+  We are bridging the higher education gap by delivering content solutions in new and innovative ways to enrich the learning experience. We are a proven leader in strategic higher education consulting and partnering with educators and institutions globally to achieve success, and our print and digital solutions enable students and instructors worldwide.We encourage learning to be a continuous, lifelong experience an integral, essential part of every stage of building a career.
+</p>
+<p>We are closing the talent deficit by supporting employers, helping them find and retain top talent, assess their employees’ skill sets, and implement training in order to transform company cultures.For decades we’ve helped people learn; today we’re showing them new ways to achieve, get certified and advance their careers.</p>
+
+<p>We are strengthening the research community by partnering with learned societies and supporting researchers to communicate discoveries that make a difference. We collaborate with authors, societies, libraries, and other members of the research community to generate, communicate, and enable access to the scientific and scholarly insights that are helping to solve some of the world’s biggest challenges.</p>
+
+<p>Our commitment to partnership helps us advance innovation and connect researchers, learners, and professionals with the content, platforms, and tools they need to be successful.</p>      
+
+                </div>
+              </div>
+
       </div>
     </main>
   );
