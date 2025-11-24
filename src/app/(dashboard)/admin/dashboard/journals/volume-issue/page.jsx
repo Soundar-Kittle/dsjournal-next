@@ -224,7 +224,16 @@ export default function VolumeIssuePage() {
         ...issueForm,
         alias_name_issue: issueForm.alias_name_issue || issueForm.alias_name,
       };
-      const res = await axios.post("/api/issues", payload);
+      // const res = await axios.post("/api/issues", payload);
+     const res = await axios.post("/api/issues", {
+  type: "issue",
+  journal_id: issueForm.journal_id,
+  volume_id: issueForm.volume_id,
+  issue_number: issueForm.issue_number,
+  issue_label: issueForm.issue_label,
+  alias_name_issue: issueForm.alias_name_issue || null
+});
+
       toast.success(res.data.message);
       await fetchIssues(issueForm.journal_id);
       setIssueForm({
@@ -735,36 +744,6 @@ export default function VolumeIssuePage() {
                 </>
               )}
               {editType === "month" && (
-                // <>
-                //   <select
-                //     className="border p-2 w-full"
-                //     value={editForm.from_month ?? ""}
-                //     onChange={(e) =>
-                //       setEditForm({ ...editForm, from_month: e.target.value })
-                //     }
-                //   >
-                //     {monthOptions.map((m) => (
-                //       <option key={m} value={m}>
-                //         {m}
-                //       </option>
-                //     ))}
-                //   </select>
-                //   <select
-                //     className="border p-2 w-full"
-                //     value={editForm.to_month ?? ""}
-                //     onChange={(e) =>
-                //       setEditForm({ ...editForm, to_month: e.target.value })
-                //     }
-                //   >
-                //     <option value="">Select To Month (optional)</option>
-                //     {monthOptions.map((m) => (
-                //       <option key={m} value={m}>
-                //         {m}
-                //       </option>
-                //     ))}
-                //   </select>
-                // </>
-
                 <>
                   {/* From Month */}
                   <Select
@@ -813,16 +792,18 @@ export default function VolumeIssuePage() {
         <CardHeader className="flex flex-wrap items-center justify-between gap-3">
           {/* <CardTitle>Journal Summary</CardTitle> */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Select
-              value={summaryJournalId}
-              options={journals.map((j) => ({
-                value: j.id,
-                label: j.journal_name,
-              }))}
-              onValueChange={async (val) => {
-                await loadJournalSummary(val);
-              }}
-            />
+<Select
+  value={summaryJournalId}
+  options={journals.map((j) => ({
+    value: j.id,
+    label: j.journal_name,
+  }))}
+  onValueChange={async (val) => {
+    setSummaryJournalId(val);   // ✅ critical fix
+    await loadJournalSummary(val);
+  }}
+/>
+
 
             <div>
               <Button
