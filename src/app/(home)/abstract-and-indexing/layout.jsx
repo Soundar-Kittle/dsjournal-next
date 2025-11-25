@@ -7,11 +7,11 @@ const menu = [
     menu_label: "Publishing On Journals",
     menu_link: "/abstract-and-indexing#publishing-on-journals",
   },
-   {
+  {
     menu_label: "Search Engines",
     menu_link: "/abstract-and-indexing#search-engines",
   },
-   {
+  {
     menu_label: "A & I Databases",
     menu_link: "/abstract-and-indexing#a-i-databases",
   },
@@ -20,9 +20,14 @@ const menu = [
 export default function Layout({ children }) {
   return (
     <main className="bg-white">
-      <PageHeader items={menu} title="Open Access" />
+      <PageHeader items={menu} title="Indexing" />
       <Breadcrumbs
-        parents={[{ menu_label: "Open Access", menu_link: "/open-access" }]}
+        parents={[
+          {
+            menu_label: "Abstracting and Indexing",
+            menu_link: "/abstract-and-indexing",
+          },
+        ]}
       />
 
       <section className="mx-auto max-w-6xl  px-4 sm:px-6 lg:px-8 py-10">
