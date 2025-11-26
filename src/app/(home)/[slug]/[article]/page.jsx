@@ -39,7 +39,10 @@ export async function generateMetadata({ params }) {
   const keywords = parseList(article.keywords);
 
   const pdfUrl = article.pdf_path
-    ? `${baseUrl.replace(/\/$/, "")}/${article.pdf_path.replace(/^(\.\.\/)+/, "")}`
+    ? `${baseUrl.replace(/\/$/, "")}/${article.pdf_path.replace(
+        /^(\.\.\/)+/,
+        ""
+      )}`
     : "";
 
   const articleUrl = `${baseUrl}/DST/${article.article_id}`;
@@ -83,7 +86,9 @@ export async function generateMetadata({ params }) {
       citation_volume: `Volume ${article.volume_number}`,
       citation_year: article.year,
       citation_date: new Date(article.published).toLocaleDateString("en-CA"),
-      citation_online_date: new Date(article.published).toLocaleDateString("en-CA"),
+      citation_online_date: new Date(article.published).toLocaleDateString(
+        "en-CA"
+      ),
       citation_doi: article.doi,
       citation_issn: article.issn_online,
       citation_abstract: article.abstract,
@@ -132,12 +137,14 @@ export default async function Page({ params }) {
   const references = article.references || "";
 
   // 🔗 Clean DOI (can be bare "10.xxxx/…" or full URL)
-const doi = article.doi?.trim() || "";
-const doiHref = doi
-  ? doi.startsWith("http")
-    ? doi
-    : `https://doi.org/${doi}${article.article_id ? `/${article.article_id}` : ""}`
-  : "";
+  const doi = article.doi?.trim() || "";
+  const doiHref = doi
+    ? doi.startsWith("http")
+      ? doi
+      : `https://doi.org/${doi}${
+          article.article_id ? `/${article.article_id}` : ""
+        }`
+    : "";
 
   return (
     <div className="space-y-6 pt-4">
@@ -147,7 +154,7 @@ const doiHref = doi
           Research Article | Open Access |{" "}
           {article.pdf_path && (
             <Link
-              href={article.pdf_path}
+              href={`/${article.pdf_path}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue font-bold hover:text-light-blue inline-flex items-center gap-1"
@@ -161,20 +168,20 @@ const doiHref = doi
         <p className="text-xs">
           Volume {article.volume_number} | Issue {article.issue_number} | Year{" "}
           {article.year} | Article Id: {articleId}{" "}
-{doiHref && (
-  <>
-    {" "}
-    DOI:{" "}
-    <a
-      href={doiHref}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-blue hover:text-light-blue"
-    >
-      {doiHref}
-    </a>
-  </>
-)}
+          {doiHref && (
+            <>
+              {" "}
+              DOI:{" "}
+              <a
+                href={doiHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue hover:text-light-blue"
+              >
+                {doiHref}
+              </a>
+            </>
+          )}
         </p>
 
         <h1 className="text-[24px] font-medium mt-4 pb-3 border-b leading-snug">
@@ -188,28 +195,36 @@ const doiHref = doi
 
       {/* Dates */}
       <div className="overflow-x-auto border-y">
-        <table className="min-w-full text-center">
+        <table className="min-w-full text-center max-sm:text-sm">
           <thead>
             <tr>
-              <th className="px-3 font-normal">Received</th>
-              <th className="px-3 font-normal border-x">Revised</th>
-              <th className="px-3 font-normal border-x">Accepted</th>
-              <th className="px-3 font-normal">Published</th>
+              <th className=" font-normal">Received</th>
+              <th className=" font-normal border-x">Revised</th>
+              <th className=" font-normal border-x">Accepted</th>
+              <th className=" font-normal">Published</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td className="px-3">
-                {(article.received && moment(article.received).format("DD MMM YYYY")) || "-"}
+              <td className="">
+                {(article.received &&
+                  moment(article.received).format("DD MMM YYYY")) ||
+                  "-"}
               </td>
-              <td className="px-3 border-x">
-                {(article.revised && moment(article.revised).format("DD MMM YYYY")) || "-"}
+              <td className=" border-x">
+                {(article.revised &&
+                  moment(article.revised).format("DD MMM YYYY")) ||
+                  "-"}
               </td>
-              <td className="px-3 border-x">
-                {(article.accepted && moment(article.accepted).format("DD MMM YYYY")) || "-"}
+              <td className=" border-x">
+                {(article.accepted &&
+                  moment(article.accepted).format("DD MMM YYYY")) ||
+                  "-"}
               </td>
-              <td className="px-3">
-                {(article.published && moment(article.published).format("DD MMM YYYY")) || "-"}
+              <td className="">
+                {(article.published &&
+                  moment(article.published).format("DD MMM YYYY")) ||
+                  "-"}
               </td>
             </tr>
           </tbody>
@@ -248,15 +263,15 @@ const doiHref = doi
         </div>
       )} */}
       {/* Abstract */}
-{article.abstract && (
-  <div>
-    <h2 className="text-lg font-semibold">Abstract</h2>
-    <div
-      className="mt-2 prose max-w-none"
-      dangerouslySetInnerHTML={{ __html: article.abstract }}
-    />
-  </div>
-)}
+      {article.abstract && (
+        <div>
+          <h2 className="text-lg font-semibold">Abstract</h2>
+          <div
+            className="mt-2 prose max-w-none"
+            dangerouslySetInnerHTML={{ __html: article.abstract }}
+          />
+        </div>
+      )}
 
       {/* Keywords */}
       {keywords.length > 0 && (

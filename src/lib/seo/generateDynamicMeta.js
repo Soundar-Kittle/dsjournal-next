@@ -90,7 +90,7 @@ export const generateDynamicMeta = async (slug) => {
     metadata.twitter.card ??= "summary_large_image";
     metadata.twitter.image ??= fallbackImage || undefined;
 
-    metadata.metadataBase = new URL("http://dsjournals.com");
+    metadata.metadataBase = new URL("https://dsjournals.com");
     return metadata;
   } catch (error) {
     console.error("❌ Error generating metadata:", error);

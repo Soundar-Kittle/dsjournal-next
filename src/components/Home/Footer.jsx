@@ -110,6 +110,7 @@ export default function Footer({ settings }) {
                   Icon && (
                     <Link
                       key={i}
+                      target="_blank"
                       href={url}
                       aria-label={"Follow us on " + platform}
                       className="grid h-9 w-9 place-items-center rounded-full bg-primary text-white hover:text-secondary transition"
