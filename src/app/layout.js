@@ -28,31 +28,39 @@ const roboto = Roboto({
   display: "swap",
 });
 
-export const generateMetadata = async () => {
+export async function generateMetadata() {
   const settings = await getSettings();
+  const icon = settings?.icon ? `/${settings.icon}` : "/logo.png";
+
   return {
     title: "Dream Science | Engineering and Technology Journals",
     description:
-      "DS Journals publishes high-quality academic research papers in various fields. Submit your manuscript for peer review and get published early!",
+      "DS Journals publishes high-quality academic research papers in various fields.",
     icons: {
-      icon: [
-        {
-          url: settings?.icon ? `/${settings?.icon}` : "/logo.png",
-        },
-      ],
-      apple: [
-        {
-          url: settings?.icon ? `/${settings?.icon}` : "/logo.png",
-        },
-      ],
+      icon,
+      apple: icon,
+    },
+    openGraph: {
+      title: "Dream Science Journal",
+      description: "Engineering and Technology Research Publications",
+      type: "website",
+      siteName: "Dream Science",
+      images: [{ url: icon, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Dream Science Journal",
+      description: "Engineering and Technology Research Publications",
+      images: [icon],
     },
   };
-};
+}
+
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head />
+      {/* <head /> */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} ${roboto.variable} antialiased`}
       >
