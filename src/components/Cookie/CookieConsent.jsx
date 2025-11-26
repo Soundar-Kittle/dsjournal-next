@@ -29,9 +29,9 @@ export default function CookieConsent() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-4 left-0 right-0 z-[9999] flex justify-center">
+    <div className="fixed bottom-4 transform -translate-x-1/2 left-1/2 z-[9999] flex justify-center max-md:w-full text-sm max-sm:text-xs">
       <div className="bg-white shadow-lg rounded-xl border border-gray-200 p-4 max-w-xl w-[95%] sm:w-auto flex flex-col sm:flex-row items-center gap-3">
-        <p className="text-sm text-gray-700 text-center sm:text-left flex-1">
+        <p className="text-gray-700 text-center sm:text-left flex-1">
           🍪 We use cookies to enhance your experience. Read our{" "}
           <a
             href="/privacy-policy"
@@ -45,13 +45,13 @@ export default function CookieConsent() {
         <div className="flex gap-2">
           <button
             onClick={declineCookies}
-            className="px-3 py-1 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md text-sm"
+            className="cursor-pointer px-3 py-1 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md"
           >
             Decline
           </button>
           <button
             onClick={acceptCookies}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm"
+            className="cursor-pointer px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
           >
             Allow
           </button>
