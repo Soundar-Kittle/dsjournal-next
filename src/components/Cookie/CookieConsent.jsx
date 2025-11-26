@@ -5,7 +5,7 @@ export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    console.log("🍪 CookieConsent mounted"); // check console
+    console.log("🍪 CookieConsent mounted");
     const consent = localStorage.getItem("cookie_consent");
     if (!consent) {
       const timer = setTimeout(() => {
