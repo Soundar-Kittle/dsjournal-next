@@ -31,7 +31,6 @@ const roboto = Roboto({
 export async function generateMetadata() {
   const settings = await getSettings();
   const icon = settings?.icon ? `/${settings.icon}` : "/logo.png";
-
   return {
     title: "Dream Science | Engineering and Technology Journals",
     description:
@@ -55,7 +54,6 @@ export async function generateMetadata() {
     },
   };
 }
-
 
 export default function RootLayout({ children }) {
   return (
