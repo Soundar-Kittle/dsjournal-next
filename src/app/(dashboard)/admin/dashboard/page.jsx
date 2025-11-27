@@ -1,58 +1,58 @@
 "use client";
-import { useEffect, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
+// import { useEffect, useState } from "react";
+// import {
+//   BarChart,
+//   Bar,
+//   XAxis,
+//   YAxis,
+//   Tooltip,
+//   ResponsiveContainer,
+//   CartesianGrid,
+//   PieChart,
+//   Pie,
+//   Cell,
+//   Legend,
+// } from "recharts";
 
-import {
-  FileText,
-  BookOpen,
-  CalendarDays,
-  ArrowUpRight,
-} from "lucide-react";
+// import {
+//   FileText,
+//   BookOpen,
+//   CalendarDays,
+//   ArrowUpRight,
+// } from "lucide-react";
 
 export default function DashboardHome() {
-  const [analytics, setAnalytics] = useState({
-    totalPapers: 0,
-    activeJournals: 0,
-    upcomingIssues: 0,
-    monthlyPapers: [],
-    journalWise: [],
-    currentIssues: [],
-  });
+  // const [analytics, setAnalytics] = useState({
+  //   totalPapers: 0,
+  //   activeJournals: 0,
+  //   upcomingIssues: 0,
+  //   monthlyPapers: [],
+  //   journalWise: [],
+  //   currentIssues: [],
+  // });
 
-  useEffect(() => {
-    async function fetchAnalytics() {
-      try {
-        const res = await fetch("/api/dashboard/analytics");
-        const data = await res.json();
-        setAnalytics(data);
-      } catch (error) {
-        console.error("Error loading analytics:", error);
-      }
-    }
-    fetchAnalytics();
-  }, []);
+  // // useEffect(() => {
+  // //   async function fetchAnalytics() {
+  // //     try {
+  // //       const res = await fetch("/api/dashboard/analytics");
+  // //       const data = await res.json();
+  // //       setAnalytics(data);
+  // //     } catch (error) {
+  // //       console.error("Error loading analytics:", error);
+  // //     }
+  // //   }
+  // //   fetchAnalytics();
+  // // }, []);
 
-  const COLORS = [
-    "#3B82F6", // blue
-    "#10B981", // green
-    "#F59E0B", // amber
-    "#EF4444", // red
-    "#8B5CF6", // violet
-    "#EC4899", // pink
-    "#14B8A6", // teal
-  ];
+  // const COLORS = [
+  //   "#3B82F6", // blue
+  //   "#10B981", // green
+  //   "#F59E0B", // amber
+  //   "#EF4444", // red
+  //   "#8B5CF6", // violet
+  //   "#EC4899", // pink
+  //   "#14B8A6", // teal
+  // ];
 
   return (
     <div className="p-8 min-h-screen bg-gray-50">
@@ -67,8 +67,8 @@ export default function DashboardHome() {
         </p>
       </div>
 
-      {/* ----- Top Summary Cards ----- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+
+      {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         <StatCard
           title="Total Published Papers"
           value={analytics.totalPapers}
@@ -94,10 +94,10 @@ export default function DashboardHome() {
         />
       </div>
 
-      {/* ----- Charts Section ----- */}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-        {/* Monthly Bar Chart */}
+
         <DashboardCard title="Monthly Paper Publications" actionLabel="View Report">
           {analytics.monthlyPapers?.length > 0 ? (
             <div className="h-[340px] w-full">
@@ -116,7 +116,7 @@ export default function DashboardHome() {
           )}
         </DashboardCard>
 
-        {/* Pie Chart */}
+
         <DashboardCard title="Journal-wise Publications">
           {analytics.journalWise?.length > 0 ? (
             <div className="h-[340px] w-full">
@@ -146,7 +146,6 @@ export default function DashboardHome() {
         </DashboardCard>
       </div>
 
-      {/* ----- Current Issues Table ----- */}
       <DashboardCard title="Current Issue Summary" className="mt-10">
 
         {analytics.currentIssues?.length > 0 ? (
@@ -180,7 +179,7 @@ export default function DashboardHome() {
         ) : (
           <EmptyChart message="No current issues found" />
         )}
-      </DashboardCard>
+      </DashboardCard> */}
     </div>
   );
 }
@@ -191,45 +190,45 @@ export default function DashboardHome() {
 /* Reusable Dashboard Components */
 /* ----------------------------------- */
 
-function StatCard({ title, value, icon, gradient, iconColor }) {
-  return (
-    <div className={`p-6 rounded-xl shadow-sm border border-gray-200 
-      bg-gradient-to-br ${gradient} hover:shadow-md transition`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-500 text-sm">{title}</p>
-          <h3 className="text-3xl font-bold text-gray-900">{value}</h3>
-        </div>
-        <div className={`p-3 rounded-full ${iconColor} bg-white shadow`}>
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
+// function StatCard({ title, value, icon, gradient, iconColor }) {
+//   return (
+//     <div className={`p-6 rounded-xl shadow-sm border border-gray-200 
+//       bg-gradient-to-br ${gradient} hover:shadow-md transition`}>
+//       <div className="flex items-center justify-between">
+//         <div>
+//           <p className="text-gray-500 text-sm">{title}</p>
+//           <h3 className="text-3xl font-bold text-gray-900">{value}</h3>
+//         </div>
+//         <div className={`p-3 rounded-full ${iconColor} bg-white shadow`}>
+//           {icon}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
-function DashboardCard({ title, actionLabel, children, className }) {
-  return (
-    <div className={`bg-white border border-gray-200 rounded-xl shadow-sm p-6 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+// function DashboardCard({ title, actionLabel, children, className }) {
+//   return (
+//     <div className={`bg-white border border-gray-200 rounded-xl shadow-sm p-6 ${className}`}>
+//       <div className="flex items-center justify-between mb-4">
+//         <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
 
-        {actionLabel && (
-          <button className="flex items-center text-sm text-blue-600 hover:text-blue-700 transition">
-            {actionLabel} <ArrowUpRight size={16} className="ml-1" />
-          </button>
-        )}
-      </div>
+//         {actionLabel && (
+//           <button className="flex items-center text-sm text-blue-600 hover:text-blue-700 transition">
+//             {actionLabel} <ArrowUpRight size={16} className="ml-1" />
+//           </button>
+//         )}
+//       </div>
 
-      {children}
-    </div>
-  );
-}
+//       {children}
+//     </div>
+//   );
+// }
 
-function EmptyChart({ message = "No data available" }) {
-  return (
-    <div className="text-gray-500 py-16 text-center border border-dashed rounded-lg">
-      {message}
-    </div>
-  );
-}
+// function EmptyChart({ message = "No data available" }) {
+//   return (
+//     <div className="text-gray-500 py-16 text-center border border-dashed rounded-lg">
+//       {message}
+//     </div>
+//   );
+// }

@@ -5,8 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { toast } from "sonner";
-import { Button, Switch } from "@/components/ui";
-import CKEditorField from "../Article/CKEditorField";
+import { Button, Switch, TextEditor } from "@/components/ui";
 
 /* ---------------- ✅ Validation ---------------- */
 const schema = yup.object({
@@ -104,7 +103,7 @@ export default function AddJournalPage({
           control={control}
           name="content"
           render={({ field }) => (
-            <CKEditorField
+            <TextEditor
               value={field.value}
               onChange={(html) => field.onChange(html)}
               placeholder={`Write content for "${page_title}"...`}
