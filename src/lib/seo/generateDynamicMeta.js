@@ -1,4 +1,4 @@
-import { getSettings } from "@/utils/getSettings";
+import { getJournalBySlug } from "@/utils/journals";
 import { getMetaSlug } from "./getMetaSlug";
 
 const normalizeSlug = (slug) => (Array.isArray(slug) ? slug.join("/") : slug);
@@ -7,18 +7,33 @@ export const generateDynamicMeta = async (slug) => {
   try {
     slug = normalizeSlug(slug);
     const seoRes = await getMetaSlug(slug);
-    const settings = await getSettings();
+    const journal = await getJournalBySlug(slug);
 
     // 🔹 Fallbacks
-    const fallbackTitle = "Dream Science | Engineering and Technology Journals";
+    const fallbackTitle =
+      journal?.journal_name ||
+      "Dream Science | Engineering and Technology Journals";
     const fallbackDesc = `Explore ${fallbackTitle}`;
-    const fallbackImage = "";
+    const fallbackImage =
+      `${process.env.NEXT_PUBLIC_BASE_URL}/${journal?.cover_image}` || "";
 
     if (!seoRes?.ok || !seoRes.meta) {
       console.log(seoRes?.message || "SEO data not found");
       return {
         title: fallbackTitle,
         description: fallbackDesc,
+        openGraph: {
+          title: fallbackTitle,
+          description: fallbackDesc,
+          type: "website",
+          images: [fallbackImage],
+        },
+        twitter: {
+          title: fallbackTitle,
+          description: fallbackDesc,
+          card: "summary_large_image",
+          image: [fallbackImage],
+        },
       };
     }
 
@@ -90,7 +105,7 @@ export const generateDynamicMeta = async (slug) => {
     metadata.twitter.card ??= "summary_large_image";
     metadata.twitter.image ??= fallbackImage || undefined;
 
-    metadata.metadataBase = new URL("http://dsjournals.com");
+    metadata.metadataBase = new URL("https://dsjournals.com");
     return metadata;
   } catch (error) {
     console.error("❌ Error generating metadata:", error);

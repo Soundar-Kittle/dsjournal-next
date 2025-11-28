@@ -19,3 +19,4 @@ export * from "./LoadingSkeleton";
 export * from "./Breadcrumbs";
 export * from "./ContentAccordian";
 export * from "./tabs";
+export * from "./TextEditor";

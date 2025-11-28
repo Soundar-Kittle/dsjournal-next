@@ -3,10 +3,12 @@
 import { BsJournalMedical } from "react-icons/bs";
 import { BiSolidBookContent, BiSolidLockOpenAlt } from "react-icons/bi";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 const features = [
   {
     icon: <BiSolidBookContent className="text-pink-500 text-3xl" />,
+    link: "/abstract-and-indexing",
     title: "Abstracting and Indexing",
     description:
       "World Wide indexed international journals in various disciplines from Dream Science for research community...",
@@ -16,6 +18,7 @@ const features = [
   {
     icon: <BiSolidLockOpenAlt className="text-cyan-500 text-3xl" />,
     title: "Open Access",
+    link: "/open-access",
     description:
       "In accordance with major definitions of open access in scientific literature (namely the Budapest, Berlin, and Bethesda declarations)...",
     color: "bg-cyan-100",
@@ -24,6 +27,7 @@ const features = [
   {
     icon: <BsJournalMedical className="text-green-500 text-3xl" />,
     title: "License Policy",
+    link: "/for-authors/licensing-policy",
     description:
       "Dream Science International Journals publishes open access articles under a Attribution-NonCommercial-No Derivatives 4.0...",
     color: "bg-green-100",
@@ -46,7 +50,12 @@ const cardVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, staggerChildren: 0.2 , delayChildren: 0.2 , ease: "easeOut"},
+    transition: {
+      duration: 0.6,
+      staggerChildren: 0.2,
+      delayChildren: 0.2,
+      ease: "easeOut",
+    },
   },
 };
 
@@ -87,26 +96,27 @@ export default function OurFeatures() {
           variants={containerVariants}
         >
           {features.map((feature, idx) => (
-            <motion.div
-              key={idx}
-              variants={cardVariants}
-              className={`bg-white shadow-[0_0_20px_3px_rgba(0,0,0,0.07)] p-8 text-center hover:shadow-lg border border-transparent transition duration-300 ${feature.hoverBorder}`}
-            >
-              {/* Icon */}
-              <div
-                className={`w-16 h-16 mx-auto flex items-center justify-center rounded-full ${feature.color} mb-4`}
+            <Link href={feature.link} key={idx}>
+              <motion.div
+                variants={cardVariants}
+                className={`bg-white shadow-[0_0_20px_3px_rgba(0,0,0,0.07)] p-8 text-center hover:shadow-lg border border-transparent transition duration-300 ${feature.hoverBorder}`}
               >
-                {feature.icon}
-              </div>
+                {/* Icon */}
+                <div
+                  className={`w-16 h-16 mx-auto flex items-center justify-center rounded-full ${feature.color} mb-4`}
+                >
+                  {feature.icon}
+                </div>
 
-              {/* Title */}
-              <h3 className="text-lg font-bold text-gray-900 mb-3">
-                {feature.title}
-              </h3>
+                {/* Title */}
+                <h3 className="text-lg font-bold text-gray-900 mb-3">
+                  {feature.title}
+                </h3>
 
-              {/* Description */}
-              <p className="text-sm leading-relaxed">{feature.description}</p>
-            </motion.div>
+                {/* Description */}
+                <p className="text-sm leading-relaxed">{feature.description}</p>
+              </motion.div>
+            </Link>
           ))}
         </motion.div>
       </motion.div>

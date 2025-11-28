@@ -33,6 +33,9 @@ export async function generateMetadata() {
   const icon = settings?.icon ? `/${settings.icon}` : "/logo.png";
   return {
     title: "Dream Science | Engineering and Technology Journals",
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_BASE_URL || "https://dsjournals.com"
+    ),
     description:
       "DS Journals publishes high-quality academic research papers in various fields.",
     icons: {

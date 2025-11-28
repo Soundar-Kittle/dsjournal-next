@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
 import { getSettings } from "@/utils/getSettings";
 import Link from "next/link";
+import { Phone } from "lucide-react";
 
 export async function generateMetadata() {
   return await generateDynamicMeta("contact-us");
@@ -37,7 +38,7 @@ export default async function Page() {
               <Link
                 href={`mailto:${settings?.email || "queries@dsjournals.com"}`}
                 aria-label="conatct email"
-                className="text-light-blue  hover:text-blue"
+                className="text-sm sm:text-base text-light-blue  hover:text-blue"
               >
                 {settings?.email || "queries@dsjournals.com"}
               </Link>
@@ -50,11 +51,11 @@ export default async function Page() {
                   <li key={i} className="flex items-center space-x-2 mt-2">
                     <Link
                       href={`tel:${clean}`}
-                      className="text-light-blue  hover:text-blue"
+                      className="text-sm sm:text-base text-light-blue hover:text-blue flex gap-2 items-center"
                     >
+                      <Phone size={15} className="text-light-blue" />
                       +91-{clean.slice(0, 5)} {clean.slice(5)} (
                       {is_whatsapp && "whatsapp & "}call)
-                      <br />
                     </Link>
                   </li>
                 );
@@ -66,7 +67,7 @@ export default async function Page() {
                 // href={`tel:${
                 //   settings?.landline?.replace(/[^\d+]/g, "") || "+914352403869"
                 // }`}
-                className="text-light-blue hover:text-blue"
+                className="text-sm sm:text-base text-light-blue hover:text-blue"
               >
                 {settings?.landline || "+91 (435) - 2403869"}
               </span>

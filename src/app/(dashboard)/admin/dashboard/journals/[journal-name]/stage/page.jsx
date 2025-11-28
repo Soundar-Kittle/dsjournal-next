@@ -1,10 +1,8 @@
-// src/app/(dashboard)/dashboard/journals/[journal-name]/stage/page.jsx
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useParams } from "next/navigation";
-import CKEditorField from "@/components/Dashboard/Journals/Article/CKEditorField";
 import ActionMenu from "@/components/Dashboard/Stage/ActionMenu";
+import { TextEditor } from "@/components/ui";
 
 /** Util */
 const cls = (...a) => a.filter(Boolean).join(" ");
@@ -228,78 +226,78 @@ function ReviewModal({ open, onClose, stagedId, onApproved }) {
   const [refs, setRefs] = useState([]);
 
   // Always show correct local date in <input type="date">
-function toLocalDateString(dateStr) {
-  if (!dateStr) return "";
-  // if it's already YYYY-MM-DD, keep it
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return "";
+  function toLocalDateString(dateStr) {
+    if (!dateStr) return "";
+    // if it's already YYYY-MM-DD, keep it
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
 
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
- const day = String(local.getDate()).padStart(2, "0");
-  const month = String(local.getMonth() + 1).padStart(2, "0");
-  const year = local.getFullYear();
-  return `${day}/${month}/${year}`;
-}
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    const day = String(local.getDate()).padStart(2, "0");
+    const month = String(local.getMonth() + 1).padStart(2, "0");
+    const year = local.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
 
-// ---- Date Helpers ----
-function normalizeDate(dateStr) {
-  if (!dateStr) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr; // already fine
-  const d = new Date(dateStr);
-  if (isNaN(d)) return "";
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-  return local.toISOString().split("T")[0];
-}
+  // ---- Date Helpers ----
+  function normalizeDate(dateStr) {
+    if (!dateStr) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr; // already fine
+    const d = new Date(dateStr);
+    if (isNaN(d)) return "";
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return local.toISOString().split("T")[0];
+  }
 
-function formatDDMMYYYY(dateStr) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d)) return "";
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}-${month}-${year}`;
-}
+  function formatDDMMYYYY(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d)) return "";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
 
-useEffect(() => {
-  if (!open || !stagedId) return;
+  useEffect(() => {
+    if (!open || !stagedId) return;
 
-  (async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`/api/articles/stage/${stagedId}`);
-      const j = await r.json();
-      if (!j.success) throw new Error(j.message || "Failed to load");
+    (async () => {
+      setLoading(true);
+      try {
+        const r = await fetch(`/api/articles/stage/${stagedId}`);
+        const j = await r.json();
+        if (!j.success) throw new Error(j.message || "Failed to load");
 
-      const record = j.staged || j.record || j.item || j.data || null;
-      if (!record) throw new Error("No record found");
+        const record = j.staged || j.record || j.item || j.data || null;
+        if (!record) throw new Error("No record found");
 
-      setRow({
-        ...record,
-        received_date: normalizeDate(record.received_date),
-        revised_date: normalizeDate(record.revised_date),
-        accepted_date: normalizeDate(record.accepted_date),
-        published_date: normalizeDate(record.published_date),
-      });
+        setRow({
+          ...record,
+          received_date: normalizeDate(record.received_date),
+          revised_date: normalizeDate(record.revised_date),
+          accepted_date: normalizeDate(record.accepted_date),
+          published_date: normalizeDate(record.published_date),
+        });
 
-      setAuthors(
-        Array.isArray(record.authors)
-          ? record.authors
-          : safeJson(record.authors, [])
-      );
-      setRefs(
-        typeof record.references === "string"
-          ? record.references
-          : record.refs || ""
-      );
-    } catch (e) {
-      console.error("Load failed:", e);
-    } finally {
-      setLoading(false);
-    }
-  })();
-}, [open, stagedId]);
+        setAuthors(
+          Array.isArray(record.authors)
+            ? record.authors
+            : safeJson(record.authors, [])
+        );
+        setRefs(
+          typeof record.references === "string"
+            ? record.references
+            : record.refs || ""
+        );
+      } catch (e) {
+        console.error("Load failed:", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [open, stagedId]);
 
   const updateStaged = async () => {
     if (!row) return;
@@ -336,44 +334,44 @@ useEffect(() => {
     }
   };
 
-const accept = async () => {
-  if (!stagedId) return;
+  const accept = async () => {
+    if (!stagedId) return;
 
-  // ask for PDF
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = ".pdf";
-  input.click(); // 👈 opens file picker when Approve is clicked
+    // ask for PDF
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".pdf";
+    input.click(); // 👈 opens file picker when Approve is clicked
 
-  input.onchange = async () => {
-    const file = input.files?.[0];
-    if (!file) return alert("Please select a PDF file to approve.");
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return alert("Please select a PDF file to approve.");
 
-    // upload PDF via FormData
-    setPromoting(true);
-    try {
-      const fd = new FormData();
-      fd.append("status", "approved");
-      fd.append("file", file);
+      // upload PDF via FormData
+      setPromoting(true);
+      try {
+        const fd = new FormData();
+        fd.append("status", "approved");
+        fd.append("file", file);
 
-      const r = await fetch(`/api/articles/stage/${stagedId}/status`, {
-        method: "PUT",
-        body: fd,
-      });
+        const r = await fetch(`/api/articles/stage/${stagedId}/status`, {
+          method: "PUT",
+          body: fd,
+        });
 
-      const j = await r.json();
-      if (!r.ok || !j.ok) throw new Error(j.message || "Approval failed");
+        const j = await r.json();
+        if (!r.ok || !j.ok) throw new Error(j.message || "Approval failed");
 
-      alert("✅ Approved & PDF uploaded");
-      onApproved?.(j);
-      onClose();
-    } catch (e) {
-      alert(e.message || String(e));
-    } finally {
-      setPromoting(false);
-    }
+        alert("✅ Approved & PDF uploaded");
+        onApproved?.(j);
+        onClose();
+      } catch (e) {
+        alert(e.message || String(e));
+      } finally {
+        setPromoting(false);
+      }
+    };
   };
-};
   const reject = async () => {
     if (!stagedId) return;
     setPromoting(true);
@@ -442,7 +440,7 @@ const accept = async () => {
               /> */}
               <div>
                 <span className="text-sm text-gray-700">Abstract</span>
-                <CKEditorField
+                <TextEditor
                   value={row.abstract || ""}
                   onChange={(html) => setRow({ ...row, abstract: html })}
                   placeholder="Enter abstract here..."
@@ -466,61 +464,71 @@ const accept = async () => {
 
             {/* === References Section === */}
             <section className="w-full max-w-[720px] ml-auto pr-2">
-              <CKEditorField
+              <TextEditor
                 value={refs || ""}
                 onChange={(html) => setRefs(html)} // full HTML
                 placeholder="Enter references here…"
               />
             </section>
 
-<section className="w-full max-w-[720px]">
-  <h3 className="text-base font-semibold text-gray-700 mb-2">Dates</h3>
-  
-  <div className="grid grid-cols-2 gap-3">
-    {[
-      ["Received Date", "received_date"],
-      ["Revised Date", "revised_date"],
-      ["Accepted Date", "accepted_date"],
-      ["Published Date", "published_date"],
-    ].map(([label, key]) => (
-      <div key={key} className="flex flex-col relative">
-        <label className="text-sm text-gray-700 mb-1">{label}</label>
+            <section className="w-full max-w-[720px]">
+              <h3 className="text-base font-semibold text-gray-700 mb-2">
+                Dates
+              </h3>
 
-        <div className="relative">
-          {/* Hidden native input (real date picker) */}
-        <input
-  type="date"
-  id={`${key}-picker`}
-  className="absolute inset-0 opacity-0 cursor-pointer z-10"
-  value={normalizeDate(row[key])}
-  onChange={(e) => setRow({ ...row, [key]: e.target.value })}
-/>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  ["Received Date", "received_date"],
+                  ["Revised Date", "revised_date"],
+                  ["Accepted Date", "accepted_date"],
+                  ["Published Date", "published_date"],
+                ].map(([label, key]) => (
+                  <div key={key} className="flex flex-col relative">
+                    <label className="text-sm text-gray-700 mb-1">
+                      {label}
+                    </label>
 
-<input
-  type="text"
-  readOnly
-  className="w-full rounded-md border px-3 py-2 text-sm bg-white cursor-pointer"
-  value={formatDDMMYYYY(row[key])}
-  placeholder="dd/mm/yyyy"
-  onClick={() =>
-    document.getElementById(`${key}-picker`)?.showPicker?.()
-  }
-/>
+                    <div className="relative">
+                      {/* Hidden native input (real date picker) */}
+                      <input
+                        type="date"
+                        id={`${key}-picker`}
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                        value={normalizeDate(row[key])}
+                        onChange={(e) =>
+                          setRow({ ...row, [key]: e.target.value })
+                        }
+                      />
 
-          {/* Calendar icon clickable */}
-          <span
-            className="absolute right-3 top-2.5 text-gray-500 cursor-pointer z-20"
-            onClick={() =>
-              document.getElementById(`${key}-picker`)?.showPicker?.()
-            }
-          >
-            📅
-          </span>
-        </div>
-      </div>
-    ))}
-  </div>
-</section>
+                      <input
+                        type="text"
+                        readOnly
+                        className="w-full rounded-md border px-3 py-2 text-sm bg-white cursor-pointer"
+                        value={formatDDMMYYYY(row[key])}
+                        placeholder="dd/mm/yyyy"
+                        onClick={() =>
+                          document
+                            .getElementById(`${key}-picker`)
+                            ?.showPicker?.()
+                        }
+                      />
+
+                      {/* Calendar icon clickable */}
+                      <span
+                        className="absolute right-3 top-2.5 text-gray-500 cursor-pointer z-20"
+                        onClick={() =>
+                          document
+                            .getElementById(`${key}-picker`)
+                            ?.showPicker?.()
+                        }
+                      >
+                        📅
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
 
             {/* === Actions Section === */}
             <div className="flex gap-2 pt-4">

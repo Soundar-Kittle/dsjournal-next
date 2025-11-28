@@ -10,8 +10,7 @@ import {
 } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import CKEditorField from "./CKEditorField";
-import { Select } from "@/components/ui";
+import { Select, TextEditor } from "@/components/ui";
 
 function ArticleForm({
   journals = [],
@@ -136,45 +135,44 @@ function ArticleForm({
   //   setStep(0);
   // }, [resetSignal, reset, defaultJournalId, defaultArticleStatus]);
   // ─────────────────────────────────────────────
-// Reset for ADD mode (or after successful save)
-// ─────────────────────────────────────────────
-// ─────────────────────────────────────────────
-// Reset form + file input + stepper
-// ─────────────────────────────────────────────
-useEffect(() => {
-  if (!resetSignal) return;
+  // Reset for ADD mode (or after successful save)
+  // ─────────────────────────────────────────────
+  // ─────────────────────────────────────────────
+  // Reset form + file input + stepper
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!resetSignal) return;
 
-  reset({
-    article_status: defaultArticleStatus,
-    journal_id: defaultJournalId ?? "",
-    volume_id: "",
-    issue_id: "",
-    article_id: "",
-    page_from: "",
-    page_to: "",
-    received: "",
-    revised: "",
-    accepted: "",
-    published: "",
-    month_from: "",
-    month_to: "",
-    doi: "",
-    article_title: "",
-    authors: "",
-    abstract: "",
-    keywords: "",
-    references: "",
-  });
+    reset({
+      article_status: defaultArticleStatus,
+      journal_id: defaultJournalId ?? "",
+      volume_id: "",
+      issue_id: "",
+      article_id: "",
+      page_from: "",
+      page_to: "",
+      received: "",
+      revised: "",
+      accepted: "",
+      published: "",
+      month_from: "",
+      month_to: "",
+      doi: "",
+      article_title: "",
+      authors: "",
+      abstract: "",
+      keywords: "",
+      references: "",
+    });
 
-  // Clear file input (native)
-  if (fileInputRef.current) {
-    fileInputRef.current.value = "";
-  }
+    // Clear file input (native)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
 
-  // Reset stepper to first step
-  setStep(0);
-
-}, [resetSignal, reset, defaultArticleStatus, defaultJournalId]);
+    // Reset stepper to first step
+    setStep(0);
+  }, [resetSignal, reset, defaultArticleStatus, defaultJournalId]);
 
   // --------------------------------------------------------------------
   // Watches
@@ -582,7 +580,7 @@ useEffect(() => {
         name="abstract"
         control={control}
         render={({ field: { value, onChange } }) => (
-          <CKEditorField
+          <TextEditor
             value={value || ""}
             onChange={onChange}
             placeholder="Abstract…"
@@ -685,7 +683,7 @@ useEffect(() => {
         name="references"
         control={control}
         render={({ field: { value, onChange } }) => (
-          <CKEditorField
+          <TextEditor
             value={value || ""}
             onChange={onChange}
             placeholder="Enter references…"

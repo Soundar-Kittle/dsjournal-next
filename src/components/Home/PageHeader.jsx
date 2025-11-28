@@ -52,7 +52,7 @@ import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 
 const JOURNAL_COLORS = {
-  "ms": "#000000",
+  ms: "#000",
 };
 
 const PageHeader = ({
@@ -73,7 +73,7 @@ const PageHeader = ({
   const slug = pathname.split("/").filter(Boolean).pop();
 
   // ✅ Default WHITE
-  const titleColor = JOURNAL_COLORS[slug] || "#ffffff";
+  const titleColor = JOURNAL_COLORS[slug] || "#fff";
 
   const imageSrc = image ? "/" + image : "/images/hero-bgimg.jpg";
 
@@ -94,7 +94,7 @@ const PageHeader = ({
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeInOut" }}
-        style={{ color: titleColor }}  // ✅ Dynamic color
+        style={{ color: titleColor }}
         className={`absolute top-1/2 left-1/2 -translate-1/2 w-full px-10 max-sm:px-5
           ${size ? size : "text-2xl sm:text-3xl md:text-4xl lg:text-5xl"}
           font-semibold text-center z-10`}
