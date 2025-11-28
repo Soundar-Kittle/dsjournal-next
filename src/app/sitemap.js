@@ -8,13 +8,14 @@ export default async function sitemap() {
   const routes = await getStaticRoutes();
 
   const staticEntries = routes.map(({ url }) => ({
-    url: `${baseUrl}/${url}`,
+    url: `${baseUrl}${url === "/" ? "" : "/" + url}`,
     lastModified: new Date().toISOString(),
     changeFrequency: "weekly",
     priority: url === "/" ? 1.0 : 0.7,
   }));
 
   const articles = await getSitemapArticles();
+  
   const articleEntries = articles.map((a) => ({
     url: `${baseUrl}/${a.journal_slug}/${a.article_id}`,
     lastModified: new Date().toISOString(),
