@@ -2,7 +2,7 @@ import "./globals.css";
 import Header from "@/components/Home/Header";
 import Footer from "@/components/Home/Footer";
 import { getSettings } from "@/utils/getSettings";
-
+import CookieConsentWrapper from "@/components/Cookie/CookieConsentWrapper";
 export default async function RootLayout({ children }) {
   const settings = await getSettings();
   return (
@@ -12,6 +12,8 @@ export default async function RootLayout({ children }) {
         <main className="flex-grow">{children}</main>
         <Footer settings={settings} />
       </div>
+       {/* 👇 Banner appears on all website pages */}
+      <CookieConsentWrapper />
     </div>
   );
 }

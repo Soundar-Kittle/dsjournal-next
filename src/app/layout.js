@@ -1,7 +1,6 @@
 import { Geist, Geist_Mono, Poppins, Roboto } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import CookieConsentWrapper from "@/components/Cookie/CookieConsentWrapper";
 import { getSettings } from "@/utils/getSettings";
 
 const geistSans = Geist({
@@ -31,7 +30,6 @@ const roboto = Roboto({
 export async function generateMetadata() {
   const settings = await getSettings();
   const icon = settings?.icon ? `/${settings.icon}` : "/logo.png";
-
   return {
     title: "Dream Science | Engineering and Technology Journals",
     metadataBase: new URL(
@@ -67,7 +65,6 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} ${roboto.variable} antialiased`}
       >
         <Providers>{children}</Providers>
-        <CookieConsentWrapper />
       </body>
     </html>
   );
