@@ -250,16 +250,6 @@ export default async function Page({ params }) {
             dangerouslySetInnerHTML={{ __html: article.abstract }}
           />
         </div>
-      )} */}
-      {/* Abstract */}
-      {article.abstract && (
-        <div>
-          <h2 className="text-lg font-semibold">Abstract</h2>
-          <div
-            className="mt-2 prose max-w-none"
-            dangerouslySetInnerHTML={{ __html: article.abstract }}
-          />
-        </div>
       )}
 
       {/* Keywords */}
