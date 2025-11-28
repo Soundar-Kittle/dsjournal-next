@@ -8,7 +8,7 @@ const page = () => {
   return (
     <section className="space-y-3">
       <h1 className="text-4xl font-medium">Open Access</h1>
-      <p className="italic indent-5">
+      <p className="italic indent-8">
         By 'open access' to this literature, we mean its free availability on
         the public internet, permitting any users to read, download, copy,
         distribute, print, search, or link to the full texts of these articles,
