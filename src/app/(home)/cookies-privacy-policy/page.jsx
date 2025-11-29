@@ -10,11 +10,11 @@ export async function generateMetadata() {
 const page = () => {
   return (
     <section className="bg-white">
-      <PageHeader title="Cookies Privacy Policy" />
+      <PageHeader title="Cookies & Privacy Policy" />
       <Breadcrumbs
         parents={[
           {
-            menu_label: "Cookies Privacy Policy",
+            menu_label: "Cookies & Privacy Policy",
             menu_link: "/cookies-privacy-policy",
           },
         ]}

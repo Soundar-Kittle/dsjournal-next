@@ -16,9 +16,6 @@ const nextConfig = {
       },
     ],
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   experimental: {
     serverSourceMaps: true,
     optimizePackageImports: ["moment"],
