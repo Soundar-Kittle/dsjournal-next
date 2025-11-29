@@ -15,7 +15,9 @@ export const generateDynamicMeta = async (slug) => {
       "Dream Science | Engineering and Technology Journals";
     const fallbackDesc = `Explore ${fallbackTitle}`;
     const fallbackImage =
-      `${process.env.NEXT_PUBLIC_BASE_URL}/${journal?.cover_image}` || "";
+      `${process.env.NEXT_PUBLIC_BASE_URL}/${
+        journal?.cover_image || "og.webp"
+      }` || "";
 
     if (!seoRes?.ok || !seoRes.meta) {
       console.log(seoRes?.message || "SEO data not found");
@@ -33,6 +35,11 @@ export const generateDynamicMeta = async (slug) => {
           description: fallbackDesc,
           card: "summary_large_image",
           image: [fallbackImage],
+        },
+        alternates: {
+          canonical: `${process.env.NEXT_PUBLIC_BASE_URL}${
+            slug === "/" ? "" : `/${slug}`
+          }`,
         },
       };
     }
@@ -55,6 +62,11 @@ export const generateDynamicMeta = async (slug) => {
         description: undefined,
         card: undefined,
         image: undefined,
+      },
+      alternates: {
+        canonical: `${process.env.NEXT_PUBLIC_BASE_URL}${
+          slug === "/" ? "" : `/${slug}`
+        }`,
       },
     };
 
@@ -115,6 +127,9 @@ export const generateDynamicMeta = async (slug) => {
       title: "Dream Science | Engineering and Technology Journals",
       description:
         "DS Journals publishes high-quality academic research papers in various fields. Submit your manuscript for peer review and get published early!",
+      alternates: {
+        canonical: "https://dsjournals.com",
+      },
     };
   }
 };
