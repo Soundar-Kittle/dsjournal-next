@@ -15,6 +15,15 @@ export async function generateMetadata({ params }) {
     };
   }
 
+  const formatScholarDate = (date) => {
+  if (!date) return "";
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}/${month}/${day}`;
+};
+
   // 👤 Normalize authors/keywords (LONGTEXT, JSON, or CSV)
   const parseList = (v) => {
     if (!v) return [];
@@ -83,12 +92,10 @@ export async function generateMetadata({ params }) {
       citation_journal_title: article.journal_name,
       citation_publisher: article.publisher,
       citation_author: authors.join(", "),
-      citation_volume: `Volume ${article.volume_number}`,
+      citation_volume: article.volume_number,
       citation_year: article.year,
-      citation_date: new Date(article.published).toLocaleDateString("en-CA"),
-      citation_online_date: new Date(article.published).toLocaleDateString(
-        "en-CA"
-      ),
+      citation_publication_date: formatScholarDate(article.published),
+      citation_online_date: formatScholarDate(article.published),
       citation_doi: article.doi,
       citation_issn: article.issn_online,
       citation_abstract: article.abstract,

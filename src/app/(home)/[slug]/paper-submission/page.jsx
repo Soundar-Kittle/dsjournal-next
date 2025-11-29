@@ -10,7 +10,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function PaperSubmissionPage({ params }) {
-  const { slug } = params;
+  const slug = (await params).slug;
   const journal = await getJournalBySlug(slug);
   if (!journal) {
     return (
