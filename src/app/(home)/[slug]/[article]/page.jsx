@@ -2,11 +2,11 @@ import { getArticleById } from "@/utils/article";
 import moment from "moment";
 import Link from "next/link";
 import { BsDownload } from "react-icons/bs";
- 
+
 export async function generateMetadata({ params }) {
-  const { article: articleId } = await params;
+  const { article: articleId, slug } = await params;
   const article = await getArticleById(articleId);
- 
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!article) {
     return {
@@ -14,7 +14,7 @@ export async function generateMetadata({ params }) {
       description: "The requested article could not be found.",
     };
   }
- 
+
   // 👤 Normalize authors/keywords (LONGTEXT, JSON, or CSV)
   const parseList = (v) => {
     if (!v) return [];
@@ -34,27 +34,26 @@ export async function generateMetadata({ params }) {
         .filter(Boolean);
     }
   };
- 
+
   const authors = parseList(article.authors);
   const keywords = parseList(article.keywords);
- 
+
   const pdfUrl = article.pdf_path
     ? `${baseUrl.replace(/\/$/, "")}/${article.pdf_path.replace(
         /^(\.\.\/)+/,
         ""
       )}`
     : "";
- 
-  const articleUrl = `${baseUrl}/DST/${article.article_id}`;
+
+  const articleUrl = `${baseUrl}/${slug}/${article.article_id}`;
   const coverImage = article.cover_image?.startsWith("http")
     ? article.cover_image
     : `${baseUrl}/${article.cover_image || "default-cover.webp"}`;
- 
+
   return {
     title: article.article_title,
     description: article.abstract,
     keywords,
- 
     openGraph: {
       url: articleUrl,
       siteName: "dsjournals",
@@ -63,7 +62,7 @@ export async function generateMetadata({ params }) {
       type: "website",
       images: [{ url: coverImage, type: "image/webp" }],
     },
- 
+
     twitter: {
       card: "summary_large_image",
       site: "website",
@@ -72,12 +71,13 @@ export async function generateMetadata({ params }) {
       images: [coverImage],
       url: "https://twitter.com/DreamScience4",
     },
- 
+
+    alternates: {
+      canonical: articleUrl,
+    },
+
     other: {
       Author: authors.join(", "),
-      title: article.article_title,
-      description: article.abstract,
-      keywords: keywords.join(", "),
       rights: `Copyright ${article.publisher}`,
       citation_title: article.article_title,
       citation_journal_title: article.journal_name,
@@ -99,11 +99,11 @@ export async function generateMetadata({ params }) {
     },
   };
 }
- 
+
 export default async function Page({ params }) {
   const { article: articleId } = await params;
   const article = await getArticleById(articleId);
- 
+
   if (!article) {
     return (
       <div className="max-w-3xl mx-auto p-6">
@@ -111,7 +111,7 @@ export default async function Page({ params }) {
       </div>
     );
   }
- 
+
   // 👤 Normalize authors, keywords, references
   const parseList = (v) => {
     if (!v) return [];
@@ -131,11 +131,11 @@ export default async function Page({ params }) {
         .filter(Boolean);
     }
   };
- 
+
   const authors = parseList(article.authors);
   const keywords = parseList(article.keywords);
   const references = article.references || "";
- 
+
   // 🔗 Clean DOI (can be bare "10.xxxx/…" or full URL)
   const doi = article.doi?.trim() || "";
   const doiHref = doi
@@ -163,7 +163,7 @@ export default async function Page({ params }) {
             </Link>
           )}
         </p>
- 
+
         <p className="text-xs">
           Volume {article.volume_number} | Issue {article.issue_number} | Year{" "}
           {article.year} | Article Id: {articleId}{" "}
@@ -182,16 +182,16 @@ export default async function Page({ params }) {
             </>
           )}
         </p>
- 
+
         <h1 className="text-[24px] font-medium mt-4 pb-3 border-b leading-snug">
           {article.article_title}
         </h1>
- 
+
         {authors.length > 0 && (
           <p className="text-xs my-4 font-semibold">{authors.join(", ")}</p>
         )}
       </div>
- 
+
       {/* Dates */}
       <div className="overflow-x-auto border-y">
         <table className="min-w-full text-center max-sm:text-sm">
@@ -229,7 +229,7 @@ export default async function Page({ params }) {
           </tbody>
         </table>
       </div>
- 
+
       {/* Citation */}
       <div>
         <h2 className="text-lg font-semibold">Citation</h2>
@@ -240,17 +240,7 @@ export default async function Page({ params }) {
           {article.page_from}-{article.page_to}, {article.year}.{" "}
         </p>
       </div>
- 
-      {/* Abstract */}
-      {article.abstract && (
-        <div>
-          <h2 className="text-lg font-semibold">Abstract</h2>
-          <div
-            className="mt-2 prose max-w-none"
-            dangerouslySetInnerHTML={{ __html: article.abstract }}
-          />
-        </div>
-      )} */}
+
       {/* Abstract */}
       {article.abstract && (
         <div>
@@ -269,7 +259,7 @@ export default async function Page({ params }) {
           <p className="mt-1">{keywords.join(", ")}</p>
         </div>
       )}
- 
+
       {/* References */}
       {references && (
         <div>
@@ -283,4 +273,3 @@ export default async function Page({ params }) {
     </div>
   );
 }
- 

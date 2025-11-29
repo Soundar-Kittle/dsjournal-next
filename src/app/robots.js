@@ -3,10 +3,14 @@ export default function robots() {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin/", "/author/", "/_next/", "/search"],
+      disallow: [
+        "/admin/",
+        "/author/",
+        "/_next/",
+        "/search",
+        "/cookies-privacy-policy",
+      ],
     },
-    // sitemap: `${
-    //   process.env.NEXT_PUBLIC_BASE_URL || "https://dreamscience.com"
-    // }/sitemap.xml`,
+    sitemap: "https://dsjournals.com/sitemap.xml",
   };
 }
