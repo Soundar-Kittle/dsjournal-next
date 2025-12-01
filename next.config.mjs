@@ -1,13 +1,5 @@
-// import bundleAnalyzer from "@next/bundle-analyzer";
-// const withBundleAnalyzer = bundleAnalyzer({
-//   enabled: process.env.ANALYZE === "true",
-// });
-
 const nextConfig = {
   reactStrictMode: false,
-  // compiler: {
-  //   removeConsole: process.env.NODE_ENV === "production",
-  // },
   images: {
     remotePatterns: [
       {
@@ -29,7 +21,28 @@ const nextConfig = {
       },
     ];
   },
+  async headers() {
+    return [
+      {
+        source: "/uploads/:path*.pdf",
+        headers: [
+          {
+            key: "X-Robots-Tag",
+            value: "index, follow",
+          },
+        ],
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: "/upload/:path*",
+        destination: "/uploads/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
-// export default withBundleAnalyzer(nextConfig);
