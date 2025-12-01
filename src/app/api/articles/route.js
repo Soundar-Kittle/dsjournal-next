@@ -6,8 +6,6 @@ import fs, { writeFile } from "fs";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getJournalSlug } from "@/utils/getJouralSlug";
 
-export const config = { api: { bodyParser: false } };
-
 // ────────────────────────────────
 // Helpers
 // ────────────────────────────────

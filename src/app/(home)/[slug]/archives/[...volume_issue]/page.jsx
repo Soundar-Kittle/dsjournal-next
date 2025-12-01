@@ -2,6 +2,12 @@ import { getArticlesBySlugVolumeIssue } from "@/utils/volumeAndIssue";
 import Link from "next/link";
 import { FaFile } from "react-icons/fa";
 import { BsDiamondHalf } from "react-icons/bs";
+import { generateDynamicMeta } from "@/lib/seo/generateDynamicMeta";
+export async function generateMetadata({ params }) {
+  const { slug, volume_issue } = await params;
+  console.log(slug, volume_issue);
+  return await generateDynamicMeta(`${slug}/archives/${volume_issue.join("/")}`);
+}
 
 export default async function Page({ params }) {
   const { slug, volume_issue } = await params;

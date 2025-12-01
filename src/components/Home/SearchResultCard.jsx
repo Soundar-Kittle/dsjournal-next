@@ -52,9 +52,9 @@ export default function SearchResultCard({ item }) {
   // ===================================================
 
   return (
-    <div className="border border-gray-200 rounded-xl p-4 bg-white hover:shadow transition cursor-pointer">
+    <div className="border border-gray-200 rounded-xl p-4 bg-white hover:shadow transition cursor-pointer group">
       {/* TOP ROW */}
-      <div className="flex items-center gap-2 text-xs text-gray-600 mb-1">
+      <div className="flex items-center gap-2 text-sm text-[#444] mb-1">
         {icon}
         <span className="capitalize">{item.type}</span>
 
@@ -67,8 +67,8 @@ export default function SearchResultCard({ item }) {
       </div>
 
       {/* TITLE */}
-      <Link href={href} className="hover:underline">
-        <h2 className="text-lg font-semibold text-blue-700 leading-snug mb-1">
+      <Link href={href}>
+        <h2 className="text-lg font-semibold text-blue group-hover:text-light-blue leading-snug mb-1">
           {item.title}
         </h2>
       </Link>
