@@ -259,33 +259,33 @@ export async function PUT(req, { params }) {
   }
 }
 
-export async function DELETE(req, { params }) {
-  const id = Number(params?.id || 0);
-  if (!id)
-    return NextResponse.json(
-      { success: false, message: "Invalid ID" },
-      { status: 400 }
-    );
+// export async function DELETE(req, { params }) {
+//   const id = Number(params?.id || 0);
+//   if (!id)
+//     return NextResponse.json(
+//       { success: false, message: "Invalid ID" },
+//       { status: 400 }
+//     );
 
-  const conn = await createDbConnection();
-  try {
-    const [res] = await conn.query("DELETE FROM staged_articles WHERE id=?", [id]);
-    if (res.affectedRows === 0)
-      return NextResponse.json(
-        { success: false, message: "Record not found" },
-        { status: 404 }
-      );
+//   const conn = await createDbConnection();
+//   try {
+//     const [res] = await conn.query("DELETE FROM staged_articles WHERE id=?", [id]);
+//     if (res.affectedRows === 0)
+//       return NextResponse.json(
+//         { success: false, message: "Record not found" },
+//         { status: 404 }
+//       );
 
-    return NextResponse.json({ success: true, message: "Deleted successfully" });
-  } catch (e) {
-    console.error("DELETE /api/articles/stage/[id] failed:", e);
-    return NextResponse.json(
-      { success: false, message: e.message || "Internal Server Error" },
-      { status: 500 }
-    );
-  } finally {
-    try {
-      await conn.end();
-    } catch {}
-  }
-}
+//     return NextResponse.json({ success: true, message: "Deleted successfully" });
+//   } catch (e) {
+//     console.error("DELETE /api/articles/stage/[id] failed:", e);
+//     return NextResponse.json(
+//       { success: false, message: e.message || "Internal Server Error" },
+//       { status: 500 }
+//     );
+//   } finally {
+//     try {
+//       await conn.end();
+//     } catch {}
+//   }
+// }
