@@ -3,6 +3,19 @@ import moment from "moment";
 import Link from "next/link";
 import { BsDownload } from "react-icons/bs";
 
+const cleanAbstract = (html, maxLength = 150) => {
+  if (!html) return "";
+
+  const text = html
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return text.length > maxLength
+    ? text.slice(0, maxLength).trim() + "..."
+    : text;
+};
+
 export async function generateMetadata({ params }) {
   const { article: articleId, slug } = await params;
   const article = await getArticleById(articleId);
@@ -16,13 +29,13 @@ export async function generateMetadata({ params }) {
   }
 
   const formatScholarDate = (date) => {
-  if (!date) return "";
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}/${month}/${day}`;
-};
+    if (!date) return "";
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}/${month}/${day}`;
+  };
 
   // 👤 Normalize authors/keywords (LONGTEXT, JSON, or CSV)
   const parseList = (v) => {
@@ -59,15 +72,17 @@ export async function generateMetadata({ params }) {
     ? article.cover_image
     : `${baseUrl}/${article.cover_image || "default-cover.webp"}`;
 
+  const shortAbstract = cleanAbstract(article.abstract, 200);
+
   return {
     title: article.article_title,
-    description: article.abstract,
+    description: shortAbstract,
     keywords,
     openGraph: {
       url: articleUrl,
       siteName: "dsjournals",
       title: article.article_title,
-      description: article.abstract,
+      description: shortAbstract,
       type: "website",
       images: [{ url: coverImage, type: "image/webp" }],
     },
@@ -76,7 +91,7 @@ export async function generateMetadata({ params }) {
       card: "summary_large_image",
       site: "website",
       title: article.article_title,
-      description: article.abstract,
+      description: shortAbstract,
       images: [coverImage],
       url: "https://twitter.com/DreamScience4",
     },
