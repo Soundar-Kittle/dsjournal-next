@@ -125,7 +125,7 @@ const splitLines = (t = "") =>
     .map((s) => s.trim());
 const cleanAuthor = (s = "") =>
   normalizeUnicode(s)
-    .replace(/\b\d+[*]?\b/g, "")
+    .replace(/[0-9,*¹²³⁴⁵⁶⁷⁸⁹]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 const slugifyBaseName = (name) =>
@@ -542,6 +542,33 @@ function parseDoiUrlAnywhere(text = "") {
   return null;
 }
 
+function extractAuthorsSmart(lines, idxOrig) {
+  // 1) Look for true author line between title and affiliations
+  const start = idxOrig >= 0 ? idxOrig + 1 : 0;
+
+  for (let i = start; i < Math.min(lines.length, start + 10); i++) {
+    const line = lines[i]?.trim();
+    if (!line) continue;
+
+    // Stop on affiliation or section headers
+    if (/^(Department|Faculty|University|Institute|Abstract|Keywords|Received|Revised|Accepted|Published)/i.test(line)) {
+      break;
+    }
+
+    // Detect real author line: contains comma + digits next to names
+    if (/,/.test(line) && /\b[A-Za-z]+\d/.test(line)) {
+      return line
+        .replace(/[*]+/g, "")
+        .split(/,| and /i)
+        .map((s) => cleanAuthor(s))
+        .filter(Boolean);
+    }
+  }
+
+  return []; // fallback
+}
+
+
 /* ───────── resolve helpers (unchanged) ───────── */
 async function resolveJournalId(conn, { url, form }) {
   let jid =
@@ -777,69 +804,56 @@ export async function POST(req) {
 
       // authors
       // ── AUTHORS extraction (handles "M. Shoikhedbrod*, I. Shoikhedbrod1")
-      let authors = [];
+      // let authors = [];
+ // AUTHORS extraction
+let authors = extractAuthorsSmart(lines, idxOrig);
 
-      // 1️⃣ Try to find an explicit "Authors:" block in the doc
-      const authorsMatch = fullText.match(
-        /(?:^|\n)\s*Authors?\s*[:\-]\s*([\s\S]+?)(?=\n\s*(Abstract|Keywords?|Received|Accepted|Published)\b)/i
-      );
-      if (authorsMatch && authorsMatch[1]) {
-        authors = authorsMatch[1]
-          .split(/,| and |\n/)
-          .map((name) =>
-            cleanAuthor(
-              name.replace(/[*\d]+/g, "") // remove footnote markers like *,1
-            )
-          )
-          .filter(Boolean);
-      }
 
-      // 2️⃣ Fallback: lines right after "Original Article" header (your PDF style)
-      if (!authors.length) {
-        const startIdx = idxOrig >= 0 ? idxOrig + 1 : 0;
-        for (let i = startIdx; i < Math.min(lines.length, startIdx + 8); i++) {
-          const line = lines[i] || "";
+// 1️⃣ Try to find an explicit "Authors:" block
+const authorsMatch = fullText.match(
+  /(?:^|\n)\s*Authors?\s*[:\-]\s*([\s\S]+?)(?=\n\s*(Abstract|Keywords?|Received|Accepted|Published)\b)/i
+);
+if (authorsMatch && authorsMatch[1]) {
+  authors = authorsMatch[1]
+    .split(/,| and |\n/)
+    .map((name) => cleanAuthor(name))
+    .filter(Boolean);
+}
 
-          // stop if we've hit affiliation, abstract header, or dates
-          if (
-            /^(r&d|department|faculty|university|institute|abstract|keywords?|received|accepted|published|introduction)/i.test(
-              line
-            )
-          ) {
-            break;
-          }
+// 2️⃣ Fallback — after “Original Article”
+if (!authors.length) {
+  const beforeReceived = fullText.split(/Received:/i)[0] || "";
+  const m = beforeReceived.match(
+    /([A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?(?:\s*,\s*[A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)+)/
+  );
+  if (m && m[1]) {
+    authors = m[1]
+      .split(/,| and /i)
+      .map((s) => cleanAuthor(s))   // <-- just use helper
+      .filter(Boolean);
+  }
+}
 
-          // look for "M. Shoikhedbrod*, I. Shoikhedbrod1" style
-          if (/[A-Z]\.\s*[A-Z][a-z]+/.test(line)) {
-            authors = line
-              .replace(/[*\d]+/g, "") // strip *, 1, 2 footnote refs
-              .split(/,| and /i)
-              .map((s) => cleanAuthor(s))
-              .filter(Boolean);
-            break;
-          }
-        }
-      }
+// 3️⃣ Fallback — before "Received:"
+if (!authors.length) {
+  const beforeReceived = fullText.split(/Received:/i)[0] || "";
+  const m = beforeReceived.match(
+    /([A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?(?:\s*,\s*[A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)+)/
+  );
 
-      // 3️⃣ Fallback: text before "Received:"
-      if (!authors.length) {
-        const beforeReceived = fullText.split(/Received:/i)[0] || "";
-        const m = beforeReceived.match(
-          /([A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?(?:\s*,\s*[A-Z]\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)+)/
-        );
-        if (m && m[1]) {
-          authors = m[1]
-            .replace(/[*\d]+/g, "")
-            .split(/,| and /i)
-            .map((s) => cleanAuthor(s))
-            .filter(Boolean);
-        }
-      }
+  if (m && m[1]) {
+    authors = m[1]
+      .replace(/[*\d]+/g, "")
+      .split(/,| and /i)
+      .map((s) => cleanAuthor(s))
+      .filter(Boolean);
+  }
+}
 
-      // 4️⃣ Last resort
-      if (!authors.length) {
-        authors = [];
-      }
+// 4️⃣ Last fallback → empty array
+if (!authors.length) {
+  authors = [];
+}
 
       // dates / abstract / keywords
       const datesLine =
@@ -1227,42 +1241,45 @@ export async function GET(req) {
 
     // 🔍 Normalize the fields
     const records = rows.map((r) => {
-      let authors = [];
-      let keywords = [];
+      // --- Parse authors safely ---
+let authors = [];
+if (r.authors) {
+  try {
+    const parsed = JSON.parse(r.authors);
 
-      // --- Parse authors JSON safely ---
-      if (r.authors) {
-        try {
-          const parsed = JSON.parse(r.authors);
-          authors = Array.isArray(parsed)
-            ? parsed.map((a) => a.trim()).filter(Boolean)
-            : typeof parsed === "string"
-            ? parsed.split(",").map((a) => a.trim())
-            : [];
-        } catch {
-          authors = r.authors
-            .split(",")
-            .map((a) => a.trim())
-            .filter(Boolean);
-        }
-      }
+    if (Array.isArray(parsed)) {
+      authors = parsed.map((a) => String(a).trim()).filter(Boolean);
+    } else if (typeof parsed === "string") {
+      authors = parsed.split(",").map((a) => a.trim()).filter(Boolean);
+    }
+  } catch {
+    if (typeof r.authors === "string") {
+      authors = r.authors.split(",").map((a) => a.trim()).filter(Boolean);
+    } else if (Array.isArray(r.authors)) {
+      authors = r.authors.map((a) => String(a).trim()).filter(Boolean);
+    }
+  }
+}
 
-      // --- Parse keywords JSON safely ---
-      if (r.keywords) {
-        try {
-          const parsed = JSON.parse(r.keywords);
-          keywords = Array.isArray(parsed)
-            ? parsed.map((k) => k.trim()).filter(Boolean)
-            : typeof parsed === "string"
-            ? parsed.split(",").map((k) => k.trim())
-            : [];
-        } catch {
-          keywords = r.keywords
-            .split(",")
-            .map((k) => k.trim())
-            .filter(Boolean);
-        }
-      }
+// --- Parse keywords safely ---
+let keywords = [];
+if (r.keywords) {
+  try {
+    const parsed = JSON.parse(r.keywords);
+
+    if (Array.isArray(parsed)) {
+      keywords = parsed.map((k) => String(k).trim()).filter(Boolean);
+    } else if (typeof parsed === "string") {
+      keywords = parsed.split(",").map((k) => k.trim()).filter(Boolean);
+    }
+  } catch {
+    if (typeof r.keywords === "string") {
+      keywords = r.keywords.split(",").map((k) => k.trim()).filter(Boolean);
+    } else if (Array.isArray(r.keywords)) {
+      keywords = r.keywords.map((k) => String(k).trim()).filter(Boolean);
+    }
+  }
+}
 
       // --- References kept as HTML block ---
       const references = r.refs || "";
@@ -1293,134 +1310,134 @@ export async function GET(req) {
   }
 }
 
-export async function PUT(req) {
-  try {
-    const body = await req.json();
-    const id = Number(body.id);
-    if (!id)
-      return NextResponse.json(
-        { success: false, message: "Missing id" },
-        { status: 400 }
-      );
+// export async function PUT(req) {
+//   try {
+//     const body = await req.json();
+//     const id = Number(body.id);
+//     if (!id)
+//       return NextResponse.json(
+//         { success: false, message: "Missing id" },
+//         { status: 400 }
+//       );
 
-    const conn = await createDbConnection();
+//     const conn = await createDbConnection();
 
-    try {
-      const [[row]] = await conn.query(
-        "SELECT * FROM staged_articles WHERE id=? LIMIT 1",
-        [id]
-      );
-      if (!row)
-        return NextResponse.json(
-          { success: false, message: "Not found" },
-          { status: 404 }
-        );
+//     try {
+//       const [[row]] = await conn.query(
+//         "SELECT * FROM staged_articles WHERE id=? LIMIT 1",
+//         [id]
+//       );
+//       if (!row)
+//         return NextResponse.json(
+//           { success: false, message: "Not found" },
+//           { status: 404 }
+//         );
 
-      const allowedKeys = [
-        "title",
-        "abstract",
-        "keywords",
-        "authors",
-        "references",
-        "doi_url",
-        "issn",
-        "volume_number",
-        "issue_number",
-        "pages_from",
-        "pages_to",
-        "received_date",
-        "revised_date",
-        "accepted_date",
-        "published_date",
-      ];
+//       const allowedKeys = [
+//         "title",
+//         "abstract",
+//         "keywords",
+//         "authors",
+//         "references",
+//         "doi_url",
+//         "issn",
+//         "volume_number",
+//         "issue_number",
+//         "pages_from",
+//         "pages_to",
+//         "received_date",
+//         "revised_date",
+//         "accepted_date",
+//         "published_date",
+//       ];
 
-      const updates = [];
-      const values = [];
+//       const updates = [];
+//       const values = [];
 
-      for (const key of allowedKeys) {
-        let val = body[key];
+//       for (const key of allowedKeys) {
+//         let val = body[key];
 
-        // ignore null or empty
-        if (val === undefined || val === null || val === "") continue;
+//         // ignore null or empty
+//         if (val === undefined || val === null || val === "") continue;
 
-        // 🧠 handle special cases
-        if (["authors", "keywords"].includes(key)) {
-          // ✅ Convert arrays to JSON safely
-          if (Array.isArray(val)) val = JSON.stringify(val);
-          else if (typeof val === "string") {
-            try {
-              const arr = val
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean);
-              val = JSON.stringify(arr);
-            } catch {
-              val = JSON.stringify([val]);
-            }
-          }
-        }
+//         // 🧠 handle special cases
+//         if (["authors", "keywords"].includes(key)) {
+//           // ✅ Convert arrays to JSON safely
+//           if (Array.isArray(val)) val = JSON.stringify(val);
+//           else if (typeof val === "string") {
+//             try {
+//               const arr = val
+//                 .split(",")
+//                 .map((s) => s.trim())
+//                 .filter(Boolean);
+//               val = JSON.stringify(arr);
+//             } catch {
+//               val = JSON.stringify([val]);
+//             }
+//           }
+//         }
 
-        if (key === "references") {
-          // ✅ keep HTML directly (CKEditor safe)
-          if (typeof val === "object") val = JSON.stringify(val);
-        }
+//         if (key === "references") {
+//           // ✅ keep HTML directly (CKEditor safe)
+//           if (typeof val === "object") val = JSON.stringify(val);
+//         }
 
-        // 🧭 Normalize date formats
-        if (
-          [
-            "received_date",
-            "revised_date",
-            "accepted_date",
-            "published_date",
-          ].includes(key)
-        ) {
-          try {
-            const date = new Date(val);
-            if (!isNaN(date.getTime())) {
-              val = date.toISOString().split("T")[0];
-            } else {
-              console.warn(`Invalid date for ${key}:`, val);
-              continue;
-            }
-          } catch {
-            continue;
-          }
-        }
+//         // 🧭 Normalize date formats
+//         if (
+//           [
+//             "received_date",
+//             "revised_date",
+//             "accepted_date",
+//             "published_date",
+//           ].includes(key)
+//         ) {
+//           try {
+//             const date = new Date(val);
+//             if (!isNaN(date.getTime())) {
+//               val = date.toISOString().split("T")[0];
+//             } else {
+//               console.warn(`Invalid date for ${key}:`, val);
+//               continue;
+//             }
+//           } catch {
+//             continue;
+//           }
+//         }
 
-        updates.push(`\`${key}\` = ?`);
-        values.push(val);
-      }
+//         updates.push(`\`${key}\` = ?`);
+//         values.push(val);
+//       }
 
-      if (!updates.length)
-        return NextResponse.json(
-          { success: false, message: "No valid fields to update" },
-          { status: 400 }
-        );
+//       if (!updates.length)
+//         return NextResponse.json(
+//           { success: false, message: "No valid fields to update" },
+//           { status: 400 }
+//         );
 
-      values.push(id);
-      await conn.query(
-        `UPDATE staged_articles 
-         SET ${updates.join(", ")}, updated_at = NOW() 
-         WHERE id = ?`,
-        values
-      );
+//       values.push(id);
+//       await conn.query(
+//         `UPDATE staged_articles 
+//          SET ${updates.join(", ")}, updated_at = NOW() 
+//          WHERE id = ?`,
+//         values
+//       );
 
-      return NextResponse.json({
-        success: true,
-        message: "Updated successfully",
-        updated_fields: updates.map((u) => u.split("=")[0].replace(/[`]/g, "").trim()),
-      });
-    } finally {
-      await conn.end();
-    }
-  } catch (e) {
-    console.error("PUT /api/articles/stage error:", e);
-    return NextResponse.json(
-      { success: false, message: e.message || "Internal error" },
-      { status: 500 }
-    );
-  }
-}
+//       return NextResponse.json({
+//         success: true,
+//         message: "Updated successfully",
+//         updated_fields: updates.map((u) => u.split("=")[0].replace(/[`]/g, "").trim()),
+//       });
+//     } finally {
+//       await conn.end();
+//     }
+//   } catch (e) {
+//     console.error("PUT /api/articles/stage error:", e);
+//     return NextResponse.json(
+//       { success: false, message: e.message || "Internal error" },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 /* ----------------------- DELETE single staged article ----------------------- */
 export async function DELETE(req, { params }) {
