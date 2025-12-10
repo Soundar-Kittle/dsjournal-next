@@ -135,7 +135,7 @@
 body {
   font-family: var(--font-poppins), Helvetica, sans-serif;
   background-color: #f4f8fa;
-  color: #444;
+  /* color: #444; */
 }
 
 h5 {
@@ -172,4 +172,51 @@ h6 {
 
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
+}
+
+
+/* ============================= */
+/* ✅ ABSTRACT FONT LOCK */
+/* ============================= */
+.article-content,
+.article-content * {
+  font-family: "Poppins", Helvetica, sans-serif !important;
+  /* font-size: 16px; */
+  line-height: 1.7;
+  color: #111827;
+}
+
+/* ============================= */
+/* BASE REFERENCE FONT */
+/* ============================= */
+.references-content,
+.references-content * {
+  font-family: "Poppins", Helvetica, sans-serif !important;
+  /* font-size: 16px; */
+  line-height: 1.7;
+  color: #111827;
+}
+
+/* ✅ Lock reference section to website base font */
+.references-content,
+.references-content * {
+  font-family: "Poppins", Helvetica, sans-serif !important;
+  /* font-size: 16px; */
+  line-height: 1.7;
+  color: #111827; /* base black */
+}
+
+/* ✅ ONLY the link text should be green */
+.references-content a {
+  color: #16a34a !important;   /* GREEN TEXT ONLY */
+  font-weight: 500;
+  text-decoration: none;
+  margin: 0 4px;
+  white-space: nowrap;
+}
+
+/* ✅ Hover effect */
+.references-content a:hover {
+  opacity: 0.85;
+  text-decoration: underline;
 }

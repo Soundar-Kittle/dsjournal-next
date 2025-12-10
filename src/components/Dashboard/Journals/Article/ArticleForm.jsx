@@ -521,17 +521,22 @@ function ArticleForm({
         <Input {...register("month_to")} value={month_to} readOnly disabled />
       </div>
 
-      {/* Dates */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {["received", "revised", "accepted", "published"].map((k) => (
-          <Input
-            key={k}
-            {...register(k)}
-            type="date"
-            className="border p-2 rounded-md"
-          />
-        ))}
-      </div>
+{/* Dates */}
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+  {["received", "revised", "accepted", "published"].map((k) => (
+    <div key={k} className="flex flex-col gap-1">
+      <label className="text-sm font-medium text-gray-700 capitalize">
+        {k}
+      </label>
+
+      <Input
+        {...register(k)}
+        type="date"
+        className="border p-2 rounded-md"
+      />
+    </div>
+  ))}
+</div>
     </div>
   );
 
