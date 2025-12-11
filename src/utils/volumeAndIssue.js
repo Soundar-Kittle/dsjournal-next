@@ -67,7 +67,11 @@ export async function _getArticlesBySlugVolumeIssue(slug, volumeNum, issueNum) {
 export const getArticlesBySlugVolumeIssue = unstable_cache(
   async (slug, volumeNum, issueNum) =>
     _getArticlesBySlugVolumeIssue(slug, volumeNum, issueNum),
-  [`volume-issue-list`],
+   // 🚀 dynamic cache key
+  (slug, volumeNum, issueNum) => [
+    `volume-issue-${slug}-${volumeNum}-${issueNum}`
+  ],
+  // [`volume-issue-list`],
   {
     tags: ["volume-issue"],
   }
