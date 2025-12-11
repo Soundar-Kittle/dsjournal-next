@@ -122,6 +122,9 @@ export async function generateMetadata({ params }) {
   };
 }
 
+
+
+
 export default async function Page({ params }) {
   const { article: articleId } = await params;
   const article = await getArticleById(articleId);
@@ -267,10 +270,14 @@ export default async function Page({ params }) {
       {article.abstract && (
         <div>
           <h2 className="text-lg font-semibold">Abstract</h2>
-          <div
+          {/* <div
             className="mt-2 prose max-w-none"
             dangerouslySetInnerHTML={{ __html: article.abstract }}
-          />
+          /> */}
+          <div
+  className="article-content"
+  dangerouslySetInnerHTML={{ __html: article.abstract }}
+/>
         </div>
       )}
 
@@ -283,15 +290,17 @@ export default async function Page({ params }) {
       )}
 
       {/* References */}
-      {references && (
-        <div>
-          <h2 className="text-lg font-semibold">References</h2>
-          <div
-            className="whitespace-normal break-words space-y-1 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: references }}
-          />
-        </div>
-      )}
+{references && (
+  <div>
+    <h2 className="text-lg font-semibold">References</h2>
+
+   <div
+  className="references-content whitespace-normal break-words space-y-1 leading-relaxed"
+  dangerouslySetInnerHTML={{ __html: references }}
+/>
+
+  </div>
+)}
     </div>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback} from "react";
-import { useSearchParams,useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import ArticleForm from "@/components/Dashboard/Journals/Article/ArticleForm";
 import { ChevronRight } from "lucide-react";
+import DOMPurify from "dompurify";
 
 const resetForm = {
   id: "",
@@ -50,19 +51,18 @@ export default function Page() {
   const [journalSlug, setJournalSlug] = useState("");
   const [resetSignal, setResetSignal] = useState(0);
 
-
   const normalizeArrayField = (value) => {
-  try {
-    if (!value) return "";
-    const arr = JSON.parse(value);
-    if (Array.isArray(arr)) {
-      return arr.join(", ");
+    try {
+      if (!value) return "";
+      const arr = JSON.parse(value);
+      if (Array.isArray(arr)) {
+        return arr.join(", ");
+      }
+      return value;
+    } catch {
+      return value; // if not JSON, return original
     }
-    return value;
-  } catch {
-    return value; // if not JSON, return original
-  }
-};
+  };
 
   /** File select */
   const onFileSelect = (file) => {
@@ -78,7 +78,6 @@ export default function Page() {
     }
     setPdfFile(file);
   };
-
 
   /** Initial meta load */
   useEffect(() => {
@@ -124,29 +123,27 @@ export default function Page() {
     })();
   }, [jid]);
 
-const fetchIssuesByVolume = useCallback(
-  async (volumeId, includeId = null) => {
-    let url = `/api/issues?journal_id=${jid}&volume_id=${volumeId}`;
-    if (includeId) url += `&include_id=${includeId}`; // ✅ only for edit mode
-    const res = await fetch(url);
-    const data = await res.json();
-    return data?.issues || [];
-  },
-  [jid]
-);
-
-
-const toJsonArray = (value) => {
-  if (!value) return "[]";
-
-  return JSON.stringify(
-    value
-      .split(",")                // split by comma
-      .map(v => v.trim())        // remove spaces
-      .filter(v => v.length > 0) // remove empty items
+  const fetchIssuesByVolume = useCallback(
+    async (volumeId, includeId = null) => {
+      let url = `/api/issues?journal_id=${jid}&volume_id=${volumeId}`;
+      if (includeId) url += `&include_id=${includeId}`; // ✅ only for edit mode
+      const res = await fetch(url);
+      const data = await res.json();
+      return data?.issues || [];
+    },
+    [jid]
   );
-};
 
+  const toJsonArray = (value) => {
+    if (!value) return "[]";
+
+    return JSON.stringify(
+      value
+        .split(",") // split by comma
+        .map((v) => v.trim()) // remove spaces
+        .filter((v) => v.length > 0) // remove empty items
+    );
+  };
 
   /** Issues on volume change */
   useEffect(() => {
@@ -227,62 +224,61 @@ const toJsonArray = (value) => {
     };
   }, [form.issue_id, jid]);
 
+  /** Prefill when editing */
+  useEffect(() => {
+    if (!isEdit || !(idParam || articleIdParam)) return;
 
+    const fetchExistingArticle = async () => {
+      try {
+        const res = await fetch(
+          `/api/articles?${
+            idParam ? `id=${idParam}` : `article_id=${articleIdParam}`
+          }`
+        );
+        const json = await res.json();
+        if (!json.success || !json.article) return;
 
-    /** Prefill when editing */
-useEffect(() => {
-  if (!isEdit || !(idParam || articleIdParam)) return;
+        const a = json.article;
 
-  const fetchExistingArticle = async () => {
-    try {
-      const res = await fetch(
-        `/api/articles?${idParam ? `id=${idParam}` : `article_id=${articleIdParam}`}`
-      );
-      const json = await res.json();
-      if (!json.success || !json.article) return;
+        setForm((prev) => ({
+          ...prev,
+          id: a.id || "",
+          article_status: a.article_status || "unpublished",
+          journal_id: String(a.journal_id || jid || ""),
+          volume_id: String(a.volume_id || ""),
+          issue_id: String(a.issue_id || ""),
+          month_from: a.month_from || "",
+          month_to: a.month_to || "",
+          article_id: a.article_id || "",
+          doi: a.doi || "",
+          article_title: a.article_title || "",
+          authors: normalizeArrayField(a.authors),
+          abstract: a.abstract || "",
+          keywords: normalizeArrayField(a.keywords),
+          page_from: a.page_from || "",
+          page_to: a.page_to || "",
+          references: a.references || "",
+          received: a.received || "",
+          revised: a.revised || "",
+          accepted: a.accepted || "",
+          published: a.published || "",
+          pdf_path: a.pdf_path || "",
+        }));
 
-      const a = json.article;
+        // Prefill dependent metadata (issues/months)
+        if (a.volume_id) {
+          const issues = await fetchIssuesByVolume(a.volume_id, a.issue_id);
+          setIssuesMeta(issues);
+        }
 
-      setForm((prev) => ({
-        ...prev,
-        id: a.id || "",
-        article_status: a.article_status || "unpublished",
-        journal_id: String(a.journal_id || jid || ""),
-        volume_id: String(a.volume_id || ""),
-        issue_id: String(a.issue_id || ""),
-        month_from: a.month_from || "",
-        month_to: a.month_to || "",
-        article_id: a.article_id || "",
-        doi: a.doi || "",
-        article_title: a.article_title || "",
-        authors: normalizeArrayField(a.authors),
-        abstract: a.abstract || "",
-        keywords: normalizeArrayField(a.keywords),
-        page_from: a.page_from || "",
-        page_to: a.page_to || "",
-        references: a.references || "",
-        received: a.received || "",
-        revised: a.revised || "",
-        accepted: a.accepted || "",
-        published: a.published || "",
-        pdf_path: a.pdf_path || "",
-      }));
+        monthsWerePrefilledRef.current = true;
+      } catch (err) {
+        console.error("❌ Prefill error:", err);
+      }
+    };
 
-      // Prefill dependent metadata (issues/months)
-if (a.volume_id) {
-  const issues = await fetchIssuesByVolume(a.volume_id, a.issue_id);
-  setIssuesMeta(issues);
-}
-
-      monthsWerePrefilledRef.current = true;
-    } catch (err) {
-      console.error("❌ Prefill error:", err);
-    }
-  };
-
-  fetchExistingArticle();
-}, [isEdit, idParam, articleIdParam, jid, fetchIssuesByVolume]);
-
+    fetchExistingArticle();
+  }, [isEdit, idParam, articleIdParam, jid, fetchIssuesByVolume]);
 
   /** Controlled updates */
   const handleFormUpdate = (updated) => {
@@ -302,112 +298,124 @@ if (a.volume_id) {
     });
   };
 
-const onSubmit = async (formValuesFromChild) => {
-  try {
-    setSubmitting(true);
+  const onSubmit = async (formValuesFromChild) => {
+    try {
+      setSubmitting(true);
 
-    // 🔹 Always trust the final values from ArticleForm
-    const merged = { ...form, ...formValuesFromChild };
+      // 🔹 Always trust the final values from ArticleForm
+      const merged = { ...form, ...formValuesFromChild };
 
-    // 🔥 Convert authors + keywords into JSON array here
-    merged.authors = toJsonArray(merged.authors);
-    merged.keywords = toJsonArray(merged.keywords);
+      // 🔥 CLEAN ABSTRACT + REFERENCES (remove Word fonts, spans, inline styles)
+      merged.abstract = DOMPurify.sanitize(merged.abstract || "", {
+        ALLOWED_TAGS: ["p", "b", "i", "u", "ul", "ol", "li", "br"],
+        ALLOWED_ATTR: [],
+      });
 
-    // Basic validation
-    if (!merged.article_id || !merged.volume_id || !merged.issue_id) {
-      alert("Volume, Issue, and Article ID are required.");
-      setSubmitting(false);
-      return;
-    }
+      merged.references = DOMPurify.sanitize(merged.references || "", {
+        ALLOWED_TAGS: ["p", "b", "i", "u", "ul", "ol", "li", "br", "a"],
+        ALLOWED_ATTR: ["href", "target"],
+      });
 
-    // 🔹 Auto-fill DOI only
-    const jr = journals.find(j => String(j.id) === String(merged.journal_id));
-    if (jr && merged.article_id) {
-      const prefix = jr.doi_prefix?.replace(/\/$/, "") || "";
-      if (prefix) {
-        merged.doi = `${prefix}/${merged.article_id}`;
+      // 🔥 Convert authors + keywords into JSON array here
+      merged.authors = toJsonArray(merged.authors);
+      merged.keywords = toJsonArray(merged.keywords);
+
+      // Basic validation
+      if (!merged.article_id || !merged.volume_id || !merged.issue_id) {
+        alert("Volume, Issue, and Article ID are required.");
+        setSubmitting(false);
+        return;
       }
+
+      // 🔹 Auto-fill DOI only
+      const jr = journals.find(
+        (j) => String(j.id) === String(merged.journal_id)
+      );
+      if (jr && merged.article_id) {
+        const prefix = jr.doi_prefix?.replace(/\/$/, "") || "";
+        if (prefix) {
+          merged.doi = `${prefix}/${merged.article_id}`;
+        }
+      }
+
+      const fd = new FormData();
+      Object.entries(merged).forEach(([k, v]) => {
+        if (k === "id" && !merged.id) return;
+        fd.append(k, v ?? "");
+      });
+
+      if (pdfFile) fd.append("pdf", pdfFile);
+
+      const method = merged.id ? "PUT" : "POST";
+      const res = await fetch("/api/articles", { method, body: fd });
+      const data = await res.json();
+
+      if (!res.ok || !data?.success)
+        throw new Error(data.message || "Save failed");
+
+      alert(
+        merged.id
+          ? "Article updated successfully."
+          : "Article created successfully."
+      );
+
+      if (!merged.id) {
+        // ADD SUCCESS
+        setPdfFile(null); // <-- VERY IMPORTANT
+        setForm({ ...resetForm, journal_id: jid || "" });
+        setResetSignal(Date.now()); // triggers form reset
+      } else {
+        // EDIT SUCCESS
+        setPdfFile(null);
+        setForm({ ...resetForm, journal_id: jid || "" });
+        setResetSignal(Date.now());
+      }
+    } catch (err) {
+      console.error("Save error:", err);
+      alert(err.message || "Something went wrong.");
+    } finally {
+      setSubmitting(false);
     }
+  };
 
-    const fd = new FormData();
-    Object.entries(merged).forEach(([k, v]) => {
-      if (k === "id" && !merged.id) return;
-      fd.append(k, v ?? "");
-    });
-
-    if (pdfFile) fd.append("pdf", pdfFile);
-
-    const method = merged.id ? "PUT" : "POST";
-    const res = await fetch("/api/articles", { method, body: fd });
-    const data = await res.json();
-
-    if (!res.ok || !data?.success) throw new Error(data.message || "Save failed");
-
-    alert(
-      merged.id
-        ? "Article updated successfully."
-        : "Article created successfully."
-    );
-
-if (!merged.id) {
-  // ADD SUCCESS
-  setPdfFile(null);      // <-- VERY IMPORTANT
-  setForm({ ...resetForm, journal_id: jid || "" });
-  setResetSignal(Date.now());  // triggers form reset
-}
-else {
-  // EDIT SUCCESS
-  setPdfFile(null);
-  setForm({ ...resetForm, journal_id: jid || "" });
-  setResetSignal(Date.now());
-}
-  } catch (err) {
-    console.error("Save error:", err);
-    alert(err.message || "Something went wrong.");
-  } finally {
-    setSubmitting(false);
-  }
-};
-
-
-
-return (
+  return (
     <div className="max-w-6xl mx-auto p-6">
-<div className="flex justify-between items-center mb-6">
-  <h1 className="text-2xl font-semibold">
-    {isEdit ? "Edit Article" : "Add Article"}
-  </h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold">
+          {isEdit ? "Edit Article" : "Add Article"}
+        </h1>
 
+        {/* ⭐ BACK TO ARCHIVES BUTTON */}
+        <button
+          onClick={() => {
+            const jr = journals.find((j) => j.id === Number(jid));
+            if (!jr) return alert("Journal not found.");
+            const shortName = encodeURIComponent(jr.short_name);
 
- {/* ⭐ BACK TO ARCHIVES BUTTON */}
-    <button
-      onClick={() => {
-        const jr = journals.find(j => j.id === Number(jid));
-        if (!jr) return alert("Journal not found.");
-        const shortName = encodeURIComponent(jr.short_name);
-
-        router.push(`/admin/dashboard/journals/${shortName}/archives?jid=${jid}`);
-      }}
-      className="flex items-center gap-2 px-5 py-2 bg-gray-800 text-white rounded-lg shadow hover:bg-gray-900 transition cursor-pointer"
-    >
-      Back to Archives
-      <ChevronRight className="w-4 h-4" />
-    </button>
-</div>
-<ArticleForm
- formData={form}    
-  journals={journals}
-  volumesMeta={volumesMeta}
-  fetchIssuesByVolume={fetchIssuesByVolume}
-  defaultJournalId={jid}
-  disabledJournal={true}
-  onSubmit={onSubmit}       // child will call with form data
-  submitting={submitting}
-  onFileSelect={onFileSelect}
-  selectedFile={pdfFile}
-  resetSignal={resetSignal}     // 👈 added
-  isEdit={isEdit} // ✅ add this line
-/>
+            router.push(
+              `/admin/dashboard/journals/${shortName}/archives?jid=${jid}`
+            );
+          }}
+          className="flex items-center gap-2 px-5 py-2 bg-gray-800 text-white rounded-lg shadow hover:bg-gray-900 transition cursor-pointer"
+        >
+          Back to Archives
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+      <ArticleForm
+        formData={form}
+        journals={journals}
+        volumesMeta={volumesMeta}
+        fetchIssuesByVolume={fetchIssuesByVolume}
+        defaultJournalId={jid}
+        disabledJournal={true}
+        onSubmit={onSubmit} // child will call with form data
+        submitting={submitting}
+        onFileSelect={onFileSelect}
+        selectedFile={pdfFile}
+        resetSignal={resetSignal} // 👈 added
+        isEdit={isEdit} // ✅ add this line
+      />
     </div>
   );
 }
