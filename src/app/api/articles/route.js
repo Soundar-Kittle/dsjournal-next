@@ -125,10 +125,13 @@ export async function POST(req) {
     // ------------------------------
     let pdfPath = null;
     const uploaded = files?.pdf?.[0];
+    // if (uploaded?.relativePath) {
+    //   pdfPath = uploaded.relativePath.startsWith("/")
+    //     ? uploaded.relativePath
+    //     : `/${uploaded.relativePath}`;
+    // }
     if (uploaded?.relativePath) {
-      pdfPath = uploaded.relativePath.startsWith("/")
-        ? uploaded.relativePath
-        : `/${uploaded.relativePath}`;
+      pdfPath = uploaded.relativePath;
     }
 
     // ------------------------------
@@ -169,8 +172,8 @@ export async function POST(req) {
     `;
 
     const [result] = await conn.query(sql, Object.values(payload));
-    revalidateTag("articles");
-    revalidateTag("volume-issue");
+    revalidateTag("articles", "max");
+    revalidateTag("volume-issue", "max");
     revalidatePath(`/${journalSlug}/archives`, "layout");
     revalidatePath(`/${journalSlug}/${article_id}`);
     revalidatePath(`/${journalSlug}/current-issue`);
@@ -245,7 +248,8 @@ export async function PUT(req) {
       if (oldPath && fs.existsSync(oldPath)) await fs.promises.unlink(oldPath);
       const buffer = Buffer.from(await newFile.arrayBuffer());
       await writeFile(newFullPath, buffer);
-      updates.pdf_path = `/uploads/articles/${newFile.name}`;
+      // updates.pdf_path = `/uploads/articles/${newFile.name}`;
+      updates.pdf_path = `uploads/articles/${newFile.name}`;
     }
 
     const removeFlag = formData.get("remove_pdf");
