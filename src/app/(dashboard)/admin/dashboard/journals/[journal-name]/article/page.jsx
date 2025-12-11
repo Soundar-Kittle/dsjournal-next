@@ -338,13 +338,33 @@ export default function Page() {
         }
       }
 
-      const fd = new FormData();
-      Object.entries(merged).forEach(([k, v]) => {
-        if (k === "id" && !merged.id) return;
-        fd.append(k, v ?? "");
-      });
+      // const fd = new FormData();
+      // Object.entries(merged).forEach(([k, v]) => {
+      //   if (k === "id" && !merged.id) return;
+      //   fd.append(k, v ?? "");
+      // });
 
-      if (pdfFile) fd.append("pdf", pdfFile);
+      // if (pdfFile) fd.append("pdf", pdfFile);
+
+      // Build FormData
+const fd = new FormData();
+
+Object.entries(merged).forEach(([k, v]) => {
+  if (k === "id" && !merged.id) return;
+  if (k === "remove_pdf") return;            // avoid double append
+  fd.append(k, v ?? "");
+});
+
+// 🔥 Make sure remove flag is sent
+if (merged.remove_pdf === "1") {
+  fd.append("remove_pdf", "1");
+}
+
+// Only upload new file if selected
+if (pdfFile) {
+  fd.append("pdf", pdfFile);
+}
+
 
       const method = merged.id ? "PUT" : "POST";
       const res = await fetch("/api/articles", { method, body: fd });

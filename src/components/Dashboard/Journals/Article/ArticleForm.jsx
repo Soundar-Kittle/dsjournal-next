@@ -650,7 +650,7 @@ function ArticleForm({
               href={
                 formData.pdf_path.startsWith("http")
                   ? formData.pdf_path
-                  : `/uploads/${formData.pdf_path.replace(/^\/+/, "")}`
+                  : `/${formData.pdf_path.replace(/^\/+/, "")}`
               }
               target="_blank"
               rel="noopener noreferrer"
@@ -658,7 +658,7 @@ function ArticleForm({
             >
               {formData.pdf_path.split("/").pop()}
             </a>
-            <button
+            {/* <button
               type="button"
               onClick={() => {
                 // 🗑 allow removing existing file before uploading new one
@@ -668,7 +668,24 @@ function ArticleForm({
               className="text-red-600 underline ml-3"
             >
               remove
-            </button>
+            </button> */}
+           <button
+  type="button"
+  className="text-red-600 underline ml-2"
+  onClick={() => {
+    // Mark PDF for removal
+    setValue("remove_pdf", "1");
+
+    // Clear the PDF path in the form
+    setValue("pdf_path", "");
+
+    // Remove selected file (preview)
+    onFileSelect(null);
+  }}
+>
+  remove
+</button>
+
           </div>
         ) : (
           <div className="text-xs text-gray-500 mt-1">

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { parseForm } from "@/lib/parseForm";
 import { createDbConnection } from "@/lib/db";
 import path from "path";
-import fs, { writeFile } from "fs";
+// import fs, { writeFile } from "fs";
+import fs from "fs/promises";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getJournalSlug } from "@/utils/getJouralSlug";
 
@@ -197,92 +198,248 @@ export async function POST(req) {
   }
 }
 
+// export async function PUT(req) {
+//   const conn = await createDbConnection();
+//   try {
+//     const formData = await req.formData();
+//     const id = formData.get("id");
+//     const journal_id = Number(formData.get("journal_id"));
+//     const volume_id = Number(formData.get("volume_id"));
+//     const issue_id = Number(formData.get("issue_id"));
+//     const article_id = Number(formData.get("article_id"));
+
+//     if (!id)
+//       return NextResponse.json(
+//         { success: false, message: "ID required" },
+//         { status: 400 }
+//       );
+
+//     let updates = {};
+
+//     for (const [key, value] of formData.entries()) {
+//       if (key === "pdf" || key === "remove_pdf") continue;
+
+//       if (key === "authors") {
+//         updates.authors = JSON.stringify(parseToArray(value)); // FIXED
+//       } else if (key === "keywords") {
+//         updates.keywords = JSON.stringify(parseToArray(value)); // FIXED
+//       } else {
+//         updates[key] = value;
+//       }
+//     }
+
+//     // ------------------------------
+//     // PDF replacement logic (unchanged)
+//     // ------------------------------
+//     const [rows] = await conn.query(
+//       "SELECT pdf_path FROM articles WHERE id = ?",
+//       [id]
+//     );
+
+//     const oldPath = rows[0]?.pdf_path
+//       ? path.join(process.cwd(), "public", rows[0].pdf_path.replace(/^\/+/, ""))
+//       : null;
+
+//     const newFile = formData.get("pdf");
+//     const uploadDir = path.join(process.cwd(), "public", "uploads", "articles");
+//     await fs.promises.mkdir(uploadDir, { recursive: true });
+
+//     if (newFile && newFile.size > 0) {
+//       const newFullPath = path.join(uploadDir, newFile.name);
+//       if (oldPath && fs.existsSync(oldPath)) await fs.promises.unlink(oldPath);
+//       const buffer = Buffer.from(await newFile.arrayBuffer());
+//       await fs.writeFile(newFullPath, buffer);
+//       // await writeFile(newFullPath, buffer);
+//       // updates.pdf_path = `/uploads/articles/${newFile.name}`;
+//       updates.pdf_path = `uploads/articles/${newFile.name}`;
+//     }
+
+//     const removeFlag = formData.get("remove_pdf");
+//     if (removeFlag === "1" && oldPath && fs.existsSync(oldPath)) {
+//       await fs.promises.unlink(oldPath);
+//       updates.pdf_path = "";
+//     }
+
+//     // ------------------------------
+//     // Build dynamic update query
+//     // ------------------------------
+//     // const fields = Object.keys(updates)
+//     //   .map((k) => `${k === "references" ? "`references`" : k} = ?`)
+//     //   .join(", ");
+// // ------------------------------
+// // Build dynamic update query
+// // ------------------------------
+// const fields = Object.keys(updates)
+//   .map((k) => (k === "references" ? "`references` = ?" : `${k} = ?`))
+//   .join(", ");
+
+// const values = Object.values(updates);
+
+// await conn.query(
+//   `UPDATE articles SET ${fields}, updated_at = NOW() WHERE id = ?`,
+//   [...values, id]
+// );
+
+//     let slug = null;
+//     if (journal_id) {
+//       const slugRes = await getJournalSlug(conn, journal_id);
+//       slug = slugRes.slug;
+//     }
+
+//     revalidateTag("articles");
+//     revalidateTag("volume-issue");
+//     revalidatePath(`/${slug}/archives`, "layout");
+//     revalidatePath(`/${slug}/${article_id}`);
+//     revalidatePath(`/${slug}/current-issue`);
+//     revalidatePath(`/${slug}/archives/volume${volume_id}/issue${issue_id}`);
+
+//     return NextResponse.json({
+//       success: true,
+//       message: "Article updated successfully.",
+//     });
+//   } catch (err) {
+//     console.error("PUT error:", err);
+//     return NextResponse.json(
+//       { success: false, message: err.message },
+//       { status: 500 }
+//     );
+//   } finally {
+//     await conn.end();
+//   }
+// }
+
 export async function PUT(req) {
   const conn = await createDbConnection();
+
   try {
     const formData = await req.formData();
     const id = formData.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "ID required" },
+        { status: 400 }
+      );
+    }
+
     const journal_id = Number(formData.get("journal_id"));
     const volume_id = Number(formData.get("volume_id"));
     const issue_id = Number(formData.get("issue_id"));
     const article_id = Number(formData.get("article_id"));
 
-    if (!id)
-      return NextResponse.json(
-        { success: false, message: "ID required" },
-        { status: 400 }
-      );
-
     let updates = {};
 
+    // --------------------------------------
+    // PARSE NORMAL FIELDS
+    // --------------------------------------
     for (const [key, value] of formData.entries()) {
       if (key === "pdf" || key === "remove_pdf") continue;
 
       if (key === "authors") {
-        updates.authors = JSON.stringify(parseToArray(value)); // FIXED
+        updates.authors = JSON.stringify(parseToArray(value));
       } else if (key === "keywords") {
-        updates.keywords = JSON.stringify(parseToArray(value)); // FIXED
+        updates.keywords = JSON.stringify(parseToArray(value));
       } else {
-        updates[key] = value;
+        updates[key] = value ?? null;
       }
     }
 
-    // ------------------------------
-    // PDF replacement logic (unchanged)
-    // ------------------------------
-    const [rows] = await conn.query(
-      "SELECT pdf_path FROM articles WHERE id = ?",
+    // --------------------------------------
+    // FETCH OLD PDF PATH
+    // --------------------------------------
+    const [[oldRow]] = await conn.query(
+      "SELECT pdf_path FROM articles WHERE id = ? LIMIT 1",
       [id]
     );
 
-    const oldPath = rows[0]?.pdf_path
-      ? path.join(process.cwd(), "public", rows[0].pdf_path.replace(/^\/+/, ""))
+    const oldPdfPath = oldRow?.pdf_path
+      ? path.join(process.cwd(), "public", oldRow.pdf_path.replace(/^\/+/, ""))
       : null;
 
     const newFile = formData.get("pdf");
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "articles");
-    await fs.promises.mkdir(uploadDir, { recursive: true });
+    const removeFlag = formData.get("remove_pdf") === "1";
 
-    if (newFile && newFile.size > 0) {
-      const newFullPath = path.join(uploadDir, newFile.name);
-      if (oldPath && fs.existsSync(oldPath)) await fs.promises.unlink(oldPath);
-      const buffer = Buffer.from(await newFile.arrayBuffer());
-      await writeFile(newFullPath, buffer);
-      // updates.pdf_path = `/uploads/articles/${newFile.name}`;
-      updates.pdf_path = `uploads/articles/${newFile.name}`;
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "articles");
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    // Helper → check if file exists
+    async function fileExists(file) {
+      try {
+        await fs.access(file);
+        return true;
+      } catch {
+        return false;
+      }
     }
 
-    const removeFlag = formData.get("remove_pdf");
-    if (removeFlag === "1" && oldPath && fs.existsSync(oldPath)) {
-      await fs.promises.unlink(oldPath);
+    // --------------------------------------
+    // RULE 1: New file uploaded → REPLACE old
+    // --------------------------------------
+    if (newFile && newFile.size > 0) {
+      const fileName = newFile.name;
+      const newFullPath = path.join(uploadDir, fileName);
+
+      // Delete old PDF if exists
+      if (oldPdfPath && (await fileExists(oldPdfPath))) {
+        await fs.unlink(oldPdfPath);
+      }
+
+      // Save new PDF
+      const buffer = Buffer.from(await newFile.arrayBuffer());
+      await fs.writeFile(newFullPath, buffer);
+
+      updates.pdf_path = `uploads/articles/${fileName}`;
+    }
+
+    // --------------------------------------
+    // RULE 2: No new file + remove flag → delete file
+    // --------------------------------------
+    else if (removeFlag) {
+      if (oldPdfPath && (await fileExists(oldPdfPath))) {
+        await fs.unlink(oldPdfPath);
+      }
       updates.pdf_path = "";
     }
 
-    // ------------------------------
-    // Build dynamic update query
-    // ------------------------------
+    // --------------------------------------
+    // RULE 3: No new file, no remove → keep old path
+    // (DO NOTHING → do not include pdf_path in updates)
+    // --------------------------------------
+
+    // --------------------------------------
+    // BUILD SQL UPDATE QUERY
+    // --------------------------------------
     const fields = Object.keys(updates)
-      .map((k) => `${k === "references" ? "`references`" : k} = ?`)
+      .map((k) => (k === "references" ? "`references` = ?" : `${k} = ?`))
       .join(", ");
+
     const values = Object.values(updates);
 
-    await conn.query(
-      `UPDATE articles SET ${fields}, updated_at = NOW() WHERE id = ?`,
-      [...values, id]
-    );
+    if (fields.length > 0) {
+      await conn.query(
+        `UPDATE articles SET ${fields}, updated_at = NOW() WHERE id = ?`,
+        [...values, id]
+      );
+    }
 
+    // --------------------------------------
+    // CACHE REVALIDATION
+    // --------------------------------------
     let slug = null;
     if (journal_id) {
-      const slugRes = await getJournalSlug(conn, journal_id);
-      slug = slugRes.slug;
+      const { slug: s } = await getJournalSlug(conn, journal_id);
+      slug = s;
     }
 
     revalidateTag("articles");
     revalidateTag("volume-issue");
-    revalidatePath(`/${slug}/archives`, "layout");
-    revalidatePath(`/${slug}/${article_id}`);
-    revalidatePath(`/${slug}/current-issue`);
-    revalidatePath(`/${slug}/archives/volume${volume_id}/issue${issue_id}`);
+
+    if (slug) {
+      revalidatePath(`/${slug}/archives`, "layout");
+      revalidatePath(`/${slug}/${article_id}`);
+      revalidatePath(`/${slug}/current-issue`);
+      revalidatePath(`/${slug}/archives/volume${volume_id}/issue${issue_id}`);
+    }
 
     return NextResponse.json({
       success: true,
@@ -298,6 +455,7 @@ export async function PUT(req) {
     await conn.end();
   }
 }
+
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
