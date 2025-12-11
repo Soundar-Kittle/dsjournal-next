@@ -54,13 +54,15 @@ export async function POST(req) {
     console.log("Rows AFTER update:", rowsAfter);
 
     revalidateTag("articles", "max");
+    revalidateTag("volume-issue", "max");
+    revalidateTag("journal_month_groups", "max");
 
     return NextResponse.json({
       success: true,
       updated: result.changedRows,
       rowsAfter,
     });
-
+    
   } catch (err) {
     console.error("Bulk update error:", err);
     return NextResponse.json(
