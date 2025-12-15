@@ -3,7 +3,7 @@ import Header from "@/components/Home/Header";
 import Footer from "@/components/Home/Footer";
 import { getSettings } from "@/utils/getSettings";
 import CookieConsentWrapper from "@/components/Cookie/CookieConsentWrapper";
-export default async function RootLayout({ children }) {
+export default async function HomeLayout({ children }) {
   const settings = await getSettings();
   return (
     <div className="bg-[#f8f9fa]">
