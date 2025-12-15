@@ -3,13 +3,7 @@ export default function robots() {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: [
-        "/admin/",
-        "/author/",
-        "/_next/",
-        "/search",
-        "/cookies-privacy-policy",
-      ],
+      disallow: ["/admin/", "/author/", "/search", "/cookies-privacy-policy"],
     },
     sitemap: "https://dsjournals.com/sitemap.xml",
   };
