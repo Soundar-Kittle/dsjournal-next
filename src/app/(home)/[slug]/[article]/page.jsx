@@ -8,16 +8,13 @@ import { generateArticleSchema } from "@/lib/seo/generateArticleSchema";
 export async function generateMetadata({ params }) {
   const { article: articleId, slug } = await params;
   const article = await getArticleById(articleId);
-  
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "https://dsjournals.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://dsjournals.com";
 
-     const DEFAULT_PUBLISHER = process.env.NEXT_PUBLIC_PUBLISHER_NAME || "Dream Science";
+  const DEFAULT_PUBLISHER =
+    process.env.NEXT_PUBLIC_PUBLISHER_NAME || "Dream Science";
 
-       
-const publisher =
-  article?.publisher?.trim() || DEFAULT_PUBLISHER;
+  const publisher = article?.publisher?.trim() || DEFAULT_PUBLISHER;
 
   if (!article) {
     return {
@@ -28,7 +25,10 @@ const publisher =
 
   const cleanText = (html, len = 200) =>
     html
-      ? html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").slice(0, len)
+      ? html
+          .replace(/<[^>]*>/g, "")
+          .replace(/\s+/g, " ")
+          .slice(0, len)
       : "";
 
   const articleUrl = `${baseUrl}/${slug}/${article.article_id}`;
@@ -49,31 +49,29 @@ const publisher =
     )}/${String(d.getDate()).padStart(2, "0")}`;
   };
 
-const parseList = (v) => {
-  if (!v) return [];
+  const parseList = (v) => {
+    if (!v) return [];
 
-  try {
-    const arr = Array.isArray(v)
-      ? v
-      : Array.isArray(JSON.parse(v))
-      ? JSON.parse(v)
-      : String(v).split(/[,;]\s*/);
+    try {
+      const arr = Array.isArray(v)
+        ? v
+        : Array.isArray(JSON.parse(v))
+        ? JSON.parse(v)
+        : String(v).split(/[,;]\s*/);
 
-    return [...new Set(
-      arr
-        .map((s) => String(s).trim())
-        .filter(Boolean)
-    )];
-  } catch {
-    return [...new Set(
-      String(v)
-        .split(/[,;]\s*/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-    )];
-  }
-};
-const authors = parseList(article.authors);
+      return [...new Set(arr.map((s) => String(s).trim()).filter(Boolean))];
+    } catch {
+      return [
+        ...new Set(
+          String(v)
+            .split(/[,;]\s*/)
+            .map((s) => s.trim())
+            .filter(Boolean)
+        ),
+      ];
+    }
+  };
+  const authors = parseList(article.authors);
 
   return {
     title: article.article_title,
@@ -89,9 +87,7 @@ const authors = parseList(article.authors);
       description: cleanText(article.abstract),
       url: articleUrl,
       type: "article",
-      images: [
-        { url: coverImage, width: 1200, height: 630 },
-      ],
+      images: [{ url: coverImage, width: 1200, height: 630 }],
     },
 
     twitter: {
@@ -106,7 +102,7 @@ const authors = parseList(article.authors);
       citation_title: article.article_title,
       citation_publisher: publisher, // ✅ DEFAULTED
       citation_journal_title: article.journal_name,
-      citation_author:  authors,
+      citation_author: authors,
       citation_volume: article.volume_number,
       citation_issue: article.issue_number,
       citation_firstpage: article.page_from,
@@ -133,7 +129,6 @@ export async function generateStaticParams() {
 export default async function Page({ params }) {
   const { article: articleId, slug } = await params;
   const article = await getArticleById(articleId);
-
 
   if (!article) {
     return (
@@ -163,7 +158,7 @@ export default async function Page({ params }) {
     }
   };
   const authors = parseList(article.authors);
-   const schema = generateArticleSchema({
+  const schema = generateArticleSchema({
     article,
     authors,
     articleUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/${slug}/${article.article_id}`,
@@ -319,7 +314,7 @@ export default async function Page({ params }) {
           />
         </div>
       )}
- {/* ✅ JSON-LD */}
+      {/* ✅ JSON-LD */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
