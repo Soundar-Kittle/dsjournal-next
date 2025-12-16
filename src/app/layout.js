@@ -1,5 +1,4 @@
 import { Geist, Geist_Mono, Poppins, Roboto } from "next/font/google";
-import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { getSettings } from "@/utils/getSettings";
@@ -61,14 +60,12 @@ export async function generateMetadata() {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      {/* <GoogleTagManager gtmId="GTM-TC3323V4" /> */}
       <head />
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} ${roboto.variable} antialiased`}
       >
         <Providers>{children}</Providers>
       </body>
-      {/* <GoogleAnalytics gaId="G-X1GJ4EE6YR" /> */}
     </html>
   );
 }

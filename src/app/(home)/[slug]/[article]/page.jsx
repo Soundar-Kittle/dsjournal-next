@@ -1,20 +1,8 @@
+import { createDbConnection } from "@/lib/db";
 import { getArticleById } from "@/utils/article";
 import moment from "moment";
 import Link from "next/link";
 import { BsDownload } from "react-icons/bs";
-
-const cleanAbstract = (html, maxLength = 150) => {
-  if (!html) return "";
-
-  const text = html
-    .replace(/<[^>]*>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return text.length > maxLength
-    ? text.slice(0, maxLength).trim() + "..."
-    : text;
-};
 
 export async function generateMetadata({ params }) {
   const { article: articleId, slug } = await params;
@@ -71,6 +59,18 @@ export async function generateMetadata({ params }) {
   const coverImage = article.cover_image?.startsWith("http")
     ? article.cover_image
     : `${baseUrl}/${article.cover_image || "default-cover.webp"}`;
+  const cleanAbstract = (html, maxLength = 150) => {
+    if (!html) return "";
+
+    const text = html
+      .replace(/<[^>]*>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return text.length > maxLength
+      ? text.slice(0, maxLength).trim() + "..."
+      : text;
+  };
 
   const shortAbstract = cleanAbstract(article.abstract, 200);
 
@@ -113,7 +113,7 @@ export async function generateMetadata({ params }) {
       citation_online_date: formatScholarDate(article.published),
       citation_doi: article.doi,
       citation_issn: article.issn_online,
-      citation_abstract: article.abstract,
+      citation_abstract: shortAbstract,
       citation_pdf_url: pdfUrl,
       citation_language: article.language,
       "og:image:type": "image/webp",
@@ -122,8 +122,13 @@ export async function generateMetadata({ params }) {
   };
 }
 
-
-
+export async function generateStaticParams() {
+  const conn = await createDbConnection();
+  const [rows] = await conn.query(
+    "SELECT article_id FROM articles WHERE article_status = 'published'"
+  );
+  return rows.map((row) => ({ article: row.article_id }));
+}
 
 export default async function Page({ params }) {
   const { article: articleId } = await params;
@@ -275,9 +280,9 @@ export default async function Page({ params }) {
             dangerouslySetInnerHTML={{ __html: article.abstract }}
           /> */}
           <div
-  className="article-content"
-  dangerouslySetInnerHTML={{ __html: article.abstract }}
-/>
+            className="article-content"
+            dangerouslySetInnerHTML={{ __html: article.abstract }}
+          />
         </div>
       )}
 
@@ -290,17 +295,16 @@ export default async function Page({ params }) {
       )}
 
       {/* References */}
-{references && (
-  <div>
-    <h2 className="text-lg font-semibold">References</h2>
+      {references && (
+        <div>
+          <h2 className="text-lg font-semibold">References</h2>
 
-   <div
-  className="references-content whitespace-normal break-words space-y-1 leading-relaxed"
-  dangerouslySetInnerHTML={{ __html: references }}
-/>
-
-  </div>
-)}
+          <div
+            className="references-content whitespace-normal break-words space-y-1 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: references }}
+          />
+        </div>
+      )}
     </div>
   );
 }
