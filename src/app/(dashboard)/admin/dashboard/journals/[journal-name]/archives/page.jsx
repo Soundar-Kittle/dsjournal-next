@@ -170,26 +170,26 @@ export default function Page() {
     fetchJournals();
   }, [jid]);
 
-const handleBulkAction = async () => {
-  console.log("🔵 Selected bulkAction =", bulkAction);
+  const handleBulkAction = async () => {
+    console.log("🔵 Selected bulkAction =", bulkAction);
 
-  const rows = table.getSelectedRowModel().flatRows;
-  const ids = rows.map(r => r.original.article_id);
+    const rows = table.getSelectedRowModel().flatRows;
+    const ids = rows.map((r) => r.original.article_id);
 
-  const statusValue = bulkAction; // 🔥 EXACT enum, no conversion
-  console.log("🟢 Final status sent =", statusValue);
+    const statusValue = bulkAction; // 🔥 EXACT enum, no conversion
+    console.log("🟢 Final status sent =", statusValue);
 
-  const res = await fetch("/api/articles/bulk-status", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ids, status: statusValue }),
-  });
+    const res = await fetch("/api/articles/bulk-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, status: statusValue }),
+    });
 
-  const json = await res.json();
-  console.log("🟣 Response:", json);
+    const json = await res.json();
+    console.log("🟣 Response:", json);
 
-  queryClient.invalidateQueries(["articles", jid]);
-};
+    queryClient.invalidateQueries(["articles", jid]);
+  };
   // -------------------------------------------------------------
   // Helper functions
   // -------------------------------------------------------------
@@ -251,23 +251,23 @@ const handleBulkAction = async () => {
         cell: (info) => info.getValue().join(", "),
       },
       {
-  header: "Status",
-  accessorKey: "article_status",
-  cell: ({ row }) => {
-    const v = row.original.article_status;
-    return (
-      <span
-        className={
-          v === "published"
-            ? "text-green-600 font-semibold"
-            : "text-red-600 font-semibold"
-        }
-      >
-        {v}
-      </span>
-    );
-  },
-},
+        header: "Status",
+        accessorKey: "article_status",
+        cell: ({ row }) => {
+          const v = row.original.article_status;
+          return (
+            <span
+              className={
+                v === "published"
+                  ? "text-green-600 font-semibold"
+                  : "text-red-600 font-semibold"
+              }
+            >
+              {v}
+            </span>
+          );
+        },
+      },
       {
         header: "Volume",
         accessorKey: "volume",
@@ -313,7 +313,7 @@ const handleBulkAction = async () => {
             <div className="relative article-menu">
               <button
                 onClick={(e) => toggleMenu(row.id, e)}
-                className="p-1 rounded hover:bg-gray-100"
+                className="cursor-pointer p-1 rounded hover:bg-gray-100"
               >
                 <MoreVertical size={16} />
               </button>
@@ -321,24 +321,24 @@ const handleBulkAction = async () => {
               {openMenuId === row.id && (
                 <div
                   className={`absolute right-0 ${
-                    menuPosition === "up" ? "bottom-full mb-2" : "mt-2"
+                    menuPosition === "up" ? "bottom-full" : "mt-2"
                   } w-36 bg-white border rounded-md shadow-lg z-50`}
                 >
                   <button
                     onClick={() => setViewArticle(row.original)}
-                    className="block w-full text-left px-3 py-1.5 hover:bg-gray-100"
+                    className="cursor-pointer block w-full text-left px-3 py-1 hover:bg-gray-100"
                   >
                     View
                   </button>
                   <button
                     onClick={handleEdit}
-                    className="block w-full text-left px-3 py-1.5 hover:bg-gray-100 text-blue-600"
+                    className="cursor-pointer block w-full text-left px-3 py-1 hover:bg-gray-100 text-blue-600"
                   >
                     Edit
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="block w-full text-left px-3 py-1.5 text-red-600 hover:bg-gray-100"
+                    className="cursor-pointer block w-full text-left px-3 py-1 text-red-600 hover:bg-gray-100"
                   >
                     Delete
                   </button>
@@ -492,7 +492,7 @@ const handleBulkAction = async () => {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg shadow-sm relative">
+      <div className="overflow-x-auto border rounded-lg shadow-sm relative">
         <table className="w-full border-collapse text-sm">
           <thead className="bg-gray-100">
             {table.getHeaderGroups().map((hg) => (
@@ -500,7 +500,7 @@ const handleBulkAction = async () => {
                 {hg.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="p-2 text-left border-b font-medium"
+                    className="p-2 text-left border-b font-medium py-5"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -538,7 +538,7 @@ const handleBulkAction = async () => {
                     className="border-b hover:bg-gray-50 transition"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="p-2">
+                      <td key={cell.id} className="p-2 py-5">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
