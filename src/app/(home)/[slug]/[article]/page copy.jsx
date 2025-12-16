@@ -3,145 +3,27 @@ import { getArticleById } from "@/utils/article";
 import moment from "moment";
 import Link from "next/link";
 import { BsDownload } from "react-icons/bs";
-import { generateArticleSchema } from "@/lib/seo/generateArticleSchema";
 
 export async function generateMetadata({ params }) {
   const { article: articleId, slug } = await params;
   const article = await getArticleById(articleId);
-  
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "https://dsjournals.com";
-
-     const DEFAULT_PUBLISHER = process.env.NEXT_PUBLIC_PUBLISHER_NAME || "Dream Science";
-
-       
-const publisher =
-  article?.publisher?.trim() || DEFAULT_PUBLISHER;
-
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!article) {
     return {
       title: "Article Not Found",
-      robots: "noindex, nofollow",
+      description: "The requested article could not be found.",
     };
   }
-
-  const cleanText = (html, len = 200) =>
-    html
-      ? html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").slice(0, len)
-      : "";
-
-  const articleUrl = `${baseUrl}/${slug}/${article.article_id}`;
-  const coverImage = article.cover_image
-    ? `${baseUrl}/${article.cover_image.replace(/^\/+/, "")}`
-    : `${baseUrl}/default-cover.webp`;
-
-  const pdfUrl = article.pdf_path
-    ? `${baseUrl}/${article.pdf_path.replace(/^\/+/, "")}`
-    : "";
 
   const formatScholarDate = (date) => {
     if (!date) return "";
     const d = new Date(date);
-    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}/${String(d.getDate()).padStart(2, "0")}`;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}/${month}/${day}`;
   };
-
-const parseList = (v) => {
-  if (!v) return [];
-
-  try {
-    const arr = Array.isArray(v)
-      ? v
-      : Array.isArray(JSON.parse(v))
-      ? JSON.parse(v)
-      : String(v).split(/[,;]\s*/);
-
-    return [...new Set(
-      arr
-        .map((s) => String(s).trim())
-        .filter(Boolean)
-    )];
-  } catch {
-    return [...new Set(
-      String(v)
-        .split(/[,;]\s*/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-    )];
-  }
-};
-const authors = parseList(article.authors);
-
-  return {
-    title: article.article_title,
-    description: cleanText(article.abstract),
-    robots: "index, follow",
-
-    alternates: {
-      canonical: articleUrl,
-    },
-
-    openGraph: {
-      title: article.article_title,
-      description: cleanText(article.abstract),
-      url: articleUrl,
-      type: "article",
-      images: [
-        { url: coverImage, width: 1200, height: 630 },
-      ],
-    },
-
-    twitter: {
-      card: "summary_large_image",
-      title: article.article_title,
-      description: cleanText(article.abstract),
-      images: [coverImage],
-    },
-
-    // ✅ Google Scholar
-    other: {
-      citation_title: article.article_title,
-      citation_publisher: publisher, // ✅ DEFAULTED
-      citation_journal_title: article.journal_name,
-      citation_author:  authors,
-      citation_volume: article.volume_number,
-      citation_issue: article.issue_number,
-      citation_firstpage: article.page_from,
-      citation_lastpage: article.page_to,
-      citation_year: article.year,
-      citation_online_date: formatScholarDate(article.published),
-      citation_publication_date: formatScholarDate(article.published),
-      citation_doi: article.doi,
-      citation_issn: article.issn_online,
-      citation_pdf_url: pdfUrl,
-      citation_language: article.language || "en",
-    },
-  };
-}
-
-export async function generateStaticParams() {
-  const conn = await createDbConnection();
-  const [rows] = await conn.query(
-    "SELECT article_id FROM articles WHERE article_status = 'published'"
-  );
-  return rows.map((row) => ({ article: row.article_id }));
-}
-
-export default async function Page({ params }) {
-  const { article: articleId, slug } = await params;
-  const article = await getArticleById(articleId);
-
-
-  if (!article) {
-    return (
-      <div className="max-w-3xl mx-auto p-6">
-        <p className="text-gray-600">Article not found.</p>
-      </div>
-    );
-  }
 
   // 👤 Normalize authors/keywords (LONGTEXT, JSON, or CSV)
   const parseList = (v) => {
@@ -162,21 +44,125 @@ export default async function Page({ params }) {
         .filter(Boolean);
     }
   };
+
   const authors = parseList(article.authors);
-   const schema = generateArticleSchema({
-    article,
-    authors,
-    articleUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/${slug}/${article.article_id}`,
-    pdfUrl: article.pdf_path
-      ? `${process.env.NEXT_PUBLIC_BASE_URL}/${article.pdf_path}`
-      : "",
-    journal: {
-      journal_name: article.journal_name,
-      issn_online: article.issn_online,
-      issn_print: article.issn_print,
-      publisher: article.publisher,
+  const keywords = parseList(article.keywords);
+
+  const pdfUrl = article.pdf_path
+    ? `${baseUrl.replace(/\/$/, "")}/${article.pdf_path.replace(
+        /^(\.\.\/)+/,
+        ""
+      )}`
+    : "";
+
+  const articleUrl = `${baseUrl}/${slug}/${article.article_id}`;
+  const coverImage = article.cover_image?.startsWith("http")
+    ? article.cover_image
+    : `${baseUrl}/${article.cover_image || "default-cover.webp"}`;
+  const cleanAbstract = (html, maxLength = 150) => {
+    if (!html) return "";
+
+    const text = html
+      .replace(/<[^>]*>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return text.length > maxLength
+      ? text.slice(0, maxLength).trim() + "..."
+      : text;
+  };
+
+  const shortAbstract = cleanAbstract(article.abstract, 200);
+
+  return {
+    title: article.article_title,
+    description: shortAbstract,
+    keywords,
+    openGraph: {
+      url: articleUrl,
+      siteName: "dsjournals",
+      title: article.article_title,
+      description: shortAbstract,
+      type: "website",
+      images: [{ url: coverImage, type: "image/webp" }],
     },
-  });
+
+    twitter: {
+      card: "summary_large_image",
+      site: "website",
+      title: article.article_title,
+      description: shortAbstract,
+      images: [coverImage],
+      url: "https://twitter.com/DreamScience4",
+    },
+
+    alternates: {
+      canonical: articleUrl,
+    },
+
+    other: {
+      Author: authors.join(", "),
+      rights: `Copyright ${article.publisher}`,
+      citation_title: article.article_title,
+      citation_journal_title: article.journal_name,
+      citation_publisher: article.publisher,
+      citation_author: authors.join(", "),
+      citation_volume: article.volume_number,
+      citation_year: article.year,
+      citation_publication_date: formatScholarDate(article.published),
+      citation_online_date: formatScholarDate(article.published),
+      citation_doi: article.doi,
+      citation_issn: article.issn_online,
+      citation_abstract: shortAbstract,
+      citation_pdf_url: pdfUrl,
+      citation_language: article.language,
+      "og:image:type": "image/webp",
+      robots: "index, follow",
+    },
+  };
+}
+
+export async function generateStaticParams() {
+  const conn = await createDbConnection();
+  const [rows] = await conn.query(
+    "SELECT article_id FROM articles WHERE article_status = 'published'"
+  );
+  return rows.map((row) => ({ article: row.article_id }));
+}
+
+export default async function Page({ params }) {
+  const { article: articleId } = await params;
+  const article = await getArticleById(articleId);
+
+  if (!article) {
+    return (
+      <div className="max-w-3xl mx-auto p-6">
+        <p className="text-gray-600">Article not found.</p>
+      </div>
+    );
+  }
+
+  // 👤 Normalize authors, keywords, references
+  const parseList = (v) => {
+    if (!v) return [];
+    try {
+      if (Array.isArray(v)) return v;
+      const parsed = JSON.parse(v);
+      return Array.isArray(parsed)
+        ? parsed
+        : String(v)
+            .split(/[,;]\s*/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+    } catch {
+      return String(v)
+        .split(/[,;]\s*/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  };
+
+  const authors = parseList(article.authors);
   const keywords = parseList(article.keywords);
   const references = article.references || "";
 
@@ -319,13 +305,6 @@ export default async function Page({ params }) {
           />
         </div>
       )}
- {/* ✅ JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(schema),
-        }}
-      />
     </div>
   );
 }
