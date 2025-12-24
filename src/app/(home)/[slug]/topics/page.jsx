@@ -28,7 +28,7 @@ const page = async ({ params }) => {
 
   return (
     <div
-      className="[&_ul]:list-disc [&_ol]:list-decimal"
+      className="[&_ul]:list-disc [&_ol]:list-decimal text-left"
       dangerouslySetInnerHTML={{ __html: content.content }}
     />
   );
