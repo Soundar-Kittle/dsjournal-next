@@ -137,12 +137,27 @@ export default function Page() {
   const toJsonArray = (value) => {
     if (!value) return "[]";
 
-    return JSON.stringify(
-      value
-        .split(",") // split by comma
-        .map((v) => v.trim()) // remove spaces
-        .filter((v) => v.length > 0) // remove empty items
-    );
+    if (Array.isArray(value)) {
+      return JSON.stringify(value);
+    }
+
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) return value; // It was already a JSON array string
+      } catch (e) {
+        // Not a JSON string, treat as comma-separated
+      }
+
+      return JSON.stringify(
+        value
+          .split(",") // split by comma
+          .map((v) => v.trim()) // remove spaces
+          .filter((v) => v.length > 0) // remove empty items
+      );
+    }
+
+    return "[]"; // Fallback
   };
 
   /** Issues on volume change */
@@ -347,25 +362,25 @@ export default function Page() {
       // if (pdfFile) fd.append("pdf", pdfFile);
 
       // Build FormData
-const fd = new FormData();
+      const fd = new FormData();
 
-Object.entries(merged).forEach(([k, v]) => {
-  if (k === "id" && !merged.id) return;
-  if (k === "remove_pdf") return;            // avoid double append
-  fd.append(k, v ?? "");
-});
+      Object.entries(merged).forEach(([k, v]) => {
+        if (k === "id" && !merged.id) return;
+        if (k === "remove_pdf") return; // avoid double append
+        fd.append(k, v ?? "");
+      });
 
-// 🔥 Make sure remove flag is sent
-if (merged.remove_pdf === "1") {
-  fd.append("remove_pdf", "1");
-}
+      // 🔥 Make sure remove flag is sent
+      if (merged.remove_pdf === "1") {
+        fd.append("remove_pdf", "1");
+      }
 
-// Only upload new file if selected
-if (pdfFile) {
-  fd.append("pdf", pdfFile);
-}
+      // Only upload new file if selected
+      if (pdfFile) {
+        fd.append("pdf", pdfFile);
+      }
 
-
+      
       const method = merged.id ? "PUT" : "POST";
       const res = await fetch("/api/articles", { method, body: fd });
       const data = await res.json();

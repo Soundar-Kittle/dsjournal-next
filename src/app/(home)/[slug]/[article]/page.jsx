@@ -3,6 +3,7 @@ import { getArticleById } from "@/utils/article";
 import moment from "moment";
 import Link from "next/link";
 import { BsDownload } from "react-icons/bs";
+import { FileSearch } from "lucide-react";
 import { generateArticleSchema } from "@/lib/seo/generateArticleSchema";
 
 export async function generateMetadata({ params }) {
@@ -132,8 +133,17 @@ export default async function Page({ params }) {
 
   if (!article) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
-        <p className="text-gray-600">Article not found.</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+        <div className="bg-gray-100 p-5 rounded-full mb-6">
+          <FileSearch className="w-10 h-10 text-gray-400" strokeWidth={1.5} />
+        </div>
+        <h1 className="text-xl md:text-2xl font-semibold text-primary mb-3">
+          Article Not Found
+        </h1>
+        <p className="text-gray-500 max-w-md mb-8 text-sm"> 
+          We couldn't find the article you're looking for. It may have been
+          removed, or the link might be incorrect.
+        </p>
       </div>
     );
   }

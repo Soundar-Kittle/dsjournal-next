@@ -263,9 +263,6 @@ export async function PUT(req) {
     const newFile = formData.get("pdf");
     const removeFlag = formData.get("remove_pdf") === "1";
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "articles");
-    await fs.mkdir(uploadDir, { recursive: true });
-
     // Helper → check if file exists
     async function fileExists(file) {
       try {
@@ -280,19 +277,72 @@ export async function PUT(req) {
     // RULE 1: New file uploaded → REPLACE old
     // --------------------------------------
     if (newFile && newFile.size > 0) {
-      const fileName = newFile.name;
-      const newFullPath = path.join(uploadDir, fileName);
+      const vid = updates.volume_id || volume_id;
+      const iid = updates.issue_id || issue_id;
+      const aid = updates.article_id || article_id;
 
-      // Delete old PDF if exists
+      // Need detailed info for folder path
+      const [[vol]] = await conn.query(
+        "SELECT volume_number FROM volumes WHERE id = ?",
+        [vid]
+      );
+      const [[iss]] = await conn.query(
+        "SELECT issue_number FROM issues WHERE id = ?",
+        [iid]
+      );
+
+      if (!vol || !iss) {
+        throw new Error("Invalid volume/issue ID for file placement.");
+      }
+
+      // Prefix from article ID (e.g. DS-V1...) -> "DS"
+      // or "article" fallback
+      const prefix = String(aid).split("-")[0] || "article";
+      const volume_number = vol.volume_number;
+      const issue_number = iss.issue_number;
+
+      const destDir = path.join(
+        process.cwd(),
+        "public",
+        "uploads",
+        prefix,
+        `volume-${volume_number}`,
+        `issue-${issue_number}`
+      );
+      await fs.mkdir(destDir, { recursive: true });
+
+      const destName = `${aid}.pdf`;
+      const newFullPath = path.join(destDir, destName);
+
+      // Delete old PDF if exists (and if different path, or same path overwrite)
       if (oldPdfPath && (await fileExists(oldPdfPath))) {
-        await fs.unlink(oldPdfPath);
+        // careful not to delete if it's the SAME file we are overwriting (fs.writeFile handles truncation)
+        // but if path changed, delete old
+        if (oldPdfPath !== newFullPath) {
+          await fs.unlink(oldPdfPath);
+        }
+      }
+
+      // ⚠️ FORCE DELETE TARGET if exists (to ensure clean write)
+      if (await fileExists(newFullPath)) {
+        try {
+          await fs.unlink(newFullPath);
+        } catch {}
       }
 
       // Save new PDF
       const buffer = Buffer.from(await newFile.arrayBuffer());
       await fs.writeFile(newFullPath, buffer);
 
-      updates.pdf_path = `uploads/articles/${fileName}`;
+      // POSIX path for DB
+      const relativePath = path.posix.join(
+        "uploads",
+        prefix,
+        `volume-${volume_number}`,
+        `issue-${issue_number}`,
+        destName
+      );
+      updates.pdf_path = relativePath;
     }
 
     // --------------------------------------
@@ -594,8 +644,10 @@ export async function DELETE(req) {
     // Delete PDF if it exists
     if (pdfPath) {
       const fullPath = path.join(process.cwd(), "public", pdfPath);
-      if (fs.existsSync(fullPath)) {
-        await fs.promises.unlink(fullPath);
+      try {
+        await fs.unlink(fullPath);
+      } catch (err) {
+        // ignore error if file missing
       }
     }
 
