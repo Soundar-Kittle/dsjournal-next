@@ -175,12 +175,25 @@ export async function POST(req) {
     const [result] = await conn.query(sql, Object.values(payload));
     revalidateTag("articles", "max");
     revalidateTag("volume-issue", "max");
-    revalidatePath(`/${journalSlug}/archives`, "layout");
+    revalidateTag("journal_month_groups", "max");
+    // --- Fetch volume & issue numbers for revalidation
+    const [[volRow]] = await conn.query(
+      "SELECT volume_number FROM volumes WHERE id = ?",
+      [volume_id]
+    );
+    const [[issRow]] = await conn.query(
+      "SELECT issue_number FROM issues WHERE id = ?",
+      [issue_id]
+    );
+    const volNum = volRow?.volume_number;
+    const issNum = issRow?.issue_number;
+
+    revalidatePath(`/${journalSlug}/archives`);
     revalidatePath(`/${journalSlug}/${article_id}`);
     revalidatePath(`/${journalSlug}/current-issue`);
-    revalidatePath(
-      `/${journalSlug}/archives/volume${volume_id}/issue${issue_id}`
-    );
+    if (volNum && issNum) {
+      revalidatePath(`/${journalSlug}/archives/volume${volNum}/issue${issNum}`);
+    }
 
     return NextResponse.json({
       success: true,
@@ -197,116 +210,6 @@ export async function POST(req) {
     await conn.end();
   }
 }
-
-// export async function PUT(req) {
-//   const conn = await createDbConnection();
-//   try {
-//     const formData = await req.formData();
-//     const id = formData.get("id");
-//     const journal_id = Number(formData.get("journal_id"));
-//     const volume_id = Number(formData.get("volume_id"));
-//     const issue_id = Number(formData.get("issue_id"));
-//     const article_id = Number(formData.get("article_id"));
-
-//     if (!id)
-//       return NextResponse.json(
-//         { success: false, message: "ID required" },
-//         { status: 400 }
-//       );
-
-//     let updates = {};
-
-//     for (const [key, value] of formData.entries()) {
-//       if (key === "pdf" || key === "remove_pdf") continue;
-
-//       if (key === "authors") {
-//         updates.authors = JSON.stringify(parseToArray(value)); // FIXED
-//       } else if (key === "keywords") {
-//         updates.keywords = JSON.stringify(parseToArray(value)); // FIXED
-//       } else {
-//         updates[key] = value;
-//       }
-//     }
-
-//     // ------------------------------
-//     // PDF replacement logic (unchanged)
-//     // ------------------------------
-//     const [rows] = await conn.query(
-//       "SELECT pdf_path FROM articles WHERE id = ?",
-//       [id]
-//     );
-
-//     const oldPath = rows[0]?.pdf_path
-//       ? path.join(process.cwd(), "public", rows[0].pdf_path.replace(/^\/+/, ""))
-//       : null;
-
-//     const newFile = formData.get("pdf");
-//     const uploadDir = path.join(process.cwd(), "public", "uploads", "articles");
-//     await fs.promises.mkdir(uploadDir, { recursive: true });
-
-//     if (newFile && newFile.size > 0) {
-//       const newFullPath = path.join(uploadDir, newFile.name);
-//       if (oldPath && fs.existsSync(oldPath)) await fs.promises.unlink(oldPath);
-//       const buffer = Buffer.from(await newFile.arrayBuffer());
-//       await fs.writeFile(newFullPath, buffer);
-//       // await writeFile(newFullPath, buffer);
-//       // updates.pdf_path = `/uploads/articles/${newFile.name}`;
-//       updates.pdf_path = `uploads/articles/${newFile.name}`;
-//     }
-
-//     const removeFlag = formData.get("remove_pdf");
-//     if (removeFlag === "1" && oldPath && fs.existsSync(oldPath)) {
-//       await fs.promises.unlink(oldPath);
-//       updates.pdf_path = "";
-//     }
-
-//     // ------------------------------
-//     // Build dynamic update query
-//     // ------------------------------
-//     // const fields = Object.keys(updates)
-//     //   .map((k) => `${k === "references" ? "`references`" : k} = ?`)
-//     //   .join(", ");
-// // ------------------------------
-// // Build dynamic update query
-// // ------------------------------
-// const fields = Object.keys(updates)
-//   .map((k) => (k === "references" ? "`references` = ?" : `${k} = ?`))
-//   .join(", ");
-
-// const values = Object.values(updates);
-
-// await conn.query(
-//   `UPDATE articles SET ${fields}, updated_at = NOW() WHERE id = ?`,
-//   [...values, id]
-// );
-
-//     let slug = null;
-//     if (journal_id) {
-//       const slugRes = await getJournalSlug(conn, journal_id);
-//       slug = slugRes.slug;
-//     }
-
-//     revalidateTag("articles");
-//     revalidateTag("volume-issue");
-//     revalidatePath(`/${slug}/archives`, "layout");
-//     revalidatePath(`/${slug}/${article_id}`);
-//     revalidatePath(`/${slug}/current-issue`);
-//     revalidatePath(`/${slug}/archives/volume${volume_id}/issue${issue_id}`);
-
-//     return NextResponse.json({
-//       success: true,
-//       message: "Article updated successfully.",
-//     });
-//   } catch (err) {
-//     console.error("PUT error:", err);
-//     return NextResponse.json(
-//       { success: false, message: err.message },
-//       { status: 500 }
-//     );
-//   } finally {
-//     await conn.end();
-//   }
-// }
 
 export async function PUT(req) {
   const conn = await createDbConnection();
@@ -348,9 +251,10 @@ export async function PUT(req) {
     // FETCH OLD PDF PATH
     // --------------------------------------
     const [[oldRow]] = await conn.query(
-      "SELECT pdf_path FROM articles WHERE id = ? LIMIT 1",
+      "SELECT pdf_path ,article_id FROM articles WHERE id = ? LIMIT 1",
       [id]
     );
+    const article_number = oldRow?.article_id;
 
     const oldPdfPath = oldRow?.pdf_path
       ? path.join(process.cwd(), "public", oldRow.pdf_path.replace(/^\/+/, ""))
@@ -431,14 +335,29 @@ export async function PUT(req) {
       slug = s;
     }
 
-    revalidateTag("articles");
-    revalidateTag("volume-issue");
+    revalidateTag("articles", "max");
+    revalidateTag("volume-issue", "max");
+    revalidateTag("journal_month_groups", "max");
 
     if (slug) {
-      revalidatePath(`/${slug}/archives`, "layout");
-      revalidatePath(`/${slug}/${article_id}`);
+      // --- Fetch volume & issue numbers for revalidation
+      const [[volRow]] = await conn.query(
+        "SELECT volume_number FROM volumes WHERE id = ?",
+        [volume_id]
+      );
+      const [[issRow]] = await conn.query(
+        "SELECT issue_number FROM issues WHERE id = ?",
+        [issue_id]
+      );
+      const volNum = volRow?.volume_number;
+      const issNum = issRow?.issue_number;
+
+      revalidatePath(`/${slug}/archives`);
+      revalidatePath(`/${slug}/${article_number}`);
       revalidatePath(`/${slug}/current-issue`);
-      revalidatePath(`/${slug}/archives/volume${volume_id}/issue${issue_id}`);
+      if (volNum && issNum) {
+        revalidatePath(`/${slug}/archives/volume${volNum}/issue${issNum}`);
+      }
     }
 
     return NextResponse.json({
@@ -455,7 +374,6 @@ export async function PUT(req) {
     await conn.end();
   }
 }
-
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -657,7 +575,7 @@ export async function DELETE(req) {
   try {
     // Fetch PDF path if any
     const [rows] = await conn.query(
-      "SELECT pdf_path, journal_id, article_id FROM articles WHERE id = ? LIMIT 1",
+      "SELECT pdf_path, journal_id, article_id, volume_id, issue_id FROM articles WHERE id = ? LIMIT 1",
       [id]
     );
 
@@ -667,6 +585,8 @@ export async function DELETE(req) {
 
     const journal_id = rows?.[0]?.journal_id;
     const article_id = rows?.[0]?.article_id;
+    const volume_id = rows?.[0]?.volume_id;
+    const issue_id = rows?.[0]?.issue_id;
 
     // Delete DB row
     await conn.query("DELETE FROM articles WHERE id = ?", [id]);
@@ -685,11 +605,31 @@ export async function DELETE(req) {
       slug = slugRes.slug;
     }
 
-    revalidateTag("articles");
-    revalidateTag("volume-issue");
-    revalidatePath(`/${slug}/archives`, "layout");
+    // --- Fetch volume & issue numbers for revalidation
+    let volNum = null;
+    let issNum = null;
+    if (volume_id && issue_id) {
+      const [[volRow]] = await conn.query(
+        "SELECT volume_number FROM volumes WHERE id = ?",
+        [volume_id]
+      );
+      const [[issRow]] = await conn.query(
+        "SELECT issue_number FROM issues WHERE id = ?",
+        [issue_id]
+      );
+      volNum = volRow?.volume_number;
+      issNum = issRow?.issue_number;
+    }
+
+    revalidateTag("articles", "max");
+    revalidateTag("volume-issue", "max");
+    revalidateTag("journal_month_groups", "max");
+    revalidatePath(`/${slug}/archives`);
     revalidatePath(`/${slug}/${article_id}`);
     revalidatePath(`/${slug}/current-issue`);
+    if (volNum && issNum) {
+      revalidatePath(`/${slug}/archives/volume${volNum}/issue${issNum}`);
+    }
     return NextResponse.json({
       success: true,
       message: "Article deleted successfully",

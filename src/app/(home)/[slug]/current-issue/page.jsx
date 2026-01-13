@@ -25,7 +25,7 @@ const Page = async ({ params }) => {
   );
 
   if (!articles || articles.length === 0) {
-    return <p>No cuurent issue articles found.</p>;
+    return <p>No current issue articles found.</p>;
   }
 
   return (
