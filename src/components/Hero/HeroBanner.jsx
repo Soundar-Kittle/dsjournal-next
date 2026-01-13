@@ -56,10 +56,10 @@ const HeroBanner = ({ data }) => {
 
             return (
               <CarouselItem key={i} className="w-full h-full">
-                <div className="relative h-full w-full py-15">
+                <div className="relative h-[350px] w-full py-15">
                   <Image
                     src={`/${imageSrc}`}
-                    alt={slide.title}
+                    alt={slide?.title || "banner"}
                     fill
                     className="object-cover"
                     priority={i === 0}
@@ -77,7 +77,7 @@ const HeroBanner = ({ data }) => {
                           className={`max-w-3xl text-white space-y-5 ${marginSide}`}
                         >
                           <h1 className="text-3xl md:text-5xl font-semibold leading-tight text-white">
-                            {slide.title}
+                            {slide?.title}
                           </h1>
                           {+visibility.show_description === 1 && (
                             <p className="text-base">{slide.description}</p>
