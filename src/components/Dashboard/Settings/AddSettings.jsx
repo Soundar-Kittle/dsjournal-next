@@ -65,6 +65,8 @@ const schema = yup
         url: yup.string().url("Invalid URL format").required("URL is required"),
       })
     ),
+    google_analytics_id: yup.string().nullable(),
+    google_tag_manager_id: yup.string().nullable(),
   })
   .test("mail-required", null, function (value) {
     const { app_name, app_email, app_password } = value;
@@ -150,6 +152,8 @@ export default function AddSettings() {
       app_password: "",
       social_links: [],
       location: "",
+      google_analytics_id: "",
+      google_tag_manager_id: "",
     },
   });
 
@@ -214,6 +218,8 @@ export default function AddSettings() {
         ? settingsData.social_links
         : [],
       location: settingsData.location || "",
+      google_analytics_id: settingsData.google_analytics_id || "",
+      google_tag_manager_id: settingsData.google_tag_manager_id || "",
     });
 
     setLogoFile({ logo: settingsData.logo ? [settingsData.logo] : [] });
@@ -235,6 +241,14 @@ export default function AddSettings() {
     fd.append("phone_number", JSON.stringify(payload.phone_number));
     fd.append("social_links", JSON.stringify(payload.social_links));
     fd.append("folder", "settings");
+    fd.append(
+      "google_analytics_id",
+      payload?.google_analytics_id?.toUpperCase()
+    );
+    fd.append(
+      "google_tag_manager_id",
+      payload?.google_tag_manager_id?.toUpperCase()
+    );
 
     const safeAppend = (key, value) => {
       if (value && value !== "" && value !== null && value !== undefined) {
@@ -270,7 +284,9 @@ export default function AddSettings() {
                     ? "Default Settings"
                     : tab === "social"
                     ? "Social Links"
-                    : "Mail Details"}
+                    : tab === "mail"
+                    ? "Mail Details"
+                    : "Google Tags"}
                   {/* {tab} */}
                 </Button>
               </DropdownMenuTrigger>
@@ -284,6 +300,9 @@ export default function AddSettings() {
                 <DropdownMenuItem onClick={() => setTab("mail")}>
                   Mail Details
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTab("google_tags")}>
+                  Google Tags
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -292,6 +311,7 @@ export default function AddSettings() {
             <TabsTrigger value="default">Default Settings</TabsTrigger>
             <TabsTrigger value="social">Social Links</TabsTrigger>
             <TabsTrigger value="mail">Mail Details</TabsTrigger>
+            <TabsTrigger value="google_tags">Google Tags</TabsTrigger>
           </TabsList>
 
           {/* Default Settings Tab */}
@@ -747,6 +767,60 @@ export default function AddSettings() {
                 )}
               />
               <ErrorMessage error={errors.app_password} />
+            </div>
+          </TabsContent>
+
+          {/* Google Tags Tab */}
+          <TabsContent
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            value="google_tags"
+          >
+            <div>
+              <label
+                htmlFor="google_analytics_id"
+                className="text-sm font-bold mb-2 block"
+              > 
+                Google Analytics ID (G)
+              </label>
+              <Controller
+                name="google_analytics_id"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    id="google_analytics_id"
+                    placeholder="G-XXXXXXXXXX"
+                    className={`uppercase ${
+                      errors.google_analytics_id ? "border-red-500" : ""
+                    }`}
+                  />
+                )}
+              />
+              <ErrorMessage error={errors.google_analytics_id} />
+            </div>
+
+            <div>
+              <label
+                htmlFor="google_tag_manager_id"
+                className="text-sm font-bold mb-2 block"
+              >
+                Google Tag Manager ID (GTM)
+              </label>
+              <Controller
+                name="google_tag_manager_id"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    id="google_tag_manager_id"
+                    placeholder="GTM-XXXXXXX"
+                    className={`uppercase ${
+                      errors.google_tag_manager_id ? "border-red-500" : ""
+                    }`}
+                  />
+                )}
+              />
+              <ErrorMessage error={errors.google_tag_manager_id} />
             </div>
           </TabsContent>
         </Tabs>

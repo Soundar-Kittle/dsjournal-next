@@ -21,10 +21,11 @@ const PageHeader = ({
 
   if (matchedTitle) title = matchedTitle;
 
-  const slug = pathname.split("/").filter(Boolean).pop();
+  const segments = pathname.split("/").filter(Boolean);
+  const rootSlug = segments[0];
 
   // ✅ Default WHITE
-  const titleColor = JOURNAL_COLORS[slug] || "#fff";
+  const titleColor = JOURNAL_COLORS[rootSlug] || "#fff";
 
   const imageSrc = image ? "/" + image : "/images/hero-bgimg.jpg";
 

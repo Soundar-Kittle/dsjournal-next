@@ -43,9 +43,10 @@ export async function POST(req) {
         );
 
         if (existingSetting.length > 0) {
+          const settingId = existingSetting[0].id;
           await connection.query(
-            `UPDATE settings_admin SET settings_value = ? WHERE settings_name = ?`,
-            [stringValue, key]
+            `UPDATE settings_admin SET settings_value = ? WHERE id = ?`,
+            [stringValue, settingId]
           );
         } else {
           await connection.query(
@@ -63,9 +64,10 @@ export async function POST(req) {
       );
 
       if (existingSetting.length > 0) {
+        const settingId = existingSetting[0].id;
         await connection.query(
-          `UPDATE settings_admin SET settings_value = ? WHERE settings_name = ?`,
-          [filePath, key]
+          `UPDATE settings_admin SET settings_value = ? WHERE id = ?`,
+          [filePath, settingId]
         );
       } else {
         await connection.query(
