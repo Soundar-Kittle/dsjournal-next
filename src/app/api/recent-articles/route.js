@@ -8,6 +8,7 @@ export async function GET() {
         a.article_id,
         a.article_title,
         j.journal_name,
+        j.short_name,
         v.volume_number,
         i.issue_number,
         v.year
@@ -20,7 +21,15 @@ export async function GET() {
       LIMIT 6
     `);
 
-    return Response.json({ results: rows });
+    // Process short_name to remove "DS-" prefix and convert to lowercase
+    const processedRows = rows.map((row) => ({
+      ...row,
+      slug: row.short_name
+        ? row.short_name.replace(/^DS-/, "").toLowerCase()
+        : null,
+    }));
+
+    return Response.json({ results: processedRows });
   } catch (err) {
     console.error("❌ Recent Articles Error:", err);
     return Response.json({ results: [] }, { status: 500 });

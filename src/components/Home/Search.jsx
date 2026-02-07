@@ -336,7 +336,7 @@ const SearchPage = () => {
                 {recent.map((article) => (
                   <Link
                     key={article.article_id}
-                    href={`/article/${article.article_id}`}
+                    href={`/${article.slug}/${article.article_id}`}
                     className="border border-gray-200 rounded-xl p-4 bg-white hover:shadow-md transition group"
                   >
                     <h3 className="font-medium text-gray-800 mb-1 group-hover:text-primary line-clamp-2">
