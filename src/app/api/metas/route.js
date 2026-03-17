@@ -80,7 +80,7 @@ export async function POST(req) {
     );
 
     await connection.commit();
-    revalidateTag("metas");
+    revalidateTag("metas","max");
     revalidatePath(`/${reference_id}`);
     return Response.json(
       { message: "Meta added successfully", id: result.insertId },
@@ -525,7 +525,7 @@ const [attrRes] = await connection.query(
     }
 
     await connection.commit();
-    revalidateTag("metas");
+    revalidateTag("metas","max");
     revalidatePath(`/${reference_id}`);
     return Response.json(
       { message: "Meta updated successfully" },
@@ -599,7 +599,7 @@ export async function DELETE(req) {
     }
 
     await connection.commit();
-    revalidateTag("metas");
+    revalidateTag("metas","max");
     revalidatePath(`/${reference_id}`);
     return Response.json(
       { message: "Meta deleted successfully" },

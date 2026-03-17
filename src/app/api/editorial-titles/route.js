@@ -34,7 +34,7 @@ export async function POST(req) {
     [title, status]
   );
   await conn.end();
-  revalidateTag("editorial_board");
+  revalidateTag("editorial_board","max");
   return NextResponse.json({ success: true, message: "Title added" });
 }
 
@@ -79,7 +79,7 @@ export async function PATCH(req) {
   }
 
   await conn.end();
-  revalidateTag("editorial_board");
+  revalidateTag("editorial_board","max");
   return NextResponse.json({ success: true, message: "Title updated" });
 }
 
@@ -89,6 +89,6 @@ export async function DELETE(req) {
   const conn = await createDbConnection();
   await conn.query("DELETE FROM editorial_titles WHERE id = ?", [id]);
   await conn.end();
-  revalidateTag("editorial_board");
+  revalidateTag("editorial_board","max");
   return NextResponse.json({ success: true, message: "Title deleted" });
 }

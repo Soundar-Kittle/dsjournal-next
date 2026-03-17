@@ -136,7 +136,7 @@ export async function POST(req) {
       slug = slugRes.slug;
     }
 
-    revalidateTag("journal_month_groups");
+    revalidateTag("journal_month_groups","max");
     revalidatePath(`/${slug}/current-issue`);
     revalidatePath(`/${slug}/archives`);
 
@@ -186,7 +186,7 @@ export async function PUT(req) {
       slug = slugRes.slug;
     }
 
-    revalidateTag("journal_month_groups");
+    revalidateTag("journal_month_groups","max");
     revalidatePath(`/${slug}/current-issue`);
     revalidatePath(`/${slug}/archives`);
 
@@ -231,7 +231,7 @@ export async function DELETE(req) {
       slug = slugRes.slug;
     }
 
-    revalidateTag("journal_month_groups");
+    revalidateTag("journal_month_groups","max");
     revalidatePath(`/${slug}/current-issue`);
     revalidatePath(`/${slug}/archives`);
     return NextResponse.json({

@@ -34,7 +34,7 @@ export async function POST(req) {
     await conn.beginTransaction();
     await conn.query(sql);
     await conn.commit();
-    revalidateTag("journals");
+    revalidateTag("journals","max");
     revalidatePath("/journals");
     return NextResponse.json({ success: true });
   } catch (e) {

@@ -37,7 +37,7 @@ export async function POST(req) {
     );
 
     await connection.commit();
-    revalidateTag("banners");
+    revalidateTag("banners","max");
     revalidatePath("/");
     return Response.json(
       { message: "Banner added successfully", id: result.insertId },
@@ -249,7 +249,7 @@ export async function PATCH(req) {
     );
 
     await connection.commit();
-    revalidateTag("banners");
+    revalidateTag("banners","max");
     revalidatePath("/");
     return Response.json(
       { message: "Banner updated successfully" },
@@ -283,7 +283,7 @@ export async function DELETE(req) {
     if (existingImage) removeFile(existingImage);
 
     await connection.commit();
-    revalidateTag("banners");
+    revalidateTag("banners","max");
     revalidatePath("/");
     return Response.json(
       { message: "Banner deleted successfully" },

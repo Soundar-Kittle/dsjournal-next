@@ -29,7 +29,7 @@ export async function POST(req) {
       uploadedFiles,
       cleanedData,
       existing,
-      ["logo", "icon"]
+      ["logo", "icon"],
     );
 
     for (const [key, value] of Object.entries(cleanedData)) {
@@ -39,19 +39,19 @@ export async function POST(req) {
 
         const [existingSetting] = await connection.query(
           `SELECT id FROM settings_admin WHERE settings_name = ?`,
-          [key]
+          [key],
         );
 
         if (existingSetting.length > 0) {
           const settingId = existingSetting[0].id;
           await connection.query(
             `UPDATE settings_admin SET settings_value = ? WHERE id = ?`,
-            [stringValue, settingId]
+            [stringValue, settingId],
           );
         } else {
           await connection.query(
             `INSERT INTO settings_admin (settings_name, settings_value) VALUES (?, ?)`,
-            [key, stringValue]
+            [key, stringValue],
           );
         }
       }
@@ -60,37 +60,37 @@ export async function POST(req) {
     for (const [key, filePath] of Object.entries(filePaths)) {
       const [existingSetting] = await connection.query(
         `SELECT id FROM settings_admin WHERE settings_name = ?`,
-        [key]
+        [key],
       );
 
       if (existingSetting.length > 0) {
         const settingId = existingSetting[0].id;
         await connection.query(
           `UPDATE settings_admin SET settings_value = ? WHERE id = ?`,
-          [filePath, settingId]
+          [filePath, settingId],
         );
       } else {
         await connection.query(
           `INSERT INTO settings_admin (settings_name, settings_value) VALUES (?, ?)`,
-          [key, filePath]
+          [key, filePath],
         );
       }
     }
 
     await connection.commit();
-    revalidateTag("settings");
+    revalidateTag("settings", "max");
     revalidatePath("/");
     revalidatePath("/contact-us");
     return Response.json(
       { message: "Settings updated successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     if (connection) await connection.rollback();
     console.error("❌ API Error:", error);
     return Response.json(
       { error: "Failed to update settings", details: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     if (connection) connection.end();
@@ -104,7 +104,7 @@ export async function GET() {
     await connection.beginTransaction();
 
     const [rows] = await connection.query(
-      `SELECT id, settings_name, settings_value FROM settings_admin`
+      `SELECT id, settings_name, settings_value FROM settings_admin`,
     );
 
     const parsedRows = rows.map((row) => {
@@ -126,7 +126,7 @@ export async function GET() {
     if (connection) await connection.rollback();
     return Response.json(
       { error: "Failed to fetch settings" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     if (connection) connection.end();

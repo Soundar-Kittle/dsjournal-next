@@ -260,8 +260,8 @@ export async function PUT(req, context) {
 
     await conn.commit();
 
-    revalidateTag("articles");
-    revalidateTag("volume-issue");
+    revalidateTag("articles","max");
+    revalidateTag("volume-issue","max");
     revalidatePath(`/${slug}/${existing.article_id}`);
     revalidatePath(`/${slug}/archives`, "layout");
     revalidatePath(`/${slug}/current-issue`);

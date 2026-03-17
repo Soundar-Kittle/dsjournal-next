@@ -219,8 +219,8 @@ export async function POST(req) {
         slug = slugRes.slug;
       }
       await conn.commit();
-      revalidateTag("articles");
-      revalidateTag("volume-issue");
+      revalidateTag("articles","max");
+      revalidateTag("volume-issue","max");
 
       revalidatePath(`/${slug}/archives`, "layout");
       revalidatePath(`/${slug}/${article_id_val}`);

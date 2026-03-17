@@ -97,7 +97,7 @@ export async function POST(req) {
     }
 
     await conn.end();
-    revalidateTag("editorial_board");
+    revalidateTag("editorial_board","max");
     revalidatePath(`/${slug}/editorial-board`);
 
     return NextResponse.json({ success: true, message: "Role assigned" });
@@ -199,7 +199,7 @@ export async function PATCH(req) {
     }
 
     await conn.end();
-    revalidateTag("editorial_board");
+    revalidateTag("editorial_board","max");
     revalidatePath(`/${slug}/editorial-board`);
 
     return NextResponse.json({ success: true, message: "Role updated" });
@@ -283,7 +283,7 @@ export async function PUT(req) {
     }
 
     await conn.end();
-    revalidateTag("editorial_board");
+    revalidateTag("editorial_board","max");
     revalidatePath(`/${slug}/editorial-board`);
     return NextResponse.json({ success: true, message: "Order updated" });
   } catch (err) {
@@ -314,7 +314,7 @@ export async function DELETE(req) {
   }
 
   await conn.end();
-  revalidateTag("editorial_board");
+  revalidateTag("editorial_board","max");
   revalidatePath(`/${slug}/editorial-board`);
   return NextResponse.json({ success: true, message: "Role deleted" });
 }

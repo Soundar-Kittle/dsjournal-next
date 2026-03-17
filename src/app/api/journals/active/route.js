@@ -29,8 +29,8 @@ export async function POST(req) {
       const slugRes = await getJournalSlug(connection, journal_id);
       slug = slugRes.slug;
     }
-    revalidateTag("journals");
-    revalidateTag("journal_slug");
+    revalidateTag("journals","max");
+    revalidateTag("journal_slug","max");
     revalidatePath("/journals");
     revalidatePath(`/${slug}`, "layout");
     return NextResponse.json({

@@ -106,9 +106,9 @@ export async function POST(req) {
     // Use INSERT ... SET ? to avoid value-count mismatches
     await conn.query("INSERT INTO journals SET ?", row);
     await conn.end();
-    revalidateTag("journals");
-    revalidateTag("journal_slug");    
-    revalidateTag("journal_analytics");
+    revalidateTag("journals","max");
+    revalidateTag("journal_slug","max");    
+    revalidateTag("journal_analytics","max");
 
     revalidatePath("/journals");
     revalidatePath(`/${slug}`);
@@ -255,9 +255,9 @@ export async function PATCH(req) {
     const slug = cleanedData.short_name.replace(/^DS-/i, "").toLowerCase();
 
     await conn.commit();
-    revalidateTag("journals");
-    revalidateTag("journal_slug");
-    revalidateTag("journal_analytics");
+    revalidateTag("journals","max");
+    revalidateTag("journal_slug","max");
+    revalidateTag("journal_analytics","max");
 
     revalidatePath("/journals");
     revalidatePath(`/${slug}`);
@@ -416,9 +416,9 @@ export async function DELETE(req) {
     if (journal.copyright_form) removeFile(journal.copyright_form);
 
     await conn.commit();
-    revalidateTag("journals");
-    revalidateTag("journal_slug");
-    revalidateTag("journal_analytics");
+    revalidateTag("journals","max");
+    revalidateTag("journal_slug","max");
+    revalidateTag("journal_analytics","max");
 
     revalidatePath("/journals");
     revalidatePath(`/${slug}`);

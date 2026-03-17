@@ -257,7 +257,7 @@ export async function POST(req) {
         is_active ? 1 : 0,
       ]
     );
-    revalidateTag("editorial_board");
+    revalidateTag("editorial_board","max");
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("❌ POST /editorial-members failed:", err);
@@ -327,7 +327,7 @@ export async function PATCH(req) {
 
   await conn.query(query, fields);
   await conn.end();
-  revalidateTag("editorial_board");
+  revalidateTag("editorial_board","max");
   return NextResponse.json({ success: true, message: "Member updated" });
 }
 
@@ -343,7 +343,7 @@ export async function DELETE(req) {
 
   try {
     await conn.query("DELETE FROM editorial_members WHERE id = ?", [id]);
-    revalidateTag("editorial_board");
+    revalidateTag("editorial_board","max");
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("❌ DELETE /editorial-members failed:", err);

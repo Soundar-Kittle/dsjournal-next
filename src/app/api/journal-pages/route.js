@@ -69,7 +69,7 @@ export async function POST(req) {
 
     await connection.commit();
 
-    revalidateTag("journal_page");
+    revalidateTag("journal_page","max");
     revalidatePath(`/${slug}/call-for-paper`);
     revalidatePath(`/${slug}${page == "aim-and-scope" ? "" : "/" + page}`);
 
@@ -242,7 +242,7 @@ export async function PATCH(req) {
 
     await connection.commit();
 
-    revalidateTag("journal_page");
+    revalidateTag("journal_page","max");
     revalidatePath(`/${slug}${page == "aim-and-scope" ? "" : "/" + page}`);
 
     return Response.json(
@@ -291,7 +291,7 @@ export async function DELETE(req) {
 
     await connection.commit();
 
-    revalidateTag("journal_page");
+    revalidateTag("journal_page","max");
     revalidatePath(`/${slug}/call-for-paper`);
     revalidatePath(`/${slug}${page == "aim-and-scope" ? "" : "/" + page}`);
 

@@ -94,7 +94,7 @@ export async function POST(req) {
 
     await connection.commit();
 
-    revalidateTag("call_for_papers");
+    revalidateTag("call_for_papers","max");
     revalidatePath(slug ? `/${slug}/call-for-paper` : "/call-for-paper");
 
     return Response.json(
@@ -284,7 +284,7 @@ export async function PATCH(req) {
 
     await connection.commit();
 
-    revalidateTag("call_for_papers");
+    revalidateTag("call_for_papers","max");
     revalidatePath(slug ? `/${slug}/call-for-paper` : "/call-for-paper");
 
     return Response.json(
